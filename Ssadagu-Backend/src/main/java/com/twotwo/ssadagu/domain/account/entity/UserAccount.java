@@ -21,7 +21,7 @@ public class UserAccount extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     @Column(name = "bank_code", nullable = false, length = 20)
@@ -30,8 +30,8 @@ public class UserAccount extends BaseEntity {
     @Column(name = "bank_name", nullable = false, length = 50)
     private String bankName;
 
-    @Column(name = "account_number_enc", nullable = false)
-    private String accountNumberEnc;
+    @Column(name = "account_number", nullable = false)
+    private String accountNumber;
 
     @Column(name = "account_hash", nullable = false, length = 64, unique = true)
     private String accountHash;
