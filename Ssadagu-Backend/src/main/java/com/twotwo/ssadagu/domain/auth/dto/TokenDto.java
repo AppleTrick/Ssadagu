@@ -1,0 +1,22 @@
+package com.twotwo.ssadagu.domain.auth.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+
+@Schema(description = "토큰 응답 DTO")
+@Getter
+@Builder
+@AllArgsConstructor
+public class TokenDto {
+
+    @Schema(description = "권한 부여 타입 (예: Bearer)", example = "Bearer")
+    private String grantType;
+
+    @Schema(description = "액세스 토큰 (API 요청 시 Authorization 헤더에 사용)")
+    private String accessToken;
+
+    @Schema(description = "리프레시 토큰 (액세스 토큰 만료 시 재발급을 위해 사용)")
+    private String refreshToken;
+}
