@@ -1,17 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/shared/auth/useAuthStore';
-import { LoginForm } from '@/features/auth';
+import { LandingPage } from '@/views/landing';
 
-export default function LandingPage() {
-  const { isAuthenticated } = useAuthStore();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isAuthenticated) router.push('/home');
-  }, [isAuthenticated, router]);
-
-  return <LoginForm onSuccess={() => router.push('/home')} />;
+export default function Page() {
+  return <LandingPage />;
 }

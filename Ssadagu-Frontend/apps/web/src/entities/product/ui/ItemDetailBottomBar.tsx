@@ -1,7 +1,7 @@
 'use client';
 
 import styled from '@emotion/styled';
-import { colors, typography, BOTTOM_NAV_HEIGHT } from '@/shared/styles/theme';
+import { colors, typography } from '@/shared/styles/theme';
 import type { Product } from '../model/types';
 
 interface ItemDetailBottomBarProps {
@@ -11,6 +11,7 @@ interface ItemDetailBottomBarProps {
   onWish?: () => void;
   onChat?: () => void;
   onBuy?: () => void;
+  bottomOffset?: number;
 }
 
 const formatPrice = (price: number) =>
@@ -23,9 +24,10 @@ const ItemDetailBottomBar = ({
   onWish,
   onChat,
   onBuy,
+  bottomOffset = 0,
 }: ItemDetailBottomBarProps) => {
   return (
-    <Bar>
+    <Bar $bottomOffset={bottomOffset}>
       <Left>
         <WishButton onClick={onWish} aria-label="찜하기">
           <svg width="24" height="24" viewBox="0 0 24 24" fill={isWished ? colors.red : 'none'} stroke={isWished ? colors.red : colors.textPrimary} strokeWidth="2">
@@ -53,9 +55,9 @@ const ItemDetailBottomBar = ({
 
 export default ItemDetailBottomBar;
 
-const Bar = styled.div`
+const Bar = styled.div<{ $bottomOffset: number }>`
   position: fixed;
-  bottom: ${BOTTOM_NAV_HEIGHT}px;
+  bottom: ${({ $bottomOffset }) => $bottomOffset}px;
   left: 0;
   right: 0;
   height: 68px;

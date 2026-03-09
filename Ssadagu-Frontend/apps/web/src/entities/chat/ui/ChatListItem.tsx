@@ -6,6 +6,7 @@ import type { ChatRoom } from '../model/types';
 
 interface ChatListItemProps {
   room: ChatRoom;
+  currentUserId?: number;
   onClick?: () => void;
 }
 
@@ -28,8 +29,10 @@ const formatTime = (dateStr: string | null) => {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 };
 
-const ChatListItem = ({ room, onClick }: ChatListItemProps) => {
-  const otherNickname = room.buyerNickname;
+const ChatListItem = ({ room, currentUserId, onClick }: ChatListItemProps) => {
+  const otherNickname = currentUserId === room.buyerId
+    ? room.sellerNickname
+    : room.buyerNickname;
 
   return (
     <Container onClick={onClick}>

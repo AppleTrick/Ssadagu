@@ -1,7 +1,7 @@
 'use client';
 
-import { ItemRegistrationForm } from '@/features/create-product';
+import { ProductNewPage } from '@/views/product-new';
 
-export default function ProductNewPage() {
-  return <ItemRegistrationForm />;
+export default function Page() {
+  return <ProductNewPage />;
 }

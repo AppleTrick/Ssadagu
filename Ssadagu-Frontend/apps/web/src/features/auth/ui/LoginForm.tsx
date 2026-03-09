@@ -10,6 +10,7 @@ import Button from '@/shared/ui/Button';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { MOCK_TOKEN } from '@/shared/mocks/mockData';
 
 const schema = z.object({
   email: z.string().min(1, '이메일을 입력해주세요').email('올바른 이메일을 입력해주세요'),
@@ -144,6 +145,20 @@ const ButtonArea = styled.div`
   padding-top: 8px;
 `;
 
+const DevButton = styled.button`
+  margin-top: 24px;
+  width: 100%;
+  height: 44px;
+  border: 1.5px dashed ${colors.border};
+  border-radius: 999px;
+  background: none;
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.sm};
+  color: ${colors.textSecondary};
+  cursor: pointer;
+  &:hover { background: ${colors.bg}; }
+`;
+
 /* ── Component ───────────────────────────────────────────── */
 
 const LoginForm = ({ onSuccess }: LoginFormProps) => {
@@ -158,6 +173,12 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
     resolver: zodResolver(schema),
     defaultValues: { email: '', password: '' },
   });
+
+  const handleDevLogin = () => {
+    if (process.env.NEXT_PUBLIC_MSW_ENABLED !== 'true') return;
+    setToken(MOCK_TOKEN);
+    onSuccess?.();
+  };
 
   const onSubmit = async (data: FormValues) => {
     setServerError(null);
@@ -241,6 +262,12 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
             </Button>
           </ButtonArea>
         </Form>
+
+        {process.env.NEXT_PUBLIC_MSW_ENABLED === 'true' && (
+          <DevButton type="button" onClick={handleDevLogin}>
+            🛠 개발 모드로 입장 (Mock)
+          </DevButton>
+        )}
       </Inner>
     </Screen>
   );

@@ -2,15 +2,18 @@
 
 import { useState, type KeyboardEvent } from 'react';
 import styled from '@emotion/styled';
-import { colors, typography, BOTTOM_NAV_HEIGHT } from '@/shared/styles/theme';
+import { colors, typography } from '@/shared/styles/theme';
+import AttachmentMenu from './AttachmentMenu';
 
 interface ChatInputAreaProps {
   onSend: (content: string) => void;
   onAttach?: () => void;
+  bottomOffset?: number;
 }
 
-const ChatInputArea = ({ onSend, onAttach }: ChatInputAreaProps) => {
+const ChatInputArea = ({ onSend, bottomOffset = 0 }: ChatInputAreaProps) => {
   const [value, setValue] = useState('');
+  const [attachOpen, setAttachOpen] = useState(false);
 
   const handleSend = () => {
     const trimmed = value.trim();
@@ -27,8 +30,15 @@ const ChatInputArea = ({ onSend, onAttach }: ChatInputAreaProps) => {
   };
 
   return (
-    <Bar>
-      <AttachButton onClick={onAttach} aria-label="첨부">
+    <>
+      <AttachmentMenu
+        isOpen={attachOpen}
+        onClose={() => setAttachOpen(false)}
+        onSelectPhoto={() => alert('사진 첨부 기능은 준비 중입니다.')}
+        onSelectLocation={() => alert('위치 공유 기능은 준비 중입니다.')}
+      />
+    <Bar $bottomOffset={bottomOffset}>
+      <AttachButton onClick={() => setAttachOpen((v) => !v)} aria-label="첨부">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
@@ -47,17 +57,20 @@ const ChatInputArea = ({ onSend, onAttach }: ChatInputAreaProps) => {
         </svg>
       </SendButton>
     </Bar>
+    </>
   );
 };
 
 export default ChatInputArea;
 
-const Bar = styled.div`
+const CHAT_INPUT_HEIGHT = 56;
+
+const Bar = styled.div<{ $bottomOffset: number }>`
   position: fixed;
-  bottom: ${BOTTOM_NAV_HEIGHT}px;
+  bottom: ${({ $bottomOffset }) => $bottomOffset}px;
   left: 0;
   right: 0;
-  height: 56px;
+  height: ${CHAT_INPUT_HEIGHT}px;
   background: ${colors.surface};
   border-top: 1px solid ${colors.border};
   display: flex;

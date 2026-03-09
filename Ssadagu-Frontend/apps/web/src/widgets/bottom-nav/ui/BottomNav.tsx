@@ -47,9 +47,9 @@ const BottomNav = () => {
           ? pathname === '/'
           : pathname.startsWith(item.path);
         return (
-          <NavItem key={item.path} href={item.path} active={isActive}>
+          <NavItem key={item.path} href={item.path}>
             {item.icon(isActive)}
-            <NavLabel active={isActive}>{item.label}</NavLabel>
+            <NavLabel $active={isActive}>{item.label}</NavLabel>
           </NavItem>
         );
       })}
@@ -72,7 +72,7 @@ const Nav = styled.nav`
   z-index: ${zIndex.bottomNav};
 `;
 
-const NavItem = styled(Link)<{ active: boolean }>`
+const NavItem = styled(Link)`
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -83,8 +83,8 @@ const NavItem = styled(Link)<{ active: boolean }>`
   padding-bottom: 8px;
 `;
 
-const NavLabel = styled.span<{ active: boolean }>`
+const NavLabel = styled.span<{ $active: boolean }>`
   font-size: ${typography.size.xs};
   font-weight: ${typography.weight.medium};
-  color: ${({ active }) => (active ? colors.primary : colors.inactiveTab)};
+  color: ${({ $active }) => ($active ? colors.primary : colors.inactiveTab)};
 `;

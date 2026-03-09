@@ -22,6 +22,7 @@ export const ENDPOINTS = {
   },
   CHATS: {
     ROOMS: '/chats/rooms',
+    CREATE: '/chats/rooms',
     MESSAGES: (roomId: number) => `/chats/rooms/${roomId}/messages`,
   },
   TRANSFERS: {
