@@ -1,0 +1,241 @@
+# 파일 구조 문서 — Ssadagu Frontend
+
+> FSD (Feature-Sliced Design) 아키텍처를 기반으로 합니다.
+> AI가 파일을 생성할 때 이 구조를 반드시 준수해야 합니다.
+
+---
+
+## 1. 모노레포 루트 구조
+
+```
+Ssadagu-Frontend/
+├── apps/
+│   ├── web/              # Next.js 웹 애플리케이션
+│   └── native/           # Expo React Native 모바일 앱
+├── packages/
+│   ├── shared/           # 공통 유틸리티, 타입 (@ssadagu/shared)
+│   └── ui/               # 공통 UI 컴포넌트 (@ssadagu/ui)
+├── docs/                 # 프로젝트 문서
+├── package.json          # 루트 패키지 설정
+├── pnpm-workspace.yaml   # pnpm 워크스페이스 정의
+├── turbo.json            # Turborepo 파이프라인 설정
+└── .npmrc                # pnpm 설정
+```
+
+---
+
+## 2. 웹 앱 구조 (apps/web) — FSD 아키텍처
+
+```
+apps/web/
+├── src/
+│   ├── app/                        # [Next.js App Router] 전역 설정
+│   │   ├── layout.tsx              # 루트 레이아웃 (Provider, 전역 CSS)
+│   │   ├── globals.css             # 전역 스타일 (Tailwind 기본 포함)
+│   │   ├── favicon.ico
+│   │   │
+│   │   ├── (auth)/                 # 인증 관련 라우트 그룹
+│   │   │   ├── login/
+│   │   │   │   └── page.tsx
+│   │   │   └── layout.tsx
+│   │   │
+│   │   ├── (main)/                 # 로그인 후 메인 라우트 그룹
+│   │   │   ├── layout.tsx          # 탭 네비게이션 레이아웃
+│   │   │   ├── page.tsx            # 홈 피드 (/)
+│   │   │   ├── products/
+│   │   │   │   ├── [id]/
+│   │   │   │   │   └── page.tsx    # 상품 상세
+│   │   │   │   └── new/
+│   │   │   │       └── page.tsx    # 상품 등록
+│   │   │   ├── chat/
+│   │   │   │   ├── page.tsx        # 채팅 목록
+│   │   │   │   └── [roomId]/
+│   │   │   │       └── page.tsx    # 채팅방
+│   │   │   └── my/
+│   │   │       ├── page.tsx        # 마이페이지
+│   │   │       ├── account/
+│   │   │       │   └── page.tsx    # 계좌 관리
+│   │   │       ├── products/
+│   │   │       │   └── page.tsx    # 내 판매 상품
+│   │   │       ├── transactions/
+│   │   │       │   └── page.tsx    # 거래 내역
+│   │   │       └── wishes/
+│   │   │           └── page.tsx    # 찜 목록
+│   │   │
+│   │   └── api/                    # Next.js Route Handler (필요 시)
+│   │
+│   ├── widgets/                    # [FSD] 독립적으로 사용 가능한 대형 UI 블록
+│   │   ├── header/
+│   │   │   ├── ui/
+│   │   │   │   └── Header.tsx
+│   │   │   └── index.ts
+│   │   ├── bottom-nav/
+│   │   │   ├── ui/
+│   │   │   │   └── BottomNav.tsx
+│   │   │   └── index.ts
+│   │   └── product-list/
+│   │       ├── ui/
+│   │       │   └── ProductList.tsx
+│   │       └── index.ts
+│   │
+│   ├── features/                   # [FSD] 비즈니스 기능 단위
+│   │   ├── auth/
+│   │   │   ├── login-form/
+│   │   │   │   ├── ui/
+│   │   │   │   │   └── LoginForm.tsx
+│   │   │   │   ├── model/
+│   │   │   │   │   └── useLoginForm.ts
+│   │   │   │   └── index.ts
+│   │   │   └── logout/
+│   │   │       └── index.ts
+│   │   ├── product/
+│   │   │   ├── create-product/
+│   │   │   ├── toggle-wish/
+│   │   │   └── filter-products/
+│   │   ├── chat/
+│   │   │   ├── send-message/
+│   │   │   └── create-room/
+│   │   ├── account/
+│   │   │   ├── register-account/
+│   │   │   └── verify-account/
+│   │   └── payment/
+│   │       └── transfer/
+│   │
+│   ├── entities/                   # [FSD] 비즈니스 엔티티 (데이터 모델 + UI)
+│   │   ├── user/
+│   │   │   ├── model/
+│   │   │   │   ├── types.ts        # User 타입 정의
+│   │   │   │   └── useUser.ts      # 유저 상태 훅
+│   │   │   ├── ui/
+│   │   │   │   └── UserAvatar.tsx
+│   │   │   └── index.ts
+│   │   ├── product/
+│   │   │   ├── model/
+│   │   │   │   └── types.ts        # Product 타입 정의
+│   │   │   ├── ui/
+│   │   │   │   └── ProductCard.tsx
+│   │   │   └── index.ts
+│   │   ├── chat/
+│   │   │   ├── model/
+│   │   │   │   └── types.ts        # ChatRoom, Message 타입 정의
+│   │   │   ├── ui/
+│   │   │   │   └── MessageBubble.tsx
+│   │   │   └── index.ts
+│   │   └── transaction/
+│   │       ├── model/
+│   │       │   └── types.ts
+│   │       └── index.ts
+│   │
+│   └── shared/                     # [FSD] 재사용 가능한 공통 모듈
+│       ├── api/
+│       │   ├── client.ts           # fetch 래퍼 / API 클라이언트
+│       │   └── endpoints.ts        # 엔드포인트 상수
+│       ├── auth/
+│       │   └── useAuthStore.ts     # Zustand 인증 스토어
+│       ├── hooks/
+│       │   ├── useDebounce.ts
+│       │   └── useIntersectionObserver.ts
+│       ├── lib/
+│       │   ├── formatDate.ts
+│       │   └── formatPrice.ts
+│       ├── ui/                     # 공통 원자 컴포넌트 (packages/ui에서 가져옴)
+│       │   ├── Button.tsx
+│       │   ├── Input.tsx
+│       │   ├── Modal.tsx
+│       │   └── Skeleton.tsx
+│       └── constants/
+│           └── routes.ts           # 경로 상수
+│
+├── public/                         # 정적 에셋
+├── next.config.ts
+├── tailwind.config.ts
+├── postcss.config.mjs
+├── tsconfig.json
+├── eslint.config.mjs
+└── package.json
+```
+
+---
+
+## 3. 모바일 앱 구조 (apps/native)
+
+```
+apps/native/
+├── app/                            # Expo Router 파일 기반 라우팅
+│   ├── _layout.tsx                 # 루트 레이아웃 (WebView 설정)
+│   ├── (tabs)/
+│   │   ├── _layout.tsx             # 탭 네비게이션 레이아웃
+│   │   ├── index.tsx               # 홈 탭 (WebView 렌더링)
+│   │   └── explore.tsx             # 탐색 탭
+│   └── modal.tsx                   # 모달 화면
+│
+├── components/                     # 네이티브 전용 컴포넌트
+│   ├── WebViewScreen.tsx           # react-native-webview 래퍼
+│   ├── BridgeHandler.tsx           # 브릿지 이벤트 처리
+│   └── ui/
+│       └── ...
+│
+├── hooks/
+│   ├── useBridge.ts                # postMessage 브릿지 훅
+│   ├── useColorScheme.ts
+│   └── useThemeColor.ts
+│
+├── constants/
+│   └── theme.ts                    # 네이티브 테마 상수
+│
+├── assets/
+│   └── images/
+│
+├── app.json                        # Expo 앱 설정
+├── metro.config.js
+├── tsconfig.json
+└── package.json
+```
+
+---
+
+## 4. 공유 패키지 구조 (packages/)
+
+```
+packages/
+├── shared/                         # @ssadagu/shared
+│   ├── src/
+│   │   ├── index.ts
+│   │   ├── types/                  # 공통 TypeScript 타입
+│   │   └── utils/                  # 순수 유틸 함수
+│   └── package.json
+│
+└── ui/                             # @ssadagu/ui
+    ├── src/
+    │   ├── index.ts
+    │   ├── Button/
+    │   ├── Input/
+    │   ├── Card/
+    │   └── ...
+    └── package.json
+```
+
+---
+
+## 5. FSD 레이어 의존성 규칙
+
+```
+app → pages → widgets → features → entities → shared
+```
+
+- **상위 레이어는 하위 레이어만 import 가능**
+- 같은 레이어 내 교차 import 금지 (예: features 간 직접 import 금지)
+- `shared`는 모든 레이어에서 사용 가능하지만, 비즈니스 로직 포함 금지
+
+---
+
+## 6. 파일 네이밍 컨벤션
+
+| 대상 | 규칙 | 예시 |
+|------|------|------|
+| 컴포넌트 | PascalCase | `ProductCard.tsx` |
+| 훅 | camelCase, `use` 접두사 | `useProductList.ts` |
+| 유틸 함수 | camelCase | `formatPrice.ts` |
+| 타입 파일 | `types.ts` | `types.ts` |
+| 상수 | camelCase | `routes.ts` |
+| 스토어 | camelCase, `Store` 접미사 | `useAuthStore.ts` |
