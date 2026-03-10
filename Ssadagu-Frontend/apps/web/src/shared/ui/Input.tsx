@@ -4,9 +4,9 @@ import { useState } from 'react';
 import styled from '@emotion/styled';
 import { colors, radius, typography } from '@/shared/styles/theme';
 
-interface InputProps {
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   type?: React.HTMLInputTypeAttribute;
   disabled?: boolean;
@@ -38,7 +38,7 @@ const StyledInput = styled.input<{ hasError: boolean; disabled?: boolean }>`
   background: ${({ disabled }) => (disabled ? colors.bg : colors.surface)};
   border: 1.5px solid
     ${({ hasError, disabled }) =>
-      disabled ? colors.disabled : hasError ? colors.red : colors.border};
+    disabled ? colors.disabled : hasError ? colors.red : colors.border};
   border-radius: ${radius.pill};
   outline: none;
   transition: border-color 0.15s;
@@ -62,6 +62,7 @@ const ErrorText = styled.span`
 `;
 
 const Input = ({
+  id: providedId,
   value,
   onChange,
   placeholder,
@@ -69,8 +70,10 @@ const Input = ({
   disabled,
   label,
   error,
+  ...rest
 }: InputProps) => {
-  const [id] = useState(() => `input-${Math.random().toString(36).slice(2, 8)}`);
+  const [generatedId] = useState(() => `input-${Math.random().toString(36).slice(2, 8)}`);
+  const id = providedId || generatedId;
 
   return (
     <Wrapper>
@@ -83,6 +86,7 @@ const Input = ({
         placeholder={placeholder}
         disabled={disabled}
         hasError={!!error}
+        {...rest}
       />
       {error && <ErrorText>{error}</ErrorText>}
     </Wrapper>
