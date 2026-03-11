@@ -26,6 +26,10 @@ export const handlers = [
   }),
 
   // ── Users ─────────────────────────────────────────────────────────────
+  http.post(`${BASE}/users/signup`, async () => {
+    await d(400);
+    return HttpResponse.json({ data: { id: 1, email: 'test@test.com', nickname: '테스트유저' } });
+  }),
   http.get(`${BASE}/users/me`, async () => {
     await d();
     return HttpResponse.json({ data: mockUser });
