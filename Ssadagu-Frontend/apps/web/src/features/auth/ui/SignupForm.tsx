@@ -2,25 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
 import Button from '@/shared/ui/Button';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
-import { useAuthStore } from '@/shared/auth/useAuthStore';
-import { MOCK_TOKEN } from '@/shared/mocks/mockData';
+import { useSignupForm } from '../model/useSignupForm';
 
-const schema = z.object({
-  email: z.string().min(1, '이메일을 입력해주세요').email('올바른 이메일을 입력해주세요'),
-  password: z.string().min(6, '비밀번호는 최소 6자 이상이어야 합니다'),
-});
-
-type FormValues = z.infer<typeof schema>;
-
-interface LoginFormProps {
+interface SignupFormProps {
   onSuccess?: () => void;
 }
 
@@ -65,9 +52,7 @@ const Title = styled.h1`
   font-weight: ${typography.weight.bold};
   color: ${colors.textPrimary};
   text-align: center;
-  white-space: pre-line;
-  line-height: 1.35;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 `;
 
 const Subtitle = styled.p`
@@ -75,7 +60,6 @@ const Subtitle = styled.p`
   font-size: 14px;
   color: ${colors.textSecondary};
   text-align: center;
-  white-space: pre-line;
   line-height: 1.6;
   margin-bottom: 40px;
 `;
@@ -86,8 +70,6 @@ const Form = styled.form`
   flex-direction: column;
   gap: 16px;
 `;
-
-/* ── Custom field (no external Input to avoid ref conflict) ─ */
 
 const FieldWrapper = styled.div`
   display: flex;
@@ -146,21 +128,7 @@ const ButtonArea = styled.div`
   padding-top: 8px;
 `;
 
-const DevButton = styled.button`
-  margin-top: 24px;
-  width: 100%;
-  height: 44px;
-  border: 1.5px dashed ${colors.border};
-  border-radius: 999px;
-  background: none;
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.sm};
-  color: ${colors.textSecondary};
-  cursor: pointer;
-  &:hover { background: ${colors.bg}; }
-`;
-
-const SignupLink = styled.div`
+const LoginLink = styled.div`
   margin-top: 20px;
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.sm};
@@ -176,90 +144,77 @@ const SignupLink = styled.div`
 
 /* ── Component ───────────────────────────────────────────── */
 
-const LoginForm = ({ onSuccess }: LoginFormProps) => {
-  const setToken = useAuthStore((s) => s.setToken);
-  const [serverError, setServerError] = useState<string | null>(null);
+const SignupForm = ({ onSuccess }: SignupFormProps) => {
+  const { signup, loading, error: serverError } = useSignupForm();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '' },
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const handleDevLogin = () => {
-    if (process.env.NEXT_PUBLIC_MSW_ENABLED !== 'true') return;
-    setToken(MOCK_TOKEN);
-    onSuccess?.();
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!email) errs.email = '이메일을 입력해주세요';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = '올바른 이메일을 입력해주세요';
+    if (!password) errs.password = '비밀번호를 입력해주세요';
+    else if (password.length < 6) errs.password = '비밀번호는 최소 6자 이상이어야 합니다';
+    if (!nickname.trim()) errs.nickname = '닉네임을 입력해주세요';
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
-  const onSubmit = async (data: FormValues) => {
-    setServerError(null);
-    try {
-      const res = await apiClient.post(ENDPOINTS.AUTH.LOGIN, {
-        email: data.email,
-        password: data.password,
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as Record<string, unknown>;
-        setServerError(
-          typeof body?.message === 'string'
-            ? body.message
-            : '로그인에 실패했습니다. 다시 시도해주세요.',
-        );
-        return;
-      }
-
-      const body = await res.json() as Record<string, unknown>;
-      const nested = body?.data as Record<string, unknown> | undefined;
-      const token =
-        typeof body?.accessToken === 'string'
-          ? body.accessToken
-          : typeof nested?.accessToken === 'string'
-            ? nested.accessToken
-            : '';
-
-      if (token) setToken(token);
-      onSuccess?.();
-    } catch {
-      setServerError('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    const ok = await signup({ email, password, nickname });
+    if (ok) onSuccess?.();
   };
 
   return (
     <Screen>
       <Inner>
         <IconCircle aria-hidden="true">🤝</IconCircle>
-
-        <Title>{'안전하고 빠른\n우리 동네 직거래'}</Title>
+        <Title>회원가입</Title>
         <Subtitle>{'계좌 인증 한번으로 시작하는\n신뢰 기반 중고거래'}</Subtitle>
 
-        <Form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Form onSubmit={handleSubmit} noValidate>
           <FieldWrapper>
-            <FieldLabel htmlFor="login-email">이메일</FieldLabel>
+            <FieldLabel htmlFor="signup-email">이메일</FieldLabel>
             <FieldInput
-              id="login-email"
+              id="signup-email"
               type="email"
               placeholder="이메일을 입력하세요"
-              hasError={!!errors.email}
-              {...register('email')}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              hasError={!!fieldErrors.email}
             />
-            {errors.email && <FieldError role="alert">{errors.email.message}</FieldError>}
+            {fieldErrors.email && <FieldError role="alert">{fieldErrors.email}</FieldError>}
           </FieldWrapper>
 
           <FieldWrapper>
-            <FieldLabel htmlFor="login-password">비밀번호</FieldLabel>
+            <FieldLabel htmlFor="signup-password">비밀번호</FieldLabel>
             <FieldInput
-              id="login-password"
+              id="signup-password"
               type="password"
-              placeholder="비밀번호를 입력하세요"
-              hasError={!!errors.password}
-              {...register('password')}
+              placeholder="비밀번호를 입력하세요 (6자 이상)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              hasError={!!fieldErrors.password}
             />
-            {errors.password && <FieldError role="alert">{errors.password.message}</FieldError>}
+            {fieldErrors.password && <FieldError role="alert">{fieldErrors.password}</FieldError>}
+          </FieldWrapper>
+
+          <FieldWrapper>
+            <FieldLabel htmlFor="signup-nickname">닉네임</FieldLabel>
+            <FieldInput
+              id="signup-nickname"
+              type="text"
+              placeholder="닉네임을 입력하세요"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              hasError={!!fieldErrors.nickname}
+            />
+            {fieldErrors.nickname && <FieldError role="alert">{fieldErrors.nickname}</FieldError>}
           </FieldWrapper>
 
           {serverError && <ServerError role="alert">{serverError}</ServerError>}
@@ -270,26 +225,20 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
               variant="primary"
               size="lg"
               fullWidth
-              loading={isSubmitting}
-              disabled={isSubmitting}
+              loading={loading}
+              disabled={loading}
             >
-              시작하기
+              가입하기
             </Button>
           </ButtonArea>
         </Form>
 
-        <SignupLink>
-          계정이 없으신가요? <Link href="/signup">회원가입</Link>
-        </SignupLink>
-
-        {process.env.NEXT_PUBLIC_MSW_ENABLED === 'true' && (
-          <DevButton type="button" onClick={handleDevLogin}>
-            🛠 개발 모드로 입장 (Mock)
-          </DevButton>
-        )}
+        <LoginLink>
+          이미 계정이 있으신가요? <Link href="/">로그인</Link>
+        </LoginLink>
       </Inner>
     </Screen>
   );
 };
 
-export default LoginForm;
+export default SignupForm;
