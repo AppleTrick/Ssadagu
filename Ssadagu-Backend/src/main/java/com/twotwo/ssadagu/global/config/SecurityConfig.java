@@ -2,6 +2,7 @@ package com.twotwo.ssadagu.global.config;
 
 import com.twotwo.ssadagu.global.security.JwtAuthenticationEntryPoint;
 import com.twotwo.ssadagu.global.security.JwtAuthenticationFilter;
+import com.twotwo.ssadagu.global.security.VerificationFilter;
 import com.twotwo.ssadagu.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -40,7 +41,8 @@ public class SecurityConfig {
                                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(authorize -> authorize
                                                 // public API
-                                                .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**")
+                                                .requestMatchers("/api/auth/**", "/api/users/signup", "/swagger-ui/**",
+                                                                "/v3/api-docs/**")
                                                 .permitAll()
                                                 // 그 외 요청은 모두 인증 필요
                                                 .anyRequest().authenticated())
@@ -50,6 +52,8 @@ public class SecurityConfig {
                                 // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 전에 실행
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                                                 UsernamePasswordAuthenticationFilter.class)
+                                // JWT 인증 후에 1원 인증 여부 확인
+                                .addFilterAfter(new VerificationFilter(), JwtAuthenticationFilter.class)
                                 .build();
         }
 }

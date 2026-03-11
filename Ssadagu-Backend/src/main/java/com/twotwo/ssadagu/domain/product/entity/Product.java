@@ -50,4 +50,25 @@ public class Product extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public void update(String title, String description, Long price, String categoryCode, String regionName,
+            String status) {
+        if (title != null)
+            this.title = title;
+        if (description != null)
+            this.description = description;
+        if (price != null)
+            this.price = price;
+        if (categoryCode != null)
+            this.categoryCode = categoryCode;
+        if (regionName != null)
+            this.regionName = regionName;
+        if (status != null)
+            this.status = status;
+    }
+
+    public void markAsDeleted() {
+        this.status = "DELETED";
+        this.deletedAt = LocalDateTime.now();
+    }
 }

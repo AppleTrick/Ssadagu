@@ -1,0 +1,16 @@
+export const ROUTES = {
+  HOME: '/',
+  LOGIN: '/login',
+  PRODUCT_DETAIL: (id: number) => `/products/${id}`,
+  PRODUCT_NEW: '/products/new',
+  CHAT_LIST: '/chat',
+  CHAT_ROOM: (roomId: number) => `/chat/${roomId}`,
+  MY: '/my',
+  MY_PROFILE: '/my/profile',
+  MY_ACCOUNT: '/location-auth',
+  MY_PRODUCTS: '/my/products',
+  MY_TRANSACTIONS: '/my/transactions',
+  MY_WISHES: '/my/wishes',
+  VERIFY_ACCOUNT: '/verify-account',
+  LOCATION_AUTH: '/location-auth',
+} as const;

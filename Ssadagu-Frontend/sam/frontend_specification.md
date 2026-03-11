@@ -13,7 +13,7 @@
 ### 웹 애플리케이션 (apps/web)
 
 - **Framework**: Next.js (App Router)
-- **Styling**: Tailwind CSS + Emotion (CSS-in-JS)
+- **Styling**: Emotion (CSS-in-JS)
 - **State Management**: Zustand (Client), Tanstack Query (Server)
 - **Form**: React Hook Form + Zod (Validation)
 
