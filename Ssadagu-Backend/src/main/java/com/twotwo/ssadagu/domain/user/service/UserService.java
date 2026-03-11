@@ -5,6 +5,8 @@ import com.twotwo.ssadagu.domain.user.dto.SignUpRequestDto;
 import com.twotwo.ssadagu.domain.user.dto.UserResponseDto;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
+import com.twotwo.ssadagu.global.error.BusinessException;
+import com.twotwo.ssadagu.global.error.ErrorCode;
 import com.twotwo.ssadagu.global.security.CustomUserDetails;
 import com.twotwo.ssadagu.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +27,10 @@ public class UserService {
     @Transactional
     public UserResponseDto signup(SignUpRequestDto requestDto) {
         if (userRepository.existsByEmail(requestDto.getEmail())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
         if (userRepository.existsByNickname(requestDto.getNickname())) {
-            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            throw new BusinessException(ErrorCode.NICKNAME_ALREADY_EXISTS);
         }
 
         User user = User.builder()
