@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { Button } from '@/shared/ui';
-import { apiClient } from '@/shared/api/client';
-import { useAuthStore } from '@/shared/auth/useAuthStore';
 import {
   colors,
   typography,
@@ -142,7 +140,6 @@ const PinIcon = () => (
 
 export function LocationAuthPage() {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [regionName, setRegionName] = useState('');
@@ -162,22 +159,26 @@ export function LocationAuthPage() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const res = await apiClient.post(
-            '/users/me/region',
-            { latitude, longitude },
-            accessToken ?? undefined,
+          // Nominatim 역지오코딩으로 동네 이름 변환 (백엔드 엔드포인트 미구현)
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ko`,
           );
-          if (!res.ok) throw new Error('인증 실패');
-          const body = await res.json() as Record<string, unknown>;
-          const name = typeof body.regionName === 'string' ? body.regionName
-            : typeof (body.data as Record<string, unknown>)?.regionName === 'string'
-              ? (body.data as Record<string, unknown>).regionName as string
-              : `위도 ${latitude.toFixed(4)}, 경도 ${longitude.toFixed(4)}`;
+          let name = `위도 ${latitude.toFixed(4)}, 경도 ${longitude.toFixed(4)}`;
+          if (geoRes.ok) {
+            const geoData = await geoRes.json() as Record<string, unknown>;
+            const addr = geoData.address as Record<string, unknown> | undefined;
+            name = (typeof addr?.suburb === 'string' ? addr.suburb
+              : typeof addr?.neighbourhood === 'string' ? addr.neighbourhood
+              : typeof addr?.quarter === 'string' ? addr.quarter
+              : typeof addr?.city_district === 'string' ? addr.city_district
+              : name) as string;
+          }
           setRegionName(name);
           setStatus('success');
         } catch {
-          setStatus('error');
-          setErrorMsg('위치 인증에 실패했습니다. 다시 시도해주세요.');
+          // 역지오코딩 실패 시 좌표로 대체
+          setRegionName(`위도 ${latitude.toFixed(4)}, 경도 ${longitude.toFixed(4)}`);
+          setStatus('success');
         }
       },
       () => {
