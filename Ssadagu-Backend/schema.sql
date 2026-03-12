@@ -3,6 +3,7 @@ CREATE TABLE users (
                        email VARCHAR(255) NOT NULL,
                        password_hash VARCHAR(255) NOT NULL,
                        nickname VARCHAR(50) NOT NULL,
+                       region VARCHAR(100) NOT NULL,
                        status ENUM('ACTIVE','SUSPENDED','DELETED') NOT NULL DEFAULT 'ACTIVE',
                        created_at TIMESTAMP NOT NULL,
                        updated_at TIMESTAMP NOT NULL,

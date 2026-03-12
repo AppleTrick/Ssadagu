@@ -37,6 +37,7 @@ public class UserService {
                 .email(requestDto.getEmail())
                 .passwordHash(passwordEncoder.encode(requestDto.getPassword()))
                 .nickname(requestDto.getNickname())
+                .region(requestDto.getRegion())
                 .status("UNVERIFIED")
                 .build();
 
