@@ -3,9 +3,11 @@ package com.twotwo.ssadagu.domain.demanddeposit.controller;
 import com.twotwo.ssadagu.domain.demanddeposit.dto.DemandDepositAccountCreateRequestDto;
 import com.twotwo.ssadagu.domain.demanddeposit.service.DemandDepositService;
 import com.twotwo.ssadagu.global.response.ApiResponse;
+import com.twotwo.ssadagu.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -20,8 +22,14 @@ public class DemandDepositController {
 
     @Operation(summary = "수시입출금 계좌 생성", description = "금융망 API를 통해 수시입출금 상품에 가입하고 계좌를 생성합니다.")
     @PostMapping("/accounts")
-    public ApiResponse<Map<String, Object>> createAccount(@RequestBody DemandDepositAccountCreateRequestDto requestDto) {
-        Map<String, Object> response = demandDepositService.createAccount(requestDto);
+    public ApiResponse<Map<String, Object>> createAccount(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody DemandDepositAccountCreateRequestDto requestDto) {
+        
+        String userKey = (userDetails != null) ? userDetails.getUser().getUserKey() : null;
+        Map<String, Object> response = demandDepositService.createAccount(
+                requestDto.getAccountTypeUniqueNo(), 
+                userKey);
         return ApiResponse.success(response);
     }
 
@@ -29,8 +37,12 @@ public class DemandDepositController {
     @GetMapping("/accounts/{accountNo}")
     public ApiResponse<Map<String, Object>> getAccount(
             @PathVariable("accountNo") String accountNo,
-            @RequestParam(value = "testUserKey", required = false) String testUserKey) {
-        Map<String, Object> response = demandDepositService.getAccount(accountNo, testUserKey);
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        String userKey = (userDetails != null) ? userDetails.getUser().getUserKey() : null;
+        Map<String, Object> response = demandDepositService.getAccount(
+                accountNo, 
+                userKey);
         return ApiResponse.success(response);
     }
 
@@ -42,10 +54,11 @@ public class DemandDepositController {
             @RequestParam(value = "endDate", required = false) String endDate,
             @RequestParam(value = "transactionType", required = false) String transactionType,
             @RequestParam(value = "orderByType", required = false) String orderByType,
-            @RequestParam(value = "testUserKey", required = false) String testUserKey) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         
+        String userKey = (userDetails != null) ? userDetails.getUser().getUserKey() : null;
         Map<String, Object> response = demandDepositService.getTransactionHistory(
-                accountNo, startDate, endDate, transactionType, orderByType, testUserKey);
+                accountNo, startDate, endDate, transactionType, orderByType, userKey);
         return ApiResponse.success(response);
     }
 }
