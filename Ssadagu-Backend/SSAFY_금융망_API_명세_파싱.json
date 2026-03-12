@@ -1,0 +1,7067 @@
+{
+  "표지": [
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "SSAFY 교육용 금융망 API"
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      "API Interface 예제"
+    ]
+  ],
+  "목록": [
+    [
+      "대분류",
+      "중분류",
+      "NO",
+      "방식",
+      "인터페이스 ID",
+      "호출 URL",
+      "결과 타입",
+      "기능"
+    ],
+    [
+      "앱 관리자",
+      "API KEY 관리",
+      "01",
+      "POST",
+      "MANAGER_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/app/issuedApiKey",
+      "JSON",
+      "API KEY 발급"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "MANAGER_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/app/reIssuedApiKey",
+      "JSON",
+      "API KEY 재발급"
+    ],
+    [
+      "앱 사용자",
+      "계정관리",
+      "01",
+      "POST",
+      "MEMBER_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/member",
+      "JSON",
+      "계정 생성"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "MEMBER_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/member/search",
+      "JSON",
+      "계정 조회"
+    ],
+    [
+      "공통 ",
+      "Header",
+      "01",
+      "-",
+      "HEADER_01",
+      "-",
+      "-",
+      "공통 Header 정보"
+    ],
+    [
+      "은행",
+      "정보",
+      "01",
+      "POST",
+      "BANK_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/bank/inquireBankCodes",
+      "JSON",
+      "은행코드 조회"
+    ],
+    [
+      null,
+      "정보",
+      "02",
+      "POST",
+      "CURRENCY_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/bank/inquireBankCurrency",
+      "JSON",
+      "통화코드 조회"
+    ],
+    [
+      null,
+      "수시입출금",
+      "01",
+      "POST",
+      "DEMAND_DEPOSIT_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/createDemandDeposit",
+      "JSON",
+      "수시입출금 상품등록"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "DEMAND_DEPOSIT_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositList",
+      "JSON",
+      "상품 조회"
+    ],
+    [
+      null,
+      null,
+      "03",
+      "POST",
+      "DEMAND_DEPOSIT_03",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/createDemandDepositAccount",
+      "JSON",
+      "계좌 생성"
+    ],
+    [
+      null,
+      null,
+      "04",
+      "POST",
+      "DEMAND_DEPOSIT_04",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositAccountList",
+      "JSON",
+      "계좌 목록 조회"
+    ],
+    [
+      null,
+      null,
+      "05",
+      "POST",
+      "DEMAND_DEPOSIT_05",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositAccount",
+      "JSON",
+      "계좌 조회(단건)"
+    ],
+    [
+      null,
+      null,
+      "06",
+      "POST",
+      "DEMAND_DEPOSIT_06",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositAccountHolderName",
+      "JSON",
+      "예금주 조회"
+    ],
+    [
+      null,
+      null,
+      "07",
+      "POST",
+      "DEMAND_DEPOSIT_07",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositAccountBalance",
+      "JSON",
+      "계좌 잔액 조회"
+    ],
+    [
+      null,
+      null,
+      "08",
+      "POST",
+      "DEMAND_DEPOSIT_08",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/updateDemandDepositAccountWithdrawal",
+      "JSON",
+      "계좌 출금"
+    ],
+    [
+      null,
+      null,
+      "09",
+      "POST",
+      "DEMAND_DEPOSIT_09",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/updateDemandDepositAccountDeposit",
+      "JSON",
+      "계좌 입금"
+    ],
+    [
+      null,
+      null,
+      "10",
+      "POST",
+      "DEMAND_DEPOSIT_10",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/updateDemandDepositAccountTransfer",
+      "JSON",
+      "계좌 이체"
+    ],
+    [
+      null,
+      null,
+      "11",
+      "POST",
+      "DEMAND_DEPOSIT_11",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/updateTransferLimit",
+      "JSON",
+      "이체한도변경"
+    ],
+    [
+      null,
+      null,
+      "12",
+      "POST",
+      "DEMAND_DEPOSIT_12",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireTransactionHistoryList",
+      "JSON",
+      "계좌거래내역조회"
+    ],
+    [
+      null,
+      null,
+      "13",
+      "POST",
+      "DEMAND_DEPOSIT_13",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireTransactionHistory",
+      "JSON",
+      "계좌거래내역조회(단건)"
+    ],
+    [
+      null,
+      null,
+      "14",
+      "POST",
+      "DEMAND_DEPOSIT_14",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/deleteDemandDepositAccount",
+      "JSON",
+      "계좌해지"
+    ],
+    [
+      null,
+      "예금",
+      "01",
+      "POST",
+      "DEPOSIT_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/createDepositProduct",
+      "JSON",
+      "예금상품등록"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "DEPOSIT_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositProducts",
+      "JSON",
+      "예금상품조회"
+    ],
+    [
+      null,
+      null,
+      "03",
+      "POST",
+      "DEPOSIT_03",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/createDepositAccount",
+      "JSON",
+      "예금계좌생성"
+    ],
+    [
+      null,
+      null,
+      "04",
+      "POST",
+      "DEPOSIT_04",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositInfoList",
+      "JSON",
+      "예금계좌목록 조회"
+    ],
+    [
+      null,
+      null,
+      "05",
+      "POST",
+      "DEPOSIT_05",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositInfoDetail",
+      "JSON",
+      "예금계좌조회(단건)"
+    ],
+    [
+      null,
+      null,
+      "06",
+      "POST",
+      "DEPOSIT_06",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositPayment",
+      "JSON",
+      "예금납입상세조회"
+    ],
+    [
+      null,
+      null,
+      "07",
+      "POST",
+      "DEPOSIT_07",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositExpiryInterest",
+      "JSON",
+      "예금만기이자조회"
+    ],
+    [
+      null,
+      null,
+      "08",
+      "POST",
+      "DEPOSIT_08",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositEarlyTerminationInterest",
+      "JSON",
+      "예금중도해지이자조회"
+    ],
+    [
+      null,
+      null,
+      "09",
+      "POST",
+      "DEPOSIT_09",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/deleteDepositAccount",
+      "JSON",
+      "예금계좌해지"
+    ],
+    [
+      null,
+      "적금",
+      "01",
+      "POST",
+      "SAVINGS_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/createProduct",
+      "JSON",
+      "적금상품등록"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "SAVINGS_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireSavingsProducts",
+      "JSON",
+      "적금상품조회"
+    ],
+    [
+      null,
+      null,
+      "03",
+      "POST",
+      "SAVINGS_03",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/createAccount",
+      "JSON",
+      "적금계좌생성"
+    ],
+    [
+      null,
+      null,
+      "04",
+      "POST",
+      "SAVINGS_04",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireAccountList",
+      "JSON",
+      "적금계좌목록조회"
+    ],
+    [
+      null,
+      null,
+      "05",
+      "POST",
+      "SAVINGS_05",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireAccount",
+      "JSON",
+      "적금계좌조회(단건)"
+    ],
+    [
+      null,
+      null,
+      "06",
+      "POST",
+      "SAVINGS_06",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquirePayment",
+      "JSON",
+      "적금납입회차조회"
+    ],
+    [
+      null,
+      null,
+      "07",
+      "POST",
+      "SAVINGS_07",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireExpiryInterest",
+      "JSON",
+      "적금만기이자조회"
+    ],
+    [
+      null,
+      null,
+      "08",
+      "POST",
+      "SAVINGS_08",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireEarlyTerminationInterest",
+      "JSON",
+      "적금중도해지이자조회"
+    ],
+    [
+      null,
+      null,
+      "09",
+      "POST",
+      "SAVINGS_09",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/deleteAccount",
+      "JSON",
+      "적금계좌해지"
+    ],
+    [
+      null,
+      "대출",
+      "01",
+      "POST",
+      "LOAN_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireAssetBasedCreditRatingList",
+      "JSON",
+      "신용등급 기준 조회"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "LOAN_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/createLoanProduct",
+      "JSON",
+      "대출 상품 등록"
+    ],
+    [
+      null,
+      null,
+      "03",
+      "POST",
+      "LOAN_03",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireLoanProductList",
+      "JSON",
+      "대출 상품 조회"
+    ],
+    [
+      null,
+      null,
+      "04",
+      "POST",
+      "LOAN_04",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireMyCreditRating",
+      "JSON",
+      "내 신용등급 조회"
+    ],
+    [
+      null,
+      null,
+      "05",
+      "POST",
+      "LOAN_05",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/createLoanApplication",
+      "JSON",
+      "대출심사 신청"
+    ],
+    [
+      null,
+      null,
+      "06",
+      "POST",
+      "LOAN_06",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireLoanApplicationList",
+      "JSON",
+      "대출심사 목록 조회"
+    ],
+    [
+      null,
+      null,
+      "07",
+      "POST",
+      "LOAN_07",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/createLoanAccount",
+      "JSON",
+      "대출 상품 가입"
+    ],
+    [
+      null,
+      null,
+      "08",
+      "POST",
+      "LOAN_08",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireLoanAccountList",
+      "JSON",
+      "대출 상품 가입 목록 조회"
+    ],
+    [
+      null,
+      null,
+      "09",
+      "POST",
+      "LOAN_09",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireRepaymentRecords",
+      "JSON",
+      "대출 상환 내역 조회"
+    ],
+    [
+      null,
+      null,
+      "10",
+      "POST",
+      "LOAN_10",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/updateRepaymentLoanBalanceInFull",
+      "JSON",
+      "대출 일시납 상환"
+    ],
+    [
+      null,
+      "1원 인증",
+      "01",
+      "POST",
+      "ACCOUNT_AUTH_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/accountAuth/openAccountAuth",
+      "JSON",
+      "1원 송금"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "ACCOUNT_AUTH_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/accountAuth/checkAuthCode",
+      "JSON",
+      "1원 송금 검증"
+    ],
+    [
+      null,
+      "환율",
+      "01",
+      "POST",
+      "EXCHANGE_RATE_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchangeRate",
+      "JSON",
+      "환율 전체 조회"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "EXCHANGE_RATE_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchangeRate/exchangeRateSearch",
+      "JSON",
+      "환율 단건 조회"
+    ],
+    [
+      null,
+      "환전",
+      "01",
+      "POST",
+      "EXCHANGE_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchange/estimate",
+      "JSON",
+      "환전 예상 금액 조회"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "EXCHANGE_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchange",
+      "JSON",
+      "환전 신청"
+    ],
+    [
+      null,
+      null,
+      "03",
+      "POST",
+      "EXCHANGE_03",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchange/exchangeHistory",
+      "JSON",
+      "환전 신청내역조회"
+    ],
+    [
+      null,
+      "외화 수시입출금",
+      "01",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/createForeignCurrencyDemandDeposit",
+      "JSON",
+      "외화 수시입출금 상품등록"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositList",
+      "JSON",
+      "외화 상품 조회"
+    ],
+    [
+      null,
+      null,
+      "03",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_03",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/createForeignCurrencyDemandDepositAccount",
+      "JSON",
+      "외화 계좌 생성"
+    ],
+    [
+      null,
+      null,
+      "04",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_04",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositAccountList",
+      "JSON",
+      "외화 계좌 목록 조회"
+    ],
+    [
+      null,
+      null,
+      "05",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_05",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositAccount",
+      "JSON",
+      "외화 계좌 조회(단건)"
+    ],
+    [
+      null,
+      null,
+      "06",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_06",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositAccountHolderName",
+      "JSON",
+      "외화 예금주 조회"
+    ],
+    [
+      null,
+      null,
+      "07",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_07",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositAccountBalance",
+      "JSON",
+      "외화 계좌 잔액 조회"
+    ],
+    [
+      null,
+      null,
+      "08",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_08",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/updateForeignCurrencyDemandDepositAccountWithdrawal",
+      "JSON",
+      "외화 계좌 출금"
+    ],
+    [
+      null,
+      null,
+      "09",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_09",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/updateForeignCurrencyDemandDepositAccountDeposit",
+      "JSON",
+      "외화 계좌 입금"
+    ],
+    [
+      null,
+      null,
+      "10",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_10",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/updateForeignCurrencyDemandDepositAccountTransfer",
+      "JSON",
+      "외화 계좌 이체"
+    ],
+    [
+      null,
+      null,
+      "11",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_11",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/updateForeignCurrencyTransferLimit",
+      "JSON",
+      "외화 이체한도변경"
+    ],
+    [
+      null,
+      null,
+      "12",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_12",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyTransactionHistoryList",
+      "JSON",
+      "외화 계좌거래내역조회"
+    ],
+    [
+      null,
+      null,
+      "13",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_13",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyTransactionHistory",
+      "JSON",
+      "외화 계좌거래내역조회(단건)"
+    ],
+    [
+      null,
+      null,
+      "14",
+      "POST",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_14",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/deleteForeignCurrencyDemandDepositAccount",
+      "JSON",
+      "외화 계좌해지"
+    ],
+    [
+      null,
+      "거래메모(원화,외화)",
+      "01",
+      "POST",
+      "TRANSACTION_MEMO_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/transactionMemo",
+      "JSON",
+      "거래내역 메모"
+    ],
+    [
+      "카드",
+      "신용카드",
+      "01",
+      "POST",
+      "CREDIT_CARD_01",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireCategoryList",
+      "JSON",
+      "카테고리 조회"
+    ],
+    [
+      null,
+      null,
+      "02",
+      "POST",
+      "CREDIT_CARD_02",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/createMerchant",
+      "JSON",
+      "가맹점 등록"
+    ],
+    [
+      null,
+      null,
+      "03",
+      "POST",
+      "CREDIT_CARD_03",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireCardIssuerCodesList",
+      "JSON",
+      "카드사 조회"
+    ],
+    [
+      null,
+      null,
+      "04",
+      "POST",
+      "CREDIT_CARD_04",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/createCreditCardProduct",
+      "JSON",
+      "카드 상품 등록"
+    ],
+    [
+      null,
+      null,
+      "05",
+      "POST",
+      "CREDIT_CARD_05",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireCreditCardList",
+      "JSON",
+      "카드 상품 조회"
+    ],
+    [
+      null,
+      null,
+      "06",
+      "POST",
+      "CREDIT_CARD_06",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/createCreditCard",
+      "JSON",
+      "카드 생성"
+    ],
+    [
+      null,
+      null,
+      "07",
+      "POST",
+      "CREDIT_CARD_07",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireSignUpCreditCardList",
+      "JSON",
+      "내 카드 목록 조회"
+    ],
+    [
+      null,
+      null,
+      "08",
+      "POST",
+      "CREDIT_CARD_08",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireMerchantList",
+      "JSON",
+      "가맹점 목록 조회"
+    ],
+    [
+      null,
+      null,
+      "09",
+      "POST",
+      "CREDIT_CARD_09",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/createCreditCardTransaction",
+      "JSON",
+      "카드 결제"
+    ],
+    [
+      null,
+      null,
+      "10",
+      "POST",
+      "CREDIT_CARD_10",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireCreditCardTransactionList",
+      "JSON",
+      "카드 결제 내역 조회"
+    ],
+    [
+      null,
+      null,
+      "11",
+      "POST",
+      "CREDIT_CARD_11",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/deleteTransaction",
+      "JSON",
+      "카드 결제 취소"
+    ],
+    [
+      null,
+      null,
+      "12",
+      "POST",
+      "CREDIT_CARD_12",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireBillingStatements",
+      "JSON",
+      "청구서 조회"
+    ],
+    [
+      null,
+      null,
+      "13",
+      "POST",
+      "CREDIT_CARD_13",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/updateWithdrawalAccount",
+      "JSON",
+      "카드 결제 계좌 수정"
+    ]
+  ],
+  "MANAGER_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "MANAGER_01",
+      "인터페이스명",
+      null,
+      "앱 API KEY 발급"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/app/issuedApiKey"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "managerId",
+      "관리자 ID",
+      "String",
+      30,
+      "Y",
+      "이메일 형식"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{      \r\n    \"managerId\": \"ssafy@ssafy.co.kr\"\r\n}"
+    ]
+  ],
+  "MANAGER_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "MANAGER_02",
+      "인터페이스명",
+      null,
+      "앱 API KEY 재발급"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/app/reIssuedApiKey"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "managerId",
+      "관리자 ID",
+      "String",
+      30,
+      "Y",
+      "이메일 형식"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{      \r\n    \"managerId\": \"ssafy@ssafy.co.kr\"\r\n}"
+    ]
+  ],
+  "MEMBER_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "MEMBER_01",
+      "인터페이스명",
+      null,
+      "사용자 계정 생성"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/member/"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "apiKey",
+      "api 키",
+      "String",
+      10,
+      "Y",
+      "앱 관리자가 SSAFY 개발 센터에서 발급 받은 API KEY"
+    ],
+    [
+      null,
+      "userId",
+      "사용자 ID",
+      "String",
+      40,
+      "Y",
+      "이메일 형식"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"apiKey\": \"8644e48ee75740469ef8b5214499e5f7\",\r\n    \"userId\": \"test@ssafy.co.kr\"\r\n}"
+    ]
+  ],
+  "MEMBER_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "MEMBER_02",
+      "인터페이스명",
+      null,
+      "사용자 계정 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/member/search"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "apiKey",
+      "api 키",
+      "String",
+      10,
+      "Y",
+      "앱 관리자가 SSAFY 개발 센터에서 발급 받은 API KEY"
+    ],
+    [
+      null,
+      "userId",
+      "사용자 ID",
+      "String",
+      40,
+      "Y",
+      "이메일 형식"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"apiKey\": \"8644e48ee75740469ef8b5214499e5f7\",\r\n    \"userId\": \"test@ssafy.co.kr\"\r\n}"
+    ]
+  ],
+  "HEADER_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "Header01",
+      "인터페이스명",
+      null,
+      "공통 Header"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "apiName",
+      "API 이름",
+      "String",
+      30,
+      "Y",
+      "호출 API URI의 마지막 path 명\r\nex ) /cc-ssafy/api/v1/edu/account/inquireBankAccountTypes 호출 uri일 경우\r\n=> inquireBankAccountTypes"
+    ],
+    [
+      null,
+      "transmissionDate",
+      "전송일자",
+      "String",
+      8,
+      "Y",
+      "API 전송일자 (YYYYMMDD) 요청일"
+    ],
+    [
+      null,
+      "transmissionTime",
+      "전송시각",
+      "String",
+      6,
+      "Y",
+      "API 전송시각 (HHMMSS) 요청시간 기준 ±5분"
+    ],
+    [
+      null,
+      "institutionCode",
+      "기관코드",
+      "String",
+      5,
+      "Y",
+      "00100'로 고정"
+    ],
+    [
+      null,
+      "fintechAppNo",
+      "핀테크 앱 일련번호",
+      "String",
+      3,
+      "Y",
+      "001'로 고정\r\n"
+    ],
+    [
+      null,
+      "apiServiceCode",
+      "API서비스코드",
+      "String",
+      30,
+      "Y",
+      "API 이름 필드와 동일"
+    ],
+    [
+      null,
+      "institutionTransactionUniqueNo",
+      "기관거래고유번호",
+      "String",
+      20,
+      "Y",
+      "새로운 번호로 임의 채번 (YYYYMMDD + HHMMSS + 일련번호 6자리) 또는 20자리의 난수\r\nAPI요청시 사용자가 항상 새로운 번호로 임의 채번해야함.\r\n(예 : 2024021609000000000, 2024021609000000001)",
+      null,
+      null,
+      null,
+      null,
+      null,
+      "pdf에는\r\n표 상단에 작성"
+    ],
+    [
+      null,
+      "apiKey",
+      "API KEY",
+      "String",
+      40,
+      "Y",
+      "앱 관리자 (관리자)가 발급받은 API KEY"
+    ],
+    [
+      null,
+      "userKey",
+      "USER KEY",
+      "String",
+      40,
+      "Y",
+      "앱 사용자가 회원가입할때 발급받은 USER KEY"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inqureBankCodes\",\r\n        \"transmissionDate\": \"20240207\",\r\n        \"transmissionTime\": \"133415\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inqureBankCodes\",\r\n        \"institutionTransactionUniqueNo\": \"20191129000000000001\",\r\n        \"apiKey\": \"8ce632cf95b84dc581b30ad106f43bee\",\r\n        \"userKey\": \"826b058d-34ab-4ad5-80c1-a5a9c2862006\"\r\n    }\r\n}"
+    ]
+  ],
+  "BANK_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "Bank01",
+      "인터페이스명",
+      null,
+      "은행코드 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/bank/inquireBankCodes"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireBankCodes\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"135500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireBankCodes\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123557\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\"\r\n    }\r\n}"
+    ]
+  ],
+  "CURRENCY_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CURRENCY_01",
+      "인터페이스명",
+      null,
+      "통화코드 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/bank/inquireBankCurrency"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireBankCurrency\",\r\n        \"transmissionDate\": \"20240724\",\r\n        \"transmissionTime\": \"154635\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireBankCurrency\",\r\n        \"institutionTransactionUniqueNo\": \"20240724154635412480\",\r\n        \"apiKey\": \"e8fb2ac291804bc98834ff7bcef7e340\"\r\n    }\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_01",
+      "인터페이스명",
+      null,
+      "수시입출금 상품등록"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/createDemandDeposit"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "bankCode",
+      "은행코드",
+      "String",
+      3,
+      "Y"
+    ],
+    [
+      null,
+      "accountName",
+      "상품명",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "accountDescription",
+      "상품설명",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createDemandDeposit\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"095500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createDemandDeposit\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123560\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\" \r\n    },\r\n    \"bankCode\": \"001\",\r\n    \"accountName\": \"한국은행 수시입출금 상품명\",\r\n    \"accountDescription\": \"한국은행 수시입출금 상품설명\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_02",
+      "인터페이스명",
+      null,
+      "상품 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireDemandDepositList\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"100100\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireDemandDepositList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123561\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\"\r\n    }\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_03": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_03",
+      "인터페이스명",
+      null,
+      "계좌 생성"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/createDemandDepositAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountTypeUniqueNo",
+      "상품 고유번호",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"createDemandDepositAccount\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"100500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createDemandDepositAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123457\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountTypeUniqueNo\": \"001-1-ffa4253081d540\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_04": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_04",
+      "인터페이스명",
+      null,
+      "계좌 목록 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositAccountList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"inquireDemandDepositAccountList\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"101000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireDemandDepositAccountList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123473\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_05": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_05",
+      "인터페이스명",
+      null,
+      "계좌 조회(단건)"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{     \r\n    \"Header\": {\r\n        \"apiName\": \"inquireDemandDepositAccount\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"101500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireDemandDepositAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123455\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }, \r\n    \"accountNo\": \"0016174648358792\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_06": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_06",
+      "인터페이스명",
+      null,
+      "예금주 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositAccountHolderName"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n   \"Header\": {\r\n        \"apiName\": \"inquireDemandDepositAccountHolderName\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"102000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireDemandDepositAccountHolderName\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123451\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_07": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_07",
+      "인터페이스명",
+      null,
+      "계좌 잔액 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireDemandDepositAccountBalance"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n   \"Header\": {\r\n        \"apiName\": \"inquireDemandDepositAccountBalance\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"102500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireDemandDepositAccountBalance\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123463\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_08": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_08",
+      "인터페이스명",
+      null,
+      "계좌 출금"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/updateDemandDepositAccountWithdrawal"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "transactionBalance",
+      "출금금액",
+      "Double",
+      null,
+      "Y",
+      "정수만 가능"
+    ],
+    [
+      null,
+      "transactionSummary",
+      "출금계좌요약",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"updateDemandDepositAccountWithdrawal\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"102500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateDemandDepositAccountWithdrawal\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123456\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\",\r\n    \"transactionBalance\": \"100000\",\r\n    \"transactionSummary\": \"(수시입출금) : 출금\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_09": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_09",
+      "인터페이스명",
+      null,
+      "계좌 입금"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/updateDemandDepositAccountDeposit"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "transactionBalance",
+      "입금금액",
+      "Long",
+      null,
+      "Y",
+      "정수만 가능"
+    ],
+    [
+      null,
+      "transactionSummary",
+      "입금계좌요약",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"updateDemandDepositAccountDeposit\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"102500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateDemandDepositAccountDeposit\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123463\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\",\r\n    \"transactionBalance\": \"100000000\",\r\n    \"transactionSummary\": \"(수시입출금) : 입금\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_10": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_10",
+      "인터페이스명",
+      null,
+      "계좌 이체"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/updateDemandDepositAccountTransfer"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "depositAccountNo",
+      "입금계좌번호",
+      "String",
+      16,
+      "Y",
+      "원화, 외화 계좌 가능"
+    ],
+    [
+      null,
+      "depositTransactionSummary",
+      "거래 요약내용 (입금계좌)",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "transactionBalance",
+      "거래금액",
+      "Long",
+      null,
+      "Y",
+      "출금할 금액 입력"
+    ],
+    [
+      null,
+      "withdrawalAccountNo",
+      "출금계좌번호",
+      "String",
+      16,
+      "Y",
+      "원화 계좌만 가능"
+    ],
+    [
+      null,
+      "withdrawalTransactionSummary",
+      "거래 요약내용 (출금계좌)",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"updateDemandDepositAccountTransfer\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"103500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateDemandDepositAccountTransfer\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123453\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }, \r\n    \"depositAccountNo\": \"0204667768182760\",\r\n    \"depositTransactionSummary\": \"(수시입출금) : 입금(이체)\",\r\n    \"transactionBalance\": \"10000000\", \r\n    \"withdrawalAccountNo\": \"0016174648358792\", \r\n    \"withdrawalTransactionSummary\": \"(수시입출금) : 출금(이체)\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_11": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_11",
+      "인터페이스명",
+      null,
+      "이체한도변경"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/updateTransferLimit"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "oneTimeTransferLimit",
+      "1회 이체한도",
+      "Long",
+      null,
+      "Y",
+      "1원 ~ 100억"
+    ],
+    [
+      null,
+      "dailyTransferLimit",
+      "1일 이체한도",
+      "Long",
+      null,
+      "Y",
+      "1원 ~ 2000억"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"updateTransferLimit\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"104000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateTransferLimit\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123452\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }, \r\n    \"accountNo\": \"0016174648358792\", \r\n    \"oneTimeTransferLimit\": \"20000000\", \r\n    \"dailyTransferLimit\": \"100000000\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_12": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_12",
+      "인터페이스명",
+      null,
+      "계좌거래내역조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireTransactionHistoryList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "startDate",
+      "조회시작일자",
+      "String",
+      8,
+      "Y",
+      "YYYYMMDD"
+    ],
+    [
+      null,
+      "endDate",
+      "조회종료일자",
+      "String",
+      8,
+      "Y",
+      "YYYYMMDD"
+    ],
+    [
+      null,
+      "transactionType",
+      "거래구분",
+      "String",
+      1,
+      "Y",
+      "M:입금 D:출금 A: 전체"
+    ],
+    [
+      null,
+      "orderByType",
+      "정렬순서",
+      "String",
+      4,
+      "Y",
+      "거래고유번호 기준\r\nASC:오름차순(이전거래), DESC:내림차순(최근거래)"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"inquireTransactionHistoryList\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"105000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireTransactionHistoryList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123459\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\",\r\n    \"startDate\": \"20240101\",\r\n    \"endDate\": \"20241231\",\r\n    \"transactionType\": \"A\",\r\n    \"orderByType\": \"ASC\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_13": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_13",
+      "인터페이스명",
+      null,
+      "계좌거래내역조회(단건)"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/inquireTransactionHistory"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "transactionUniqueNo",
+      "거래고유번호",
+      "Long",
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n   \"Header\": {\r\n        \"apiName\": \"inquireTransactionHistory\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"105500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireTransactionHistory\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123452\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"    \r\n    },\r\n    \"accountNo\": \"0016174648358792\",\r\n    \"transactionUniqueNo\": \"61\"\r\n}"
+    ]
+  ],
+  "DEMAND_DEPOSIT_14": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_14",
+      "인터페이스명",
+      null,
+      "계좌해지"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/deleteDemandDepositAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "refundAccountNo",
+      "금액반환계좌번호",
+      "String",
+      16,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n   \"Header\": {\r\n        \"apiName\": \"deleteDemandDepositAccount\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"112000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"deleteDemandDepositAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123455\",\r\n         \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"    \r\n    },\r\n    \"accountNo\": \"0018770964252220\",\r\n    \"refundAccountNo\": \"0324003842129948\"\r\n}"
+    ]
+  ],
+  "DEPOSIT_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEPOSIT_01",
+      "인터페이스명",
+      null,
+      "예금상품등록"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/createDepositProduct"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "bankCode",
+      "은행코드",
+      "String",
+      3,
+      "Y"
+    ],
+    [
+      null,
+      "accountName",
+      "상품명",
+      "String",
+      20,
+      "Y",
+      "예금 상품명 입력 (ex. 7일 예금)"
+    ],
+    [
+      null,
+      "accountDescription",
+      "상품설명",
+      "String",
+      255,
+      "N",
+      "예금 상품 설명 입력 (ex. 최대 10% 이자를 지급하는 특별 예금)"
+    ],
+    [
+      null,
+      "subscriptionPeriod",
+      "가입기간",
+      "String",
+      20,
+      "Y",
+      "2 이상 ~ 365일이하 / 단위(일)"
+    ],
+    [
+      null,
+      "minSubscriptionBalance",
+      "최소가입가능금액",
+      "Long",
+      null,
+      "Y",
+      "1 이상 / 단위(원)"
+    ],
+    [
+      null,
+      "maxSubscriptionBalance",
+      "최대가입가능금액",
+      "Long",
+      null,
+      "Y",
+      "100000000(1억) 이하 / 단위(원)"
+    ],
+    [
+      null,
+      "interestRate",
+      "이자율",
+      "double",
+      null,
+      "Y",
+      "0.1 이상 ~ 20 이하/ 단위(%)"
+    ],
+    [
+      null,
+      "rateDescription",
+      "이자율 설명",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"createDepositProduct\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createDeposit\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123498\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\"\r\n     },\r\n    \"bankCode\": \"002\",\r\n    \"accountName\": \"특판 예금\",\r\n    \"accountDescription\": \"선착순 특판 계좌\",\r\n    \"subscriptionPeriod\": \"10\",\r\n    \"minSubscriptionBalance\": \"200000\",\r\n    \"maxSubscriptionBalance\": \"3000000\",\r\n    \"interestRate\": \"15\",\r\n    \"rateDescription\": \"이자 15프로 단기 가입\"\r\n}"
+    ]
+  ],
+  "DEPOSIT_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEPOSIT_02",
+      "인터페이스명",
+      null,
+      "예금상품조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositProducts"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"inquireDepositProducts\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireDepositProducts\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123494\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\"\r\n     }\r\n}"
+    ]
+  ],
+  "DEPOSIT_03": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEPOSIT_03",
+      "인터페이스명",
+      null,
+      "예금계좌생성"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/createDepositAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "withdrawalAccountNo",
+      "출금계좌번호",
+      "String",
+      20,
+      "Y",
+      "출금할 수시입출금 계좌번호 기입"
+    ],
+    [
+      null,
+      "accountTypeUniqueNo",
+      "상품고유번호",
+      "String",
+      20,
+      "Y",
+      "가입할 예금 상품고유번호 기입"
+    ],
+    [
+      null,
+      "depositBalance",
+      "가입금액",
+      "Long",
+      null,
+      "Y",
+      "가입할 예금의 가입 가능금액 범위 내 기입"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"createDepositAccount\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createDepositAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123492\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n     },\r\n     \"withdrawalAccountNo\": \"0011541149756547\",\r\n     \"accountTypeUniqueNo\": \"003-2-67718ffc\",\r\n     \"depositBalance\": \"80000000\"\r\n}"
+    ]
+  ],
+  "DEPOSIT_04": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEPOSIT_04",
+      "인터페이스명",
+      null,
+      "예금계좌목록조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositInfoList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"inquireDepositInfoList\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireDepositInfoList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215171212123492\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n     }\r\n}"
+    ]
+  ],
+  "DEPOSIT_05": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEPOSIT_05",
+      "인터페이스명",
+      null,
+      "예금계좌조회(단건)"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositInfoDetail"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"inquireDepositInfoDetail\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireDepositInfoDetail\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123491\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n     },\r\n     \"accountNo\": \"0019016181\"\r\n}"
+    ]
+  ],
+  "DEPOSIT_06": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEPOSIT_06",
+      "인터페이스명",
+      null,
+      "예금납입상세조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositPayment"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"inquireDepositPayment\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireDepositPayment\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123489\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n     },\r\n     \"accountNo\": \"0019169157\"\r\n}"
+    ]
+  ],
+  "DEPOSIT_07": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEPOSIT_07",
+      "인터페이스명",
+      null,
+      "예금만기이자조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositExpiryInterest"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"inquireDepositExpiryInterest\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireExpiryInterest\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123498\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n     },\r\n     \"accountNo\": \"0024379394\"\r\n}"
+    ]
+  ],
+  "DEPOSIT_08": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEPOSIT_08",
+      "인터페이스명",
+      null,
+      "예금중도해지이자조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquireDepositEarlyTerminationInterest"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"inquireDepositEarlyTerminationInterest\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireEarlyTerminationInterest\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123498\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n     },\r\n     \"accountNo\": \"0024379394\"\r\n}"
+    ]
+  ],
+  "DEPOSIT_09": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEPOSIT_09",
+      "인터페이스명",
+      null,
+      "예금계좌해지"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/deleteDepositAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"deleteDepositAccount\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"deleteAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123498\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n     },\r\n     \"accountNo\": \"0011347488\"\r\n}"
+    ]
+  ],
+  "SAVINGS_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "SAVINGS_01",
+      "인터페이스명",
+      null,
+      "적금상품등록"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/createProduct"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "bankCode",
+      "은행코드",
+      "String",
+      3,
+      "Y"
+    ],
+    [
+      null,
+      "accountName",
+      "상품명",
+      "String",
+      20,
+      "Y",
+      "적금 상품명 입력 (ex. 7일 적금)"
+    ],
+    [
+      null,
+      "accountDescription",
+      "상품설명",
+      "String",
+      255,
+      "N",
+      "적금 상품 설명 입력 (ex. 최대 19.5% 이자를 지급하는 특별 적금)"
+    ],
+    [
+      null,
+      "subscriptionPeriod",
+      "가입 기간",
+      "String",
+      20,
+      "Y",
+      "2일 이상 ~ 365일 이하"
+    ],
+    [
+      null,
+      "minSubscriptionBalance",
+      "최소 가입 가능금액",
+      "Long",
+      null,
+      "Y",
+      "1 이상 단위(원)"
+    ],
+    [
+      null,
+      "maxSubscriptionBalance",
+      "최대 가입 가능금액",
+      "Long",
+      null,
+      "Y",
+      "1000000(1백만) 이하 단위(원)"
+    ],
+    [
+      null,
+      "interestRate",
+      "이자율",
+      "double",
+      null,
+      "Y",
+      "0.1 이상 ~ 20 이하 단위(%)"
+    ],
+    [
+      null,
+      "rateDescription",
+      "이자율 설명",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createProduct\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createProduct\",\r\n        \"institutionTransactionUniqueNo\": \"20240101121212123456\",\r\n        \"apiKey\": \"36128418bded4a9a9b7cf72f23e6943c\"\r\n    },\r\n    \"bankCode\": \"001\",\r\n    \"accountName\": \"7일 적금\",\r\n    \"accountDescription\": \"7일 적금입니다\",\r\n    \"subscriptionPeriod\": \"7\",\r\n    \"minSubscriptionBalance\": \"10000\",\r\n    \"maxSubscriptionBalance\": \"1000000\",\r\n    \"interestRate\": \"10\",\r\n    \"rateDescription\": \"10% 이자를 지급합니다\"\r\n}"
+    ]
+  ],
+  "SAVINGS_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "SAVINGS_02",
+      "인터페이스명",
+      null,
+      "적금상품조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireSavingsProducts"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireSavingsProducts\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireSavingsProducts\",\r\n        \"institutionTransactionUniqueNo\": \"20240101121212123456\",\r\n        \"apiKey\": \"36128418bded4a9a9b7cf72f23e6943c\"\r\n    }\r\n}"
+    ]
+  ],
+  "SAVINGS_03": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "SAVINGS_03",
+      "인터페이스명",
+      null,
+      "적금계좌생성"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/createAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "withdrawalAccountNo",
+      "출금계좌번호",
+      "String",
+      16,
+      "Y",
+      "가입 금액에 대해 자동이체할 수시입출금 계좌번호 기입"
+    ],
+    [
+      null,
+      "accountTypeUniqueNo",
+      "상품고유번호",
+      "String",
+      20,
+      "Y",
+      "가입할 적금 상품고유번호 기입"
+    ],
+    [
+      null,
+      "depositBalance",
+      "가입금액",
+      "Long",
+      null,
+      "Y",
+      "가입할 적금의 가입 가능금액 범위 내 기입"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createAccount\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240101121212123456\",\r\n        \"apiKey\": \"36128418bded4a9a9b7cf72f23e6943c\",\r\n        \"userKey\": \"539bee99-df91-4e18-9172-1dfd71c44b2c\"\r\n    },\r\n    \"accountTypeUniqueNo\": \"001-3-5e4f5b87fa2047\", \r\n    \"depositBalance\": \"100000\",\r\n    \"withdrawalAccountNo\": \"0328073978527981\"\r\n}"
+    ]
+  ],
+  "SAVINGS_04": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "SAVINGS_04",
+      "인터페이스명",
+      null,
+      "적금계좌목록조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireAccountList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireAccountList\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireAccountList\",\r\n        \"institutionTransactionUniqueNo\": \"20240101121212123456\",\r\n        \"apiKey\": \"36128418bded4a9a9b7cf72f23e6943c\",\r\n        \"userKey\": \"539bee99-df91-4e18-9172-1dfd71c44b2c\"\r\n    }\r\n}"
+    ]
+  ],
+  "SAVINGS_05": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "SAVINGS_05",
+      "인터페이스명",
+      null,
+      "적금계좌조회(단건)"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"inquireAccount\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123467\",\r\n        \"apiKey\": \"8644e48ee75740469ef8b5214499e5f7\",\r\n        \"userKey\": \"cf1d49ba-663b-495d-9227-fc2643aa7c5e\"\r\n     },\r\n    \"accountNo\": \"1234567890123\"\r\n}"
+    ]
+  ],
+  "SAVINGS_06": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "SAVINGS_06",
+      "인터페이스명",
+      null,
+      "적금납입회차조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquirePayment"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquirePayment\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquirePayment\",\r\n        \"institutionTransactionUniqueNo\": \"20240101121212123456\",\r\n        \"apiKey\": \"36128418bded4a9a9b7cf72f23e6943c\",\r\n        \"userKey\": \"539bee99-df91-4e18-9172-1dfd71c44b2c\"\r\n    },\r\n    \"accountNo\":\"0017675199\"\r\n}"
+    ]
+  ],
+  "SAVINGS_07": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "SAVINGS_07",
+      "인터페이스명",
+      null,
+      "적금만기이자조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireExpiryInterest"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireExpiryInterest\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireExpiryInterest\",\r\n        \"institutionTransactionUniqueNo\": \"20240101121212123456\",\r\n        \"apiKey\": \"36128418bded4a9a9b7cf72f23e6943c\",\r\n        \"userKey\": \"539bee99-df91-4e18-9172-1dfd71c44b2c\"\r\n    },\r\n    \"accountNo\":\"0017675199\"\r\n}"
+    ]
+  ],
+  "SAVINGS_08": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "SAVINGS_08",
+      "인터페이스명",
+      null,
+      "적금중도해지이자조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquireEarlyTerminationInterest"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireEarlyTerminationInterest\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireEarlyTerminationInterest\",\r\n        \"institutionTransactionUniqueNo\": \"20240101121212123456\",\r\n        \"apiKey\": \"36128418bded4a9a9b7cf72f23e6943c\",\r\n        \"userKey\": \"539bee99-df91-4e18-9172-1dfd71c44b2c\"\r\n    },\r\n    \"accountNo\":\"0017675199\"\r\n}"
+    ]
+  ],
+  "SAVINGS_09": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "SAVINGS_09",
+      "인터페이스명",
+      null,
+      "적금계좌해지"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/deleteAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"deleteAccount\",\r\n        \"transmissionDate\": \"20240101\",\r\n        \"transmissionTime\": \"121212\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"deleteAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240101121212123456\",\r\n        \"apiKey\": \"36128418bded4a9a9b7cf72f23e6943c\",\r\n        \"userKey\": \"539bee99-df91-4e18-9172-1dfd71c44b2c\"\r\n    },\r\n    \"accountNo\":\"0017675199\"\r\n}"
+    ]
+  ],
+  "LOAN_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_01",
+      "인터페이스명",
+      null,
+      "신용등급 기준 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireAssetBasedCreditRatingList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireAssetBasedCreditRatingList\",\r\n        \"transmissionDate\": \"20240412\",\r\n        \"transmissionTime\": \"131500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireAssetBasedCreditRatingList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123553\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\"\r\n    }\r\n}"
+    ]
+  ],
+  "LOAN_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_02",
+      "인터페이스명",
+      null,
+      "대출 상품 등록"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/createLoanProduct"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey제외"
+    ],
+    [
+      null,
+      "bankCode",
+      "은행코드",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "accountName",
+      "상품명",
+      "String",
+      20,
+      "Y",
+      "대출 상품명 입력 (ex. 한국은행 저금리 대출, 신용대출플러스)"
+    ],
+    [
+      null,
+      "accountDescription",
+      "상품설명",
+      "String",
+      255,
+      "N",
+      "대출 상품명 입력 (ex. 2%대의 이자를 지원하는 저금리 대출, 고정금리대출)"
+    ],
+    [
+      null,
+      "ratingUniqueNo",
+      "신용등급 기준 고유번호",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "loanPeriod",
+      "대출기간",
+      "int",
+      null,
+      "Y",
+      "2 ~ 365 / 단위(일)"
+    ],
+    [
+      null,
+      "minLoanBalance",
+      "최소 대출 금액",
+      "Long",
+      null,
+      "Y",
+      "1000 이상 / 단위(원)"
+    ],
+    [
+      null,
+      "maxLoanBalance",
+      "최대 대출 금액",
+      "Long",
+      null,
+      "Y",
+      "300000000(3억) 이하 / 단위(원)"
+    ],
+    [
+      null,
+      "interestRate",
+      "기본 금리",
+      "double",
+      null,
+      "Y",
+      "0.1 이상 ~ 20 이하 단위(%)"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createLoanProduct\",\r\n        \"transmissionDate\": \"20240415\",\r\n        \"transmissionTime\": \"145000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createLoanProduct\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123555\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\"\r\n    },\r\n    \"bankCode\": \"001\",\r\n    \"accountName\": \"한국은행 저금리 대출\",\r\n    \"accountDescription\": null,\r\n    \"ratingUniqueNo\": \"RT-0fa85f6425e811ea4\",\r\n    \"loanPeriod\": \"3\",\r\n    \"minLoanBalance\": \"10000\",\r\n    \"maxLoanBalance\": \"100000000\",\r\n    \"interestRate\": \"5\"\r\n}"
+    ]
+  ],
+  "LOAN_03": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_03",
+      "인터페이스명",
+      null,
+      "대출 상품 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireLoanProductList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireLoanProductList\",\r\n        \"transmissionDate\": \"20240415\",\r\n        \"transmissionTime\": \"151000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireLoanProductList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123554\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\"\r\n    }\r\n}"
+    ]
+  ],
+  "LOAN_04": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_04",
+      "인터페이스명",
+      null,
+      "내 신용등급 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireMyCreditRating"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireMyCreditRating\",\r\n        \"transmissionDate\": \"20240415\",\r\n        \"transmissionTime\": \"151500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireMyCreditRating\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123552\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }\r\n}"
+    ]
+  ],
+  "LOAN_05": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_05",
+      "인터페이스명",
+      null,
+      "대출심사 신청"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/createLoanApplication"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountTypeUniqueNo",
+      "상품 고유번호",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createLoanApplication\",\r\n        \"transmissionDate\": \"20240411\",\r\n        \"transmissionTime\": \"090500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createLoanApplication\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123559\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountTypeUniqueNo\": \"004-4-67140989453846\"\r\n}"
+    ]
+  ],
+  "LOAN_06": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_06",
+      "인터페이스명",
+      null,
+      "대출심사 목록 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireLoanApplicationList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireLoanApplicationList\",\r\n        \"transmissionDate\": \"20240415\",\r\n        \"transmissionTime\": \"152500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\", \r\n        \"apiServiceCode\": \"inquireLoanApplicationList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123554\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }\r\n}"
+    ]
+  ],
+  "LOAN_07": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_07",
+      "인터페이스명",
+      null,
+      "대출 상품 가입"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/createLoanAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountTypeUniqueNo",
+      "상품 고유번호",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "loanBalance",
+      "대출금",
+      "Long",
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "withdrawalAccountNo",
+      "출금 계좌번호",
+      "String",
+      16,
+      "Y",
+      "수시입출금 계좌(수시입출금 계좌로 대출금 지급)"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createLoanAccount\",\r\n        \"transmissionDate\": \"20240415\",\r\n        \"transmissionTime\": \"153000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createLoanAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123558\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountTypeUniqueNo\":\"004-4-67140989453846\",\r\n    \"loanBalance\": \"100000000\",\r\n    \"withdrawalAccountNo\": \"0324003842129948\"\r\n}"
+    ]
+  ],
+  "LOAN_08": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_08",
+      "인터페이스명",
+      null,
+      "대출 상품 가입 목록 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireLoanAccountList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireLoanAccountList\",\r\n        \"transmissionDate\": \"20240415\",\r\n        \"transmissionTime\": \"153500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireLoanAccountList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123561\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }\r\n}"
+    ]
+  ],
+  "LOAN_09": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_09",
+      "인터페이스명",
+      null,
+      "대출 상환 내역 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireRepaymentRecords"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireRepaymentRecords\",\r\n        \"transmissionDate\": \"20240415\",\r\n        \"transmissionTime\": \"154500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireRepaymentRecords\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123571\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0044815881614041\"\r\n}"
+    ]
+  ],
+  "LOAN_10": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "LOAN_10",
+      "인터페이스명",
+      null,
+      "대출 일시납 상환"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/updateRepaymentLoanBalanceInFull"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"updateRepaymentLoanBalanceInFull\",\r\n        \"transmissionDate\": \"20240416\",\r\n        \"transmissionTime\": \"104000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\", \r\n        \"apiServiceCode\": \"updateRepaymentLoanBalanceInFull\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123562\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0044815881614041\"\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_01",
+      "인터페이스명",
+      null,
+      "카테고리 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireCategoryList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireCategoryList\",\r\n        \"transmissionDate\": \"20240409\",\r\n        \"transmissionTime\": \"094600\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireCategoryList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123555\",\r\n        \"apiKey\": \"91841f63099c434e8190e992c56d2fe1\"\r\n    }\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_02",
+      "인터페이스명",
+      null,
+      "가맹점 등록"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/createMerchant"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "categoryId",
+      "카테고리ID",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "merchantName",
+      "가맹점명",
+      "String",
+      100,
+      "Y",
+      "카테고리에 맞는 가맹점명 입력\r\n(ex. 이마트, 에쓰오일, 지하철, 사피학원, 핸드폰요금 등) "
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createMerchant\",\r\n        \"transmissionDate\": \"20240409\",\r\n        \"transmissionTime\": \"094800\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createMerchant\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123553\",\r\n        \"apiKey\": \"91841f63099c434e8190e992c56d2fe1\"\r\n    },\r\n    \"categoryId\": \"CG-4fa85f6425ad1d3\",\r\n    \"merchantName\": \"코스트코\"\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_03": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_03",
+      "인터페이스명",
+      null,
+      "카드사 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireCardIssuerCodesList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireCardIssuerCodesList\",\r\n       \"transmissionDate\": \"20240409\",\r\n        \"transmissionTime\": \"095900\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireCardIssuerCodesList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123553\",\r\n        \"apiKey\": \"91841f63099c434e8190e992c56d2fe1\"\r\n    }\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_04": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_04",
+      "인터페이스명",
+      null,
+      "카드 상품 등록"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/createCreditCardProduct"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "cardIssuerCode",
+      "카드사코드",
+      "String",
+      4,
+      "Y"
+    ],
+    [
+      null,
+      "cardName",
+      "카드명",
+      "String",
+      20,
+      "Y",
+      "카드 상품명 입력 (ex. 트래블플러스 카드, 교통할인카드 등)"
+    ],
+    [
+      null,
+      "baselinePerformance",
+      "기준실적",
+      "Long",
+      null,
+      "Y",
+      "카드 혜택을 받기 위한 전월 기준실적\r\n0이상 200만원 이하 입력 / 단위(원)"
+    ],
+    [
+      null,
+      "maxBenefitLimit",
+      "최대 혜택한도",
+      "Long",
+      null,
+      "Y",
+      "할인받을 수 있는 총 금액 한도\r\n1이상 100만원이하 입력 / 단위(원)"
+    ],
+    [
+      null,
+      "cardDescription",
+      "카드설명",
+      "String",
+      255,
+      "N",
+      "카드 설명 입력 (ex. 마트 최대 20% 할인, 주유 할인 등)"
+    ],
+    [
+      null,
+      "cardBenefits",
+      "카드 혜택",
+      "List",
+      null,
+      "Y",
+      "카테고리 여러개 입력 가능"
+    ],
+    [
+      null,
+      "categoryId",
+      "카테고리ID",
+      "String",
+      40,
+      "Y"
+    ],
+    [
+      null,
+      "discountRate",
+      "할인율",
+      "double",
+      null,
+      "Y",
+      "3 ~ 50 사이로 입력 가능 / 단위(%)"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createCreditCardProduct\",\r\n       \"transmissionDate\": \"20240409\",\r\n        \"transmissionTime\": \"095900\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createCreditCardProduct\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123579\",\r\n        \"apiKey\": \"91841f63099c434e8190e992c56d2fe1\"\r\n    },\r\n    \"cardIssuerCode\": \"1003\",\r\n    \"cardName\": \"디지로카 London\",\r\n    \"baselinePerformance\": \"700000\",\r\n    \"maxBenefitLimit\": \"130000\",\r\n    \"cardDescription\": \"생활 20%할인, 교통 10% 할인, 대형마트 5% 할인\",\r\n    \"cardBenefits\": [\r\n        {\r\n            \"categoryId\": \"CG-9ca85f66311a23d\",\r\n            \"discountRate\": \"20\"\r\n        },\r\n        {\r\n            \"categoryId\": \"CG-4fa85f6455cad4a\",\r\n            \"discountRate\": \"10\"\r\n        },\r\n        {\r\n            \"categoryId\": \"CG-4fa85f6425ad1d3\",\r\n            \"discountRate\": \"5\"\r\n        }\r\n    ] \r\n}"
+    ]
+  ],
+  "CREDIT_CARD_05": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_05",
+      "인터페이스명",
+      null,
+      "카드 상품 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireCreditCardList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireCreditCardList\",\r\n        \"transmissionDate\": \"20240409\",\r\n        \"transmissionTime\": \"100100\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireCreditCardList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123553\",\r\n        \"apiKey\": \"91841f63099c434e8190e992c56d2fe1\"\r\n    }\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_06": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_06",
+      "인터페이스명",
+      null,
+      "카드 생성"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/createCreditCard"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "cardUniqueNo",
+      "카드 고유번호",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "withdrawalAccountNo",
+      "출금계좌번호",
+      "String",
+      16,
+      "Y",
+      "수시입출금 계좌(수시입출금 계좌로 카드대금 지급)"
+    ],
+    [
+      null,
+      "withdrawalDate",
+      "출금날짜",
+      "String",
+      10,
+      "Y",
+      "월: 1, 화: 2, 수: 3, 목: 4, 금: 5, 토: 6, 일: 7"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createCreditCard\",\r\n        \"transmissionDate\": \"20240409\",\r\n        \"transmissionTime\": \"103500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createCreditCard\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123556\",\r\n        \"apiKey\": \"91841f63099c434e8190e992c56d2fe1\",\r\n        \"userKey\": \"6816c0c0-ec9e-4f62-8092-5a99d84f02cd\"\r\n    },\r\n    \"cardUniqueNo\": \"1003-a139e9f23f1a4cc\",\r\n    \"withdrawalAccountNo\": \"032355504232351\",\r\n    \"withdrawalDate\": \"4\"\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_07": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_07",
+      "인터페이스명",
+      null,
+      "내 카드 목록 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireSignUpCreditCardList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireSignUpCreditCardList\",\r\n        \"transmissionDate\": \"20240409\",\r\n        \"transmissionTime\": \"103600\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireSignUpCreditCardList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123557\",\r\n        \"apiKey\": \"91841f63099c434e8190e992c56d2fe1\",\r\n        \"userKey\": \"6816c0c0-ec9e-4f62-8092-5a99d84f02cd\"\r\n    }\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_08": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_08",
+      "인터페이스명",
+      null,
+      "가맹점 목록 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireMerchantList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireMerchantList\",\r\n        \"transmissionDate\": \"20240408\",\r\n        \"transmissionTime\": \"135600\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireMerchantList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123551\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\"\r\n    }\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_09": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_09",
+      "인터페이스명",
+      null,
+      "카드 결제"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/createCreditCardTransaction"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "cardNo",
+      "카드번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "cvc",
+      "카드보안코드",
+      "String",
+      3,
+      "Y"
+    ],
+    [
+      null,
+      "merchantId",
+      "가맹점ID",
+      "Long",
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "paymentBalance",
+      "거래금액",
+      "Long",
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createCreditCardTransaction\",\r\n        \"transmissionDate\": \"20240408\",\r\n        \"transmissionTime\": \"135600\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createCreditCardTransaction\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123571\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n\r\n    },\r\n    \"cardNo\": \"1005518816096479\",\r\n    \"cvc\": \"725\",\r\n    \"merchantId\": \"1\",\r\n    \"paymentBalance\": \"500000\"\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_10": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_10",
+      "인터페이스명",
+      null,
+      "카드 결제 내역 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireCreditCardTransactionList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "cardNo",
+      "카드번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "cvc",
+      "카드보안코드",
+      "String",
+      3,
+      "Y"
+    ],
+    [
+      null,
+      "startDate",
+      "조회시작일자",
+      "String",
+      8,
+      "Y",
+      "YYYYMMDD"
+    ],
+    [
+      null,
+      "endDate",
+      "조회종료일자",
+      "String",
+      8,
+      "Y",
+      "YYYYMMDD"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireCreditCardTransactionList\",\r\n        \"transmissionDate\": \"20240418\",\r\n        \"transmissionTime\": \"131500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireCreditCardTransactionList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123507\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"cardNo\": \"1005518816096479\",\r\n    \"cvc\": \"725\",\r\n    \"startDate\": \"20240401\", \r\n    \"endDate\": \"20240502\"\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_11": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_11",
+      "인터페이스명",
+      null,
+      "카드 결제 취소"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/deleteTransaction"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "cardNo",
+      "카드번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "cvc",
+      "카드보안코드",
+      "String",
+      3,
+      "Y"
+    ],
+    [
+      null,
+      "transactionUniqueNo",
+      "거래고유번호",
+      "Long",
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"deleteTransaction\",\r\n        \"transmissionDate\": \"20240408\",\r\n        \"transmissionTime\": \"140200\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"deleteTransaction\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123561\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n    },\r\n    \"cardNo\": \"1005518816096479\",\r\n    \"cvc\": \"725\",\r\n    \"transactionUniqueNo\": \"33\"\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_12": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_12",
+      "인터페이스명",
+      null,
+      "청구서 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inquireBillingStatements"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "cardNo",
+      "카드번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "cvc",
+      "카드보안코드",
+      "String",
+      3,
+      "Y"
+    ],
+    [
+      null,
+      "startMonth",
+      "조회시작월",
+      "String",
+      6,
+      "Y",
+      "YYYYMM"
+    ],
+    [
+      null,
+      "endMonth",
+      "조회종료월",
+      "String",
+      6,
+      "Y",
+      "YYYYMM"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireBillingStatements\",\r\n        \"transmissionDate\": \"20240408\",\r\n        \"transmissionTime\": \"140400\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireBillingStatements\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123501\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n\r\n    },\r\n    \"cardNo\": \"1005518816096479\",\r\n    \"cvc\": \"725\",\r\n    \"startMonth\":\"202401\",\r\n    \"endMonth\":\"202403\"\r\n}"
+    ]
+  ],
+  "CREDIT_CARD_13": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "CREDIT_CARD_13",
+      "인터페이스명",
+      null,
+      "카드 결제 계좌 수정"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/updateWithdrawalAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "cardNo",
+      "카드번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "cvc",
+      "카드보안코드",
+      "String",
+      3,
+      "Y"
+    ],
+    [
+      null,
+      "withdrawalAccountNo",
+      "출금계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "withdrawalDate",
+      "출금날짜",
+      "String",
+      10,
+      "Y",
+      "월: 1, 화: 2, 수: 3, 목: 4, 금: 5, 토: 6, 일: 7"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"updateWithdrawalAccount\",\r\n        \"transmissionDate\": \"20240408\",\r\n        \"transmissionTime\": \"140400\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateWithdrawalAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123561\",\r\n        \"apiKey\": \"21d5e78661d7490895eaebb24f1dfc42\",\r\n        \"userKey\": \"4dfb0125-27c9-4ab1-9c72-28772c59894a\"\r\n    },\r\n    \"cardNo\": \"1005518816096479\",\r\n    \"cvc\": \"725\",\r\n    \"withdrawalAccountNo\": \"0011541149756547\",\r\n    \"withdrawalDate\": \"1\"\r\n}"
+    ]
+  ],
+  "ACCOUNT_AUTH_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "ACCOUNT_AUTH_01",
+      "인터페이스명",
+      null,
+      "1원 송금"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/accountAuth/openAccountAuth"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "authText",
+      "기업명",
+      "String",
+      20,
+      "Y",
+      "회사 이니셜, 메세지 등을 통해 앱 관리자가(교육생) 본인을 식별할 수 있도록\r\n임의의 문자를 입력합니다."
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"openAccountAuth\",\r\n        \"transmissionDate\": \"20240723\",\r\n        \"transmissionTime\": \"152345\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"openAccountAuth\",\r\n        \"institutionTransactionUniqueNo\": \"20240723152345666098\",\r\n        \"apiKey\": \"e8fb2ac291804bc98834ff7bcef7e340\",\r\n        \"userKey\": \"633d65a0-67c4-48b2-9bbf-94b948d8e141\"\r\n    },\r\n    \"accountNo\" : \"0011214764051239\",\r\n    \"authText\": \"SSAFY\"\r\n}"
+    ]
+  ],
+  "ACCOUNT_AUTH_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "ACCOUNT_AUTH_02",
+      "인터페이스명",
+      null,
+      "1원 송금 검증"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/accountAuth/checkAuthCode"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "authText",
+      "기업명",
+      "String",
+      20,
+      "Y",
+      "회사 이니셜, 메세지 등을 통해 앱 관리자가(교육생) 본인을 식별할 수 있도록\r\n입력한 문자입니다."
+    ],
+    [
+      null,
+      "authCode",
+      "인증코드",
+      "String",
+      16,
+      "Y",
+      "0000(숫자4 형식)"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"checkAuthCode\",\r\n        \"transmissionDate\": \"20240723\",\r\n        \"transmissionTime\": \"152415\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"checkAuthCode\",\r\n        \"institutionTransactionUniqueNo\": \"20240723152415461262\",\r\n        \"apiKey\": \"e8fb2ac291804bc98834ff7bcef7e340\",\r\n        \"userKey\": \"633d65a0-67c4-48b2-9bbf-94b948d8e141\"\r\n    },\r\n    \"accountNo\" : \"0011214764051239\",\r\n    \"authText\": \"SSAFY\",\r\n    \"authCode\": \"8212\"\r\n}"
+    ]
+  ],
+  "EXCHANGE_RATE_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "EXCHANGE_RATE_01",
+      "인터페이스명",
+      null,
+      "환율 전체 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchangeRate"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"exchangeRate\",\r\n        \"transmissionDate\": \"20240724\",\r\n        \"transmissionTime\": \"101641\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"exchangeRate\",\r\n        \"institutionTransactionUniqueNo\": \"20240724101641312362\",\r\n        \"apiKey\": \"e8fb2ac291804bc98834ff7bcef7e340\"\r\n    }\r\n}"
+    ]
+  ],
+  "EXCHANGE_RATE_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "EXCHANGE_RATE_02",
+      "인터페이스명",
+      null,
+      "환율 단건 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchangeRate/exchangeRateSearch"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "currency",
+      "통화코드",
+      "String",
+      8,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"exchangeRateSearch\",\r\n        \"transmissionDate\": \"20240724\",\r\n        \"transmissionTime\": \"101020\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"exchangeRateSearch\",\r\n        \"institutionTransactionUniqueNo\": \"20240724101020562463\",\r\n        \"apiKey\": \"e8fb2ac291804bc98834ff7bcef7e340\"\r\n    },\r\n    \"currency\":\"USD\"\r\n}"
+    ]
+  ],
+  "EXCHANGE_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "EXCHANGE_01",
+      "인터페이스명",
+      null,
+      "예상 환전 금액 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchange/estimate"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "currency",
+      "소유 통화코드",
+      "String",
+      null,
+      "Y",
+      "소유한 통화코드 (달러>엔화 환전의 경우 USD 입력)  "
+    ],
+    [
+      null,
+      "exchangeCurrency",
+      "환전 통화코드",
+      "String",
+      8,
+      "Y",
+      "환전할 통화의 코드 입력  (달러>엔화 환전의 경우 JPY 입력)"
+    ],
+    [
+      null,
+      "amount",
+      "환전금액",
+      "Double",
+      null,
+      "Y",
+      "환전하고 싶은 금액 (달러>엔화 환전의 경우 JPY의 30000 입력)\r\n환전 금액 단위는 10 입니다."
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"estimate\",\r\n        \"transmissionDate\": \"20240724\",\r\n        \"transmissionTime\": \"102710\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"estimate\",\r\n        \"institutionTransactionUniqueNo\": \"20240724102710632310\",\r\n        \"apiKey\": \"e8fb2ac291804bc98834ff7bcef7e340\"\r\n    },\r\n    \"currency\": \"USD\",\r\n    \"exchangeCurrency\": \"JPY\",\r\n    \"amount\":\"30000\"\r\n}"
+    ]
+  ],
+  "EXCHANGE_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "EXCHANGE_02",
+      "인터페이스명",
+      null,
+      "환전 신청"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchange"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "출금계좌번호",
+      "String",
+      16,
+      "Y",
+      "출금 계좌(원화계좌, 외화계좌) 로 통화 파악"
+    ],
+    [
+      null,
+      "exchangeCurrency",
+      "통화코드",
+      "String",
+      8,
+      "Y",
+      "환전할 통화의 코드 입력  (달러>엔화 환전의 경우 JPY 입력)"
+    ],
+    [
+      null,
+      "exchangeAmount",
+      "환전금액",
+      "Double",
+      null,
+      "Y",
+      "환전하고 싶은 금액 (달러>엔화 환전의 경우 JPY의 30000 입력)\r\n환전 금액 단위는 10 입니다."
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"exchange\",\r\n        \"transmissionDate\": \"20240724\",\r\n        \"transmissionTime\": \"104536\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateDemandDepositAccountWithdrawal\",\r\n        \"institutionTransactionUniqueNo\": \"20240724104536128480\",\r\n        \"apiKey\": \"e8fb2ac291804bc98834ff7bcef7e340\",\r\n        \"userKey\": \"633d65a0-67c4-48b2-9bbf-94b948d8e141\"\r\n    },\r\n    \"accountNo\": \"0011214764051239\",\r\n    \"exchangeCurrency\": \"JPY\",\r\n    \"exchangeAmount\": \"30000\"\r\n}"
+    ]
+  ],
+  "EXCHANGE_03": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "EXCHANGE_03",
+      "인터페이스명",
+      null,
+      "환전 신청내역 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchange/exchangeHistory"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "N",
+      "미입력시 소유한 전체 계좌에 대한 내역 조회"
+    ],
+    [
+      null,
+      "startdate",
+      "조회시작일",
+      "String",
+      8,
+      "Y",
+      "YYYYMMDD"
+    ],
+    [
+      null,
+      "endDate",
+      "조회종료일",
+      "String",
+      8,
+      "Y",
+      "YYYYMMDD"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"exchangeHistory\",\r\n        \"transmissionDate\": \"20240724\",\r\n        \"transmissionTime\": \"104536\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"exchangeHistory\",\r\n        \"institutionTransactionUniqueNo\": \"20240724104536128480\",\r\n        \"apiKey\": \"e8fb2ac291804bc98834ff7bcef7e340\",\r\n        \"userKey\": \"807075b7-fa3d-42ef-b20c-1994f0a87050\"\r\n    },\r\n    \"accountNo\": \"0041869351281557\",\r\n    \"startDate\": \"20240101\",\r\n    \"endDate\": \"20240726\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_01",
+      "인터페이스명",
+      null,
+      "외화 수시입출금 상품등록"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/createForeignCurrencyDemandDeposit"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "bankCode",
+      "은행코드",
+      "String",
+      3,
+      "Y"
+    ],
+    [
+      null,
+      "accountName",
+      "상품명",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "accountDescription",
+      "상품설명",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"createForeignCurrencyDemandDeposit\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"095500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createForeignCurrencyDemandDeposit\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123560\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\" \r\n    },\r\n    \"bankCode\": \"001\",\r\n    \"accountName\": \"한국은행 외화 수시입출금 상품명\",\r\n    \"accountDescription\": \"한국은행 외화 수시입출금 상품설명\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_02": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_02",
+      "인터페이스명",
+      null,
+      "외화 상품 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y",
+      "userKey 제외"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{    \r\n    \"Header\": {\r\n        \"apiName\": \"inquireForeignCurrencyDemandDepositList\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"100100\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireForeignCurrencyDemandDepositList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123561\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\"\r\n    }\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_03": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_03",
+      "인터페이스명",
+      null,
+      "외화 계좌 생성"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/createForeignCurrencyDemandDepositAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountTypeUniqueNo",
+      "상품 고유번호",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "currency",
+      "통화코드",
+      "String",
+      20,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"createForeignCurrencyDemandDepositAccount\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"100500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"createForeignCurrencyDemandDepositAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123457\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountTypeUniqueNo\": \"001-1-ffa4253081d540\",\r\n    \"currency\": \"USD\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_04": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_04",
+      "인터페이스명",
+      null,
+      "외화 계좌 목록 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositAccountList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "currency",
+      "통화코드",
+      "List",
+      null,
+      "N",
+      "미입력시 소유한 전체 외화 계좌 조회"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"inquireForeignCurrencyDemandDepositAccountList\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"101000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireForeignCurrencyDemandDepositAccountList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123473\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"currency\": [\"USD\", \"JPY\"]\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_05": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_05",
+      "인터페이스명",
+      null,
+      "외화 계좌 조회(단건)"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{     \r\n    \"Header\": {\r\n        \"apiName\": \"inquireForeignCurrencyDemandDepositAccount\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"101500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireForeignCurrencyDemandDepositAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123455\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }, \r\n    \"accountNo\": \"0016174648358792\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_06": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_06",
+      "인터페이스명",
+      null,
+      "외화 예금주 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositAccountHolderName"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y",
+      "원화 계좌 가능"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"inquireForeignCurrencyDemandDepositAccountHolderName\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"102000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireForeignCurrencyDemandDepositAccountHolderName\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123451\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_07": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_07",
+      "인터페이스명",
+      null,
+      "외화 계좌 잔액 조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyDemandDepositAccountBalance"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"inquireForeignCurrencyDemandDepositAccountBalance\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"102500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireForeignCurrencyDemandDepositAccountBalance\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123463\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_08": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_08",
+      "인터페이스명",
+      null,
+      "외화 계좌 출금"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/updateForeignCurrencyDemandDepositAccountWithdrawal"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "transactionBalance",
+      "출금금액",
+      "Double",
+      null,
+      "Y",
+      "소수점 둘째자리까지 가능 (원화, 엔화의 경우에는 정수입력)"
+    ],
+    [
+      null,
+      "transactionSummary",
+      "출금계좌요약",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"updateForeignCurrencyDemandDepositAccountWithdrawal\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"102500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateForeignCurrencyDemandDepositAccountWithdrawal\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123456\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\",\r\n    \"transactionBalance\": \"100000\",\r\n    \"transactionSummary\": \"(수시입출금) : 출금\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_09": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_09",
+      "인터페이스명",
+      null,
+      "외화 계좌 입금"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/updateForeignCurrencyDemandDepositAccountDeposit"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "transactionBalance",
+      "입금금액",
+      "Double",
+      null,
+      "Y",
+      "소수점 둘째자리까지 가능 (원화, 엔화의 경우에는 정수입력)"
+    ],
+    [
+      null,
+      "transactionSummary",
+      "입금계좌요약",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"updateForeignCurrencyDemandDepositAccountDeposit\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"102500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateForeignCurrencyDemandDepositAccountDeposit\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123463\",\r\n         \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\",\r\n    \"transactionBalance\": \"100000000\",\r\n    \"transactionSummary\": \"(수시입출금) : 입금\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_10": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_10",
+      "인터페이스명",
+      null,
+      "외화 계좌 이체"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/updateForeignCurrencyDemandDepositAccountTransfer"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "depositAccountNo",
+      "입금계좌번호",
+      "String",
+      16,
+      "Y",
+      "외화, 원화 계좌 가능"
+    ],
+    [
+      null,
+      "depositTransactionSummary",
+      "거래 요약내용 (입금계좌)",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "transactionBalance",
+      "거래금액",
+      "Double",
+      null,
+      "Y",
+      "출금할 통화의 금액 입력 (원화, 엔화는 정수 / 이외 통화 소수점 둘째짜리까지 허용)"
+    ],
+    [
+      null,
+      "withdrawalAccountNo",
+      "출금계좌번호",
+      "String",
+      16,
+      "Y",
+      "외화 계좌만 가능"
+    ],
+    [
+      null,
+      "withdrawalTransactionSummary",
+      "거래 요약내용 (출금계좌)",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"updateForeignCurrencyDemandDepositAccountTransfer\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"103500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateForeignCurrencyDemandDepositAccountTransfer\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123453\",\r\n         \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }, \r\n    \"depositAccountNo\": \"0204667768182760\",\r\n    \"depositTransactionSummary\": \"(외화 수시입출금) : 입금(이체)\",\r\n    \"transactionBalance\": \"100000\", \r\n    \"withdrawalAccountNo\": \"0016174648358792\", \r\n    \"withdrawalTransactionSummary\": \"(외화 수시입출금) : 출금(이체)\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_11": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_11",
+      "인터페이스명",
+      null,
+      "외화 계좌 이체한도변경"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/updateForeignCurrencyTransferLimit"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "oneTimeTransferLimit",
+      "1회 이체한도",
+      "Double",
+      null,
+      "Y",
+      "통화별 한도 상이"
+    ],
+    [
+      null,
+      "dailyTransferLimit",
+      "1일 이체한도",
+      "Double",
+      null,
+      "Y",
+      "통화별 한도 상이"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n     \"Header\": {\r\n        \"apiName\": \"updateForeignCurrencyTransferLimit\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"104000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"updateForeignCurrencyTransferLimit\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123452\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    }, \r\n    \"accountNo\": \"0016174648358792\", \r\n    \"oneTimeTransferLimit\": \"20000000\", \r\n    \"dailyTransferLimit\": \"100000000\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_12": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_12",
+      "인터페이스명",
+      null,
+      "외화 계좌거래내역조회"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyTransactionHistoryList"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "startDate",
+      "조회시작일자",
+      "String",
+      8,
+      "Y",
+      "YYYYMMDD"
+    ],
+    [
+      null,
+      "endDate",
+      "조회종료일자",
+      "String",
+      8,
+      "Y",
+      "YYYYMMDD"
+    ],
+    [
+      null,
+      "transactionType",
+      "거래구분",
+      "String",
+      1,
+      "Y",
+      "M:입금 D:출금 A: 전체"
+    ],
+    [
+      null,
+      "orderByType",
+      "정렬순서",
+      "String",
+      4,
+      "Y",
+      "거래고유번호 기준\r\nASC:오름차순(이전거래), DESC:내림차순(최근거래)"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"inquireForeignCurrencyTransactionHistoryList\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"105000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireForeignCurrencyTransactionHistoryList\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123459\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"\r\n    },\r\n    \"accountNo\": \"0016174648358792\",\r\n    \"startDate\": \"20240101\",\r\n    \"endDate\": \"20241231\",\r\n    \"transactionType\": \"A\",\r\n    \"orderByType\": \"ASC\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_13": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_13",
+      "인터페이스명",
+      null,
+      "외화 계좌거래내역조회(단건)"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/inquireForeignCurrencyTransactionHistory"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "transactionUniqueNo",
+      "거래고유번호",
+      "Long",
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n   \"Header\": {\r\n        \"apiName\": \"inquireForeignCurrencyTransactionHistory\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"105500\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"inquireForeignCurrencyTransactionHistory\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123452\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"    \r\n    },\r\n    \"accountNo\": \"0016174648358792\",\r\n    \"transactionUniqueNo\": \"61\"\r\n}"
+    ]
+  ],
+  "FOREIGN_CURRENCY_14": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "DEMAND_DEPOSIT_FOREIGN_CURRENCY_14",
+      "인터페이스명",
+      null,
+      "외화 계좌해지"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/foreignCurrency/deleteForeignCurrencyDemandDepositAccount"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "refundAccountNo",
+      "금액반환계좌번호",
+      "String",
+      16,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n   \"Header\": {\r\n        \"apiName\": \"deleteForeignCurrencyDemandDepositAccount\",\r\n        \"transmissionDate\": \"20240401\",\r\n        \"transmissionTime\": \"112000\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"deleteForeignCurrencyDemandDepositAccount\",\r\n        \"institutionTransactionUniqueNo\": \"20240215121212123455\",\r\n        \"apiKey\": \"6a028e66ddbf42a6b783d78963163e29\",\r\n        \"userKey\": \"2695628f-11a1-418e-b533-9ae19e0650ec\"    \r\n    },\r\n    \"accountNo\": \"0018770964252220\",\r\n    \"refundAccountNo\": \"0324003842129948\"\r\n}"
+    ]
+  ],
+  "TRANSACTION_MEMO_01": [
+    [
+      null,
+      "1. 인터페이스 명세"
+    ],
+    [
+      null,
+      "처음으로"
+    ],
+    [
+      null,
+      "인터페이스ID",
+      "TRANSACTION_MEMO_01",
+      "인터페이스명",
+      null,
+      "거래내역 메모"
+    ],
+    [
+      null,
+      "운영URL",
+      "https://finopenapi.ssafy.io/ssafy/api/v1/edu/transactionMemo"
+    ],
+    [
+      null,
+      "2. 관련 전문"
+    ],
+    [
+      null,
+      "■ 인터페이스 요청 항목"
+    ],
+    [
+      null,
+      "Parameter명",
+      "설명",
+      "타입",
+      "길이",
+      "필수여부",
+      "비고"
+    ],
+    [
+      null,
+      "Header",
+      "공통",
+      null,
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "accountNo",
+      "계좌번호",
+      "String",
+      16,
+      "Y"
+    ],
+    [
+      null,
+      "transactionUniqueNo",
+      "거래고유번호",
+      "Long",
+      null,
+      "Y"
+    ],
+    [
+      null,
+      "transactionMemo",
+      "메모",
+      "String",
+      255,
+      "N"
+    ],
+    [
+      null,
+      "▶ 예제"
+    ],
+    [
+      null,
+      "{\r\n    \"Header\": {\r\n        \"apiName\": \"transactionMemo\",\r\n        \"transmissionDate\": \"20240723\",\r\n        \"transmissionTime\": \"152545\",\r\n        \"institutionCode\": \"00100\",\r\n        \"fintechAppNo\": \"001\",\r\n        \"apiServiceCode\": \"transactionMemo\",\r\n        \"institutionTransactionUniqueNo\": \"20240723152545874018\",\r\n        \"apiKey\": \"e8fb2ac291804bc98834ff7bcef7e340\",\r\n        \"userKey\": \"633d65a0-67c4-48b2-9bbf-94b948d8e141\"\r\n    },\r\n    \"accountNo\": \"0011214764051239\",\r\n    \"transactionUniqueNo\": \"6\",\r\n    \"transactionMemo\": \"적금 만기\"\r\n}"
+    ]
+  ]
+}
