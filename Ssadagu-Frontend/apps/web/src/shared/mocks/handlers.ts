@@ -71,27 +71,27 @@ export const handlers = [
   }),
 
   // ── Products (페이지네이션 지원) ────────────────────────────────────────
-  http.get(`${BASE}/products`, async ({ request }) => {
+  http.get(`${BASE}/v1/products`, async ({ request }) => {
     await d();
     const url = new URL(request.url);
     const page = Number(url.searchParams.get('page') ?? 0);
     const query = url.searchParams.get('q') ?? undefined;
     return HttpResponse.json({ data: paginateProducts(page, query) });
   }),
-  http.get(`${BASE}/products/:id`, async ({ params }) => {
+  http.get(`${BASE}/v1/products/:id`, async ({ params }) => {
     await d();
     const id = Number(params.id);
     return HttpResponse.json({ data: { ...mockProductDetail, id } });
   }),
-  http.post(`${BASE}/products`, async () => {
+  http.post(`${BASE}/v1/products`, async () => {
     await d(600);
     return HttpResponse.json({ data: { id: 99 } });
   }),
-  http.patch(`${BASE}/products/:id/status`, async () => {
+  http.patch(`${BASE}/v1/products/:id/status`, async () => {
     await d();
     return HttpResponse.json({ message: 'ok' });
   }),
-  http.post(`${BASE}/products/:id/wish`, async ({ params }) => {
+  http.post(`${BASE}/v1/products/:id/wish`, async ({ params }) => {
     await d(200);
     const id = Number(params.id);
     const wasWished = id === 2 || id === 8;

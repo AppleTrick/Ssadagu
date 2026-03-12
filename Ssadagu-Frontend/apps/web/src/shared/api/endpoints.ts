@@ -17,10 +17,10 @@ export const ENDPOINTS = {
     VERIFY_CONFIRM: (id: number) => `/accounts/${id}/verify/confirm`,
   },
   PRODUCTS: {
-    BASE: '/products',
-    DETAIL: (id: number) => `/products/${id}`,
-    STATUS: (id: number) => `/products/${id}/status`,
-    WISH: (id: number) => `/products/${id}/wish`,
+    BASE: '/v1/products',
+    DETAIL: (id: number) => `/v1/products/${id}`,
+    STATUS: (id: number) => `/v1/products/${id}/status`,
+    WISH: (id: number) => `/v1/products/${id}/wish`,
   },
   CHATS: {
     ROOMS: '/chats/rooms',
