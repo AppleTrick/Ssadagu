@@ -25,6 +25,6 @@ public class SignUpRequestDto {
     private String nickname;
 
     @Schema(description = "지역", example = "서울")
-    @NotBlank(message = "지역은 필수 입력값입니다.")
+    // @NotBlank(message = "지역은 필수 입력값입니다.")
     private String region;
 }
