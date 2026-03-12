@@ -36,4 +36,7 @@ public class User extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    @Column(name = "user_key", length = 100)
+    private String userKey;
 }

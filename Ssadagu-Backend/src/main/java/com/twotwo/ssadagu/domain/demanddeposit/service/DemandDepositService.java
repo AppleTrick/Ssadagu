@@ -1,6 +1,5 @@
 package com.twotwo.ssadagu.domain.demanddeposit.service;
 
-import com.twotwo.ssadagu.domain.demanddeposit.dto.DemandDepositAccountCreateRequestDto;
 import com.twotwo.ssadagu.global.util.SsafyHeaderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +31,12 @@ public class DemandDepositService {
     /**
      * SSAFY 금융망: 수시입출금 계좌 생성 (DEMAND_DEPOSIT_03)
      */
-    public Map<String, Object> createAccount(DemandDepositAccountCreateRequestDto requestDto) {
+    public Map<String, Object> createAccount(String accountTypeUniqueNo, String userKey) {
         String url = baseUrl + "/edu/demandDeposit/createDemandDepositAccount";
-        // UserKey가 명시되지 않은 경우, application.properties에서 주입된 기본 UserKey를 사용
-        String userKey = (requestDto.getTestUserKey() != null && !requestDto.getTestUserKey().isEmpty())
-                ? requestDto.getTestUserKey() : defaultUserKey;
+        
+        if (userKey == null || userKey.isEmpty()) {
+            userKey = defaultUserKey;
+        }
 
         // 공통 Header 데이터 생성
         Map<String, String> header = ssafyHeaderUtil.createHeader("createDemandDepositAccount", userKey);
@@ -44,14 +44,14 @@ public class DemandDepositService {
         // Payload 구성
         Map<String, Object> payload = new HashMap<>();
         payload.put("Header", header);
-        payload.put("accountTypeUniqueNo", requestDto.getAccountTypeUniqueNo());
+        payload.put("accountTypeUniqueNo", accountTypeUniqueNo);
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
 
-        log.info("[Demand Deposit] 계좌 생성 요청 - accountTypeUniqueNo: {}", requestDto.getAccountTypeUniqueNo());
+        log.info("[Demand Deposit] 계좌 생성 요청 - accountTypeUniqueNo: {}", accountTypeUniqueNo);
         ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
         return response.getBody();
     }
@@ -59,9 +59,12 @@ public class DemandDepositService {
     /**
      * SSAFY 금융망: 수시입출금 계좌 조회 (단건) (DEMAND_DEPOSIT_05)
      */
-    public Map<String, Object> getAccount(String accountNo, String testUserKey) {
+    public Map<String, Object> getAccount(String accountNo, String userKey) {
         String url = baseUrl + "/edu/demandDeposit/inquireDemandDepositAccount";
-        String userKey = (testUserKey != null && !testUserKey.isEmpty()) ? testUserKey : defaultUserKey;
+
+        if (userKey == null || userKey.isEmpty()) {
+            userKey = defaultUserKey;
+        }
 
         Map<String, String> header = ssafyHeaderUtil.createHeader("inquireDemandDepositAccount", userKey);
 
@@ -82,9 +85,12 @@ public class DemandDepositService {
     /**
      * SSAFY 금융망: 수시입출금 계좌 거래내역조회 (DEMAND_DEPOSIT_12)
      */
-    public Map<String, Object> getTransactionHistory(String accountNo, String startDate, String endDate, String transactionType, String orderByType, String testUserKey) {
+    public Map<String, Object> getTransactionHistory(String accountNo, String startDate, String endDate, String transactionType, String orderByType, String userKey) {
         String url = baseUrl + "/edu/demandDeposit/inquireTransactionHistoryList";
-        String userKey = (testUserKey != null && !testUserKey.isEmpty()) ? testUserKey : defaultUserKey;
+
+        if (userKey == null || userKey.isEmpty()) {
+            userKey = defaultUserKey;
+        }
 
         Map<String, String> header = ssafyHeaderUtil.createHeader("inquireTransactionHistoryList", userKey);
 

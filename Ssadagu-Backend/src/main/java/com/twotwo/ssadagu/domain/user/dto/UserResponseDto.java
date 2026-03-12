@@ -10,12 +10,14 @@ import lombok.Getter;
 public class UserResponseDto {
     private Long id;
     private String region;
+    private String userKey;
     private TokenDto token;
 
     public static UserResponseDto from(User entity, TokenDto token) {
         return UserResponseDto.builder()
                 .id(entity.getId())
                 .region(entity.getRegion())
+                .userKey(entity.getUserKey())
                 .token(token)
                 .build();
     }
