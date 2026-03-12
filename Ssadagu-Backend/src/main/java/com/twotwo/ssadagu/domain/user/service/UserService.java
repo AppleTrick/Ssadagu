@@ -23,6 +23,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserKeyService userKeyService;
 
     @Transactional
     public UserResponseDto signup(SignUpRequestDto requestDto) {
@@ -33,11 +34,16 @@ public class UserService {
             throw new BusinessException(ErrorCode.NICKNAME_ALREADY_EXISTS);
         }
 
+        // 금융망 MEMBER_01 연동하여 userKey 발급
+        String issuedUserKey = userKeyService.createUserKey(requestDto.getEmail());
+
         User user = User.builder()
                 .email(requestDto.getEmail())
                 .passwordHash(passwordEncoder.encode(requestDto.getPassword()))
                 .nickname(requestDto.getNickname())
+                .region(requestDto.getRegion())
                 .status("UNVERIFIED")
+                .userKey(issuedUserKey)
                 .build();
 
         User savedUser = userRepository.save(user);
