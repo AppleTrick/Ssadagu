@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import styled from '@emotion/styled';
 import MapBase from '@/shared/ui/MapBase';
+import { getMarkerDataUrl } from '@/features/location-picker/ui/MapMarker';
 import { radius, typography } from '@/shared/styles/theme';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -29,6 +30,7 @@ const Label = styled.div`
   z-index: 10;
   white-space: nowrap;
   pointer-events: none;
+  backdrop-filter: blur(4px);
 `;
 
 interface SharedLocationViewerProps {
@@ -38,12 +40,17 @@ interface SharedLocationViewerProps {
 }
 
 const SharedLocationViewer = ({ lat, lng, label }: SharedLocationViewerProps) => {
-  const markerRef = useRef<any>(null);
-
   const handleMapReady = useCallback(
     (map: any) => {
       const position = new window.kakao.maps.LatLng(lat, lng);
-      markerRef.current = new window.kakao.maps.Marker({ position, map });
+
+      const markerImage = new window.kakao.maps.MarkerImage(
+        getMarkerDataUrl(),
+        new window.kakao.maps.Size(40, 54),
+        { offset: new window.kakao.maps.Point(20, 54) },
+      );
+
+      new window.kakao.maps.Marker({ position, map, image: markerImage });
       map.setDraggable(false);
       map.setZoomable(false);
     },
