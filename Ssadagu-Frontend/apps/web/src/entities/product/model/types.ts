@@ -54,3 +54,12 @@ export interface ProductDetail {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CreateProductRequest {
+  sellerId: number;
+  title: string;
+  description: string;
+  price: number;
+  categoryCode: string;
+  regionName: string;
+}

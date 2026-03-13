@@ -9,6 +9,7 @@ import Button from '@/shared/ui/Button';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useCreateProduct } from '../model/useCreateProduct';
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -339,7 +340,6 @@ const ItemRegistrationForm = () => {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
   const [photoCount, setPhotoCount] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -366,47 +366,34 @@ const ItemRegistrationForm = () => {
     // Location picker — placeholder for future feature
   };
 
+  const mutation = useCreateProduct();
+
   const onSubmit = async (data: FormValues) => {
-    setIsSubmitting(true);
     setServerError(null);
     try {
-      const res = await apiClient.post(
-        ENDPOINTS.PRODUCTS.BASE,
-        {
-          title: data.title,
-          categoryCode: data.categoryCode,
-          price: Number(data.price.replace(/[^0-9]/g, '')),
-          description: data.description,
-          regionName: data.regionName || '미설정',
-        },
-        accessToken ?? undefined,
-      );
+      const result = await mutation.mutateAsync({
+        sellerId: 1, // API 명세에 따른 임시 판매자 ID
+        title: data.title,
+        categoryCode: data.categoryCode,
+        price: Number(data.price.replace(/[^0-9]/g, '')),
+        description: data.description,
+        regionName: data.regionName || '미설정',
+      });
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as Record<string, unknown>;
-        setServerError(
-          typeof body?.message === 'string' ? body.message : '등록에 실패했습니다.',
-        );
-        return;
-      }
-
-      const body = await res.json() as Record<string, unknown>;
       const productId =
-        typeof body?.id === 'number'
-          ? body.id
-          : typeof (body?.data as Record<string, unknown>)?.id === 'number'
-            ? (body.data as Record<string, unknown>).id
+        typeof result?.id === 'number'
+          ? result.id
+          : typeof (result?.data as Record<string, unknown>)?.id === 'number'
+            ? (result.data as Record<string, unknown>).id
             : null;
 
       if (productId) {
-        router.push(`/products/${productId}`);
+        router.replace(`/products/${productId}`);
       } else {
-        router.push('/home');
+        router.replace('/home');
       }
-    } catch {
-      setServerError('네트워크 오류가 발생했습니다.');
-    } finally {
-      setIsSubmitting(false);
+    } catch (err: any) {
+      setServerError(err.message || '상품 등록에 실패했습니다.');
     }
   };
 
@@ -512,8 +499,8 @@ const ItemRegistrationForm = () => {
           variant="primary"
           size="lg"
           fullWidth
-          loading={isSubmitting}
-          disabled={isSubmitting}
+          loading={mutation.isPending}
+          disabled={mutation.isPending}
           onClick={handleSubmit(onSubmit)}
         >
           등록하기
