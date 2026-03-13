@@ -41,7 +41,7 @@ public class UserService {
                 .email(requestDto.getEmail())
                 .passwordHash(passwordEncoder.encode(requestDto.getPassword()))
                 .nickname(requestDto.getNickname())
-                .region(requestDto.getRegion())
+                .region("")
                 .status("UNVERIFIED")
                 .userKey(issuedUserKey)
                 .build();
@@ -55,5 +55,18 @@ public class UserService {
         TokenDto tokenDto = jwtTokenProvider.generateToken(authentication);
 
         return UserResponseDto.from(savedUser, tokenDto);
+    }
+
+    @Transactional
+    public void verifyRegion(Long userId, com.twotwo.ssadagu.domain.user.dto.RegionVerifyRequestDto requestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (!"ACCOUNT_VERIFIED".equals(user.getStatus())) {
+            throw new IllegalArgumentException("계좌 인증이 먼저 완료되어야 동네 인증이 가능합니다.");
+        }
+
+        userRepository.updateRegion(user.getId(), requestDto.getRegion());
+        userRepository.updateStatus(user.getId(), "ACTIVE");
     }
 }
