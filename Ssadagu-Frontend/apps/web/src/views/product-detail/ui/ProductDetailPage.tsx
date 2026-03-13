@@ -6,8 +6,8 @@ import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { ImageCarousel } from '@/shared/ui';
-import { SellerCard, ItemDetailBottomBar } from '@/entities/product';
-import type { Product } from '@/entities/product';
+import { SellerCard, ItemDetailBottomBar, getProduct } from '@/entities/product';
+import type { ProductDetail } from '@/entities/product';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
@@ -145,8 +145,6 @@ const TextButton = styled.button`
 
 const statusLabel: Record<string, string> = { ON_SALE: '판매중', RESERVED: '예약중', SOLD: '판매완료' };
 
-interface ProductDetailResponse { data?: Product; }
-
 // 카카오맵 컴포넌트
 function KakaoMap({ regionName }: { regionName: string }) {
   const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
@@ -212,20 +210,15 @@ export function ProductDetailPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const [isWished, setIsWished] = useState(false);
 
-  const { data: product, isLoading, isError, refetch } = useQuery<Product>({
+  const { data: product, isLoading, isError, refetch } = useQuery<ProductDetail>({
     queryKey: ['product', productId],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(productId), accessToken ?? undefined);
-      if (!res.ok) throw new Error('상품 정보를 불러오지 못했습니다.');
-      const json = await res.json() as Product | ProductDetailResponse;
-      if ((json as ProductDetailResponse).data) return (json as ProductDetailResponse).data as Product;
-      return json as Product;
-    },
+    queryFn: () => getProduct(productId, accessToken ?? undefined),
     enabled: !isNaN(productId),
   });
 
   useEffect(() => {
-    if (product) setIsWished(product.isWished);
+    // Note: ProductDetail에는 isWished가 없으므로 API 변경 전까지는 false로 유지하거나
+    // wishCount 등을 활용한 추측이 필요함. 여기서는 API 스펙을 우선함.
   }, [product]);
 
   const wishMutation = useMutation({
@@ -295,9 +288,13 @@ export function ProductDetailPage() {
         )}
         {!isLoading && !isError && product && (
           <>
-            <ImageCarousel images={product.images.map((img) => img.imageUrl)} height="300px" />
+            {/* API에서 이미지를 제공하지 않으므로 플레이스홀더 처리 */}
+            <div style={{ width: '100%', height: '300px', background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textSecondary }}>
+              이미지가 없습니다
+            </div>
             <SellerSection>
-              <SellerCard sellerId={product.sellerId} sellerNickname={product.sellerNickname} />
+              {/* API에서 닉네임을 제공하지 않으므로 판매자 ID로 표시 */}
+              <SellerCard sellerId={product.sellerId} sellerNickname={`판매자 ${product.sellerId}`} />
             </SellerSection>
             <InfoSection>
               <StatusBadge $status={product.status}>
@@ -325,7 +322,7 @@ export function ProductDetailPage() {
             </MapSection>
 
             <ItemDetailBottomBar
-              product={product}
+              product={product as any}
               isMine={false}
               isWished={isWished}
               onWish={() => wishMutation.mutate()}

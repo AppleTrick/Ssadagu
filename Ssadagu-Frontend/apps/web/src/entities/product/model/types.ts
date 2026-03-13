@@ -39,3 +39,18 @@ export interface ProductSummary {
   updatedAt: string;
   thumbnailUrl?: string | null;
 }
+
+export interface ProductDetail {
+  id: number;
+  sellerId: number;
+  title: string;
+  description: string;
+  price: number;
+  categoryCode: string;
+  regionName: string;
+  status: ProductStatus;
+  wishCount: number;
+  chatCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
