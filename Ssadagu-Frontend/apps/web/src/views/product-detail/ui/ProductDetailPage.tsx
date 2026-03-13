@@ -7,6 +7,7 @@ import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { ImageCarousel } from '@/shared/ui';
 import { SellerCard, ItemDetailBottomBar, getProduct } from '@/entities/product';
+import { useDeleteProduct } from '@/features/create-product';
 import type { ProductDetail } from '@/entities/product';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
@@ -254,6 +255,19 @@ export function ProductDetailPage() {
     },
   });
 
+  const deleteMutation = useDeleteProduct();
+
+  const handleDelete = async () => {
+    if (!window.confirm('정말 이 상품을 삭제하시겠습니까?')) return;
+    
+    try {
+      await deleteMutation.mutateAsync(productId);
+      router.replace('/home');
+    } catch (err: any) {
+      alert(err.message || '삭제에 실패했습니다.');
+    }
+  };
+
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({ title: product?.title, url: window.location.href });
@@ -328,6 +342,7 @@ export function ProductDetailPage() {
               onWish={() => wishMutation.mutate()}
               onChat={() => chatMutation.mutate()}
               onEdit={() => router.push(`/products/${productId}/edit`)}
+              onDelete={handleDelete}
               bottomOffset={0}
             />
           </>

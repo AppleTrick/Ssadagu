@@ -23,4 +23,9 @@ export const apiClient = {
       },
       body: JSON.stringify(body),
     }),
+  delete: (url: string, token?: string) =>
+    fetch(`${BASE_URL}${url}`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }),
 };
