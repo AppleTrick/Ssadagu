@@ -63,3 +63,12 @@ export interface CreateProductRequest {
   categoryCode: string;
   regionName: string;
 }
+
+export interface UpdateProductRequest {
+  title: string;
+  description: string;
+  price: number;
+  categoryCode: string;
+  regionName: string;
+  status: ProductStatus;
+}

@@ -2,6 +2,7 @@ export * from './model/types';
 export * from './api/getProducts';
 export * from './api/getProduct';
 export * from './api/createProduct';
+export * from './api/updateProduct';
 export { default as ItemCard } from './ui/ItemCard';
 export { default as ItemDetailBottomBar } from './ui/ItemDetailBottomBar';
 export { default as SellerCard } from './ui/SellerCard';

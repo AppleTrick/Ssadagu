@@ -14,4 +14,13 @@ export const apiClient = {
       },
       body: JSON.stringify(body),
     }),
+  put: (url: string, body: unknown, token?: string) =>
+    fetch(`${BASE_URL}${url}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    }),
 };

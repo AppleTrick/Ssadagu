@@ -11,6 +11,7 @@ interface ItemDetailBottomBarProps {
   onWish?: () => void;
   onChat?: () => void;
   onBuy?: () => void;
+  onEdit?: () => void;
   bottomOffset?: number;
 }
 
@@ -24,6 +25,7 @@ const ItemDetailBottomBar = ({
   onWish,
   onChat,
   onBuy,
+  onEdit,
   bottomOffset = 0,
 }: ItemDetailBottomBarProps) => {
   return (
@@ -39,7 +41,10 @@ const ItemDetailBottomBar = ({
       </Left>
       <Right>
         {isMine ? (
-          <StatusBadge>거래 완료</StatusBadge>
+          <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+            <ChatButton onClick={onEdit} style={{ background: colors.bg, color: colors.textPrimary }}>수정하기</ChatButton>
+            <BuyButton>거래 완료</BuyButton>
+          </div>
         ) : (
           <>
             <ChatButton onClick={onChat}>채팅하기</ChatButton>

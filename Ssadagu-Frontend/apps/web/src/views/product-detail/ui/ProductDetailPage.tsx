@@ -323,10 +323,11 @@ export function ProductDetailPage() {
 
             <ItemDetailBottomBar
               product={product as any}
-              isMine={false}
+              isMine={product.sellerId === 1} // Mock: sellerId가 1이면 내 상품으로 간주
               isWished={isWished}
               onWish={() => wishMutation.mutate()}
               onChat={() => chatMutation.mutate()}
+              onEdit={() => router.push(`/products/${productId}/edit`)}
               bottomOffset={0}
             />
           </>

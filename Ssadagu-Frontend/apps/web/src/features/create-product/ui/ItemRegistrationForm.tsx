@@ -10,6 +10,8 @@ import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useCreateProduct } from '../model/useCreateProduct';
+import { useUpdateProduct } from '../model/useUpdateProduct';
+import type { ProductDetail } from '@/entities/product';
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -19,9 +21,16 @@ interface FormValues {
   price: string;
   description: string;
   regionName: string;
+  status?: string;
+}
+
+interface ItemRegistrationFormProps {
+  productId?: number;
+  initialData?: ProductDetail;
 }
 
 const CATEGORIES = [
+// ... (omitted if not changing, but I need to show the context)
   { code: 'ELECTRONICS', label: '전자기기' },
   { code: 'CLOTHING', label: '의류' },
   { code: 'BOOKS', label: '도서' },
@@ -336,11 +345,13 @@ const MapPinIcon = () => (
 
 /* ── Main Component ─────────────────────────────────────── */
 
-const ItemRegistrationForm = () => {
+const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormProps) => {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
   const [photoCount, setPhotoCount] = useState(0);
   const [serverError, setServerError] = useState<string | null>(null);
+
+  const isEdit = !!productId;
 
   const {
     register,
@@ -348,11 +359,12 @@ const ItemRegistrationForm = () => {
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
-      title: '',
-      categoryCode: '',
-      price: '',
-      description: '',
-      regionName: '',
+      title: initialData?.title || '',
+      categoryCode: initialData?.categoryCode || '',
+      price: initialData?.price?.toString() || '',
+      description: initialData?.description || '',
+      regionName: initialData?.regionName || '',
+      status: initialData?.status || 'ON_SALE',
     },
   });
 
@@ -366,34 +378,48 @@ const ItemRegistrationForm = () => {
     // Location picker — placeholder for future feature
   };
 
-  const mutation = useCreateProduct();
+  const createMutation = useCreateProduct();
+  const updateMutation = useUpdateProduct(productId || 0);
+  const currentMutation = isEdit ? updateMutation : createMutation;
 
   const onSubmit = async (data: FormValues) => {
     setServerError(null);
     try {
-      const result = await mutation.mutateAsync({
-        sellerId: 1, // API 명세에 따른 임시 판매자 ID
-        title: data.title,
-        categoryCode: data.categoryCode,
-        price: Number(data.price.replace(/[^0-9]/g, '')),
-        description: data.description,
-        regionName: data.regionName || '미설정',
-      });
-
-      const productId =
-        typeof result?.id === 'number'
-          ? result.id
-          : typeof (result?.data as Record<string, unknown>)?.id === 'number'
-            ? (result.data as Record<string, unknown>).id
-            : null;
-
-      if (productId) {
+      if (isEdit) {
+        await updateMutation.mutateAsync({
+          title: data.title,
+          categoryCode: data.categoryCode,
+          price: Number(data.price.replace(/[^0-9]/g, '')),
+          description: data.description,
+          regionName: data.regionName || '미설정',
+          status: (data.status as any) || 'ON_SALE',
+        });
         router.replace(`/products/${productId}`);
       } else {
-        router.replace('/home');
+        const result = await createMutation.mutateAsync({
+          sellerId: 1, // API 명세에 따른 임시 판매자 ID
+          title: data.title,
+          categoryCode: data.categoryCode,
+          price: Number(data.price.replace(/[^0-9]/g, '')),
+          description: data.description,
+          regionName: data.regionName || '미설정',
+        });
+
+        const newProductId =
+          typeof result?.id === 'number'
+            ? result.id
+            : typeof (result?.data as Record<string, unknown>)?.id === 'number'
+              ? (result.data as Record<string, unknown>).id
+              : null;
+
+        if (newProductId) {
+          router.replace(`/products/${newProductId}`);
+        } else {
+          router.replace('/home');
+        }
       }
     } catch (err: any) {
-      setServerError(err.message || '상품 등록에 실패했습니다.');
+      setServerError(err.message || '요청에 실패했습니다.');
     }
   };
 
@@ -403,7 +429,7 @@ const ItemRegistrationForm = () => {
         <BackButton onClick={() => router.back()} aria-label="뒤로가기">
           <CloseIcon />
         </BackButton>
-        <HeaderTitle>내 물품 팔기</HeaderTitle>
+        <HeaderTitle>{isEdit ? '게시글 수정' : '내 물품 팔기'}</HeaderTitle>
       </Header>
 
       <Content>
@@ -416,6 +442,20 @@ const ItemRegistrationForm = () => {
         </PhotoRow>
 
         <Section>
+          {isEdit && (
+            <FieldWrapper>
+              <StyledSelect
+                hasError={!!errors.status}
+                {...register('status', { required: '상태를 선택해주세요' })}
+              >
+                <option value="ON_SALE">판매중</option>
+                <option value="RESERVED">예약중</option>
+                <option value="SOLD">판매완료</option>
+              </StyledSelect>
+              {errors.status && <FieldError role="alert">{errors.status.message}</FieldError>}
+            </FieldWrapper>
+          )}
+
           {/* Title */}
           <FieldWrapper>
             <FieldInput
@@ -499,8 +539,8 @@ const ItemRegistrationForm = () => {
           variant="primary"
           size="lg"
           fullWidth
-          loading={mutation.isPending}
-          disabled={mutation.isPending}
+          loading={currentMutation.isPending}
+          disabled={currentMutation.isPending}
           onClick={handleSubmit(onSubmit)}
         >
           등록하기
