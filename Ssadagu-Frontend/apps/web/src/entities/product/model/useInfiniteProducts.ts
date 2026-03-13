@@ -13,7 +13,7 @@ export const useInfiniteProducts = (searchQuery: string) => {
   const accessToken = useAuthStore((s: { accessToken: string | null }) => s.accessToken);
 
   return useInfiniteQuery<PageData, Error>({
-    queryKey: ['products', searchQuery],
+    queryKey: ['products', searchQuery, accessToken],
     queryFn: async ({ pageParam }) => {
       const page = pageParam as number;
       
@@ -43,5 +43,6 @@ export const useInfiniteProducts = (searchQuery: string) => {
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.page + 1 : undefined),
+    enabled: !!accessToken,
   });
 };

@@ -12,7 +12,8 @@ export const getProducts = async (accessToken?: string): Promise<ProductSummary[
     throw new Error('상품 목록을 불러오지 못했습니다.');
   }
 
-  const allItems = (await res.json()) as any[];
+  const json = await res.json();
+  const allItems = (Array.isArray(json) ? json : (json.data ?? [])) as any[];
   
   return allItems.map((item) => ({
     id: item.id,

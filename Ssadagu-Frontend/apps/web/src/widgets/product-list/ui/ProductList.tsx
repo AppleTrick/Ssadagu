@@ -4,9 +4,7 @@ import { useEffect, useRef } from 'react';
 import styled from '@emotion/styled';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { ItemCard, type ProductSummary } from '@/entities/product';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
+import { ItemCard, type ProductSummary, useInfiniteProducts } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { typography, colors } from '@/shared/styles/theme';
 
@@ -61,30 +59,7 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   }, [accessToken]);
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery<ProductSummary[]>({
-      queryKey: ['products', searchQuery],
-      queryFn: async () => {
-        // Backend returns all products at once, so we ignore page/size parameters in queryFn
-        // and handle slicing in the component if needed, or fetch once and use cached data.
-        const res = await apiClient.get(
-          `${ENDPOINTS.PRODUCTS.BASE}`,
-          accessToken ?? undefined,
-        );
-        
-        if (!res.ok) throw new Error('상품 목록을 불러오지 못했습니다.');
-        
-        const json = await res.json();
-        const items = Array.isArray(json) ? json : (json.data ?? []);
-        return items;
-      },
-      initialPageParam: 0,
-      getNextPageParam: (lastPage, allPages) => {
-        // Since backend doesn't support pagination, we fetch all once. 
-        // To strictly follow "Infinite Scroll" request, we simulate it by showing all if data exists.
-        // If we want real client-side chunking, we'd fetch all and slice 'allPages'.
-        return undefined; // Stop infinite query after first fetch of all items
-      },
-    });
+    useInfiniteProducts(searchQuery);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -109,7 +84,7 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
     return <LoadingWrapper>상품 목록을 불러오지 못했습니다.</LoadingWrapper>;
   }
 
-  const allProducts = data?.pages.flat() || [];
+  const allProducts = data?.pages.flatMap((page) => page.content) || [];
 
   if (allProducts.length === 0) {
     return (
