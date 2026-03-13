@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
+import java.util.List;
 
 @Tag(name = "ChatRoom", description = "채팅방 관리 API")
 @RestController
@@ -37,7 +37,7 @@ public class ChatRoomController {
 
     @Operation(summary = "채팅 내역 조회", description = "특정 채팅방의 메시지 내역을 조회합니다.")
     @GetMapping("/rooms/{roomId}/messages")
-    public Flux<ChatMessage> getChatHistory(@PathVariable Long roomId) {
+    public List<ChatMessage> getChatHistory(@PathVariable Long roomId) {
         return chatMessageService.getChatHistory(roomId);
     }
 }

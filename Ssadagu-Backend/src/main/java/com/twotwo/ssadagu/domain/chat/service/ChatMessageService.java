@@ -4,10 +4,8 @@ import com.twotwo.ssadagu.domain.chat.entity.ChatMessage;
 import com.twotwo.ssadagu.domain.chat.repository.ChatMessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -16,7 +14,7 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomService chatRoomService;
 
-    public Mono<ChatMessage> saveMessage(Long roomId, Long senderId, String content, ChatMessage.MessageType type) {
+    public ChatMessage saveMessage(Long roomId, Long senderId, String content, ChatMessage.MessageType type) {
         ChatMessage message = ChatMessage.builder()
                 .roomId(roomId)
                 .senderId(senderId)
@@ -25,19 +23,20 @@ public class ChatMessageService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return chatMessageRepository.save(message)
-                .doOnSuccess(saved -> {
-                    // Update ChatRoom's last message
-                    boolean isBuyer = (senderId != null) && isSenderBuyer(roomId, senderId);
-                    chatRoomService.updateLastMessage(roomId, content, isBuyer);
-                });
+        ChatMessage savedMessage = chatMessageRepository.save(message);
+        
+        // Update ChatRoom's last message
+        boolean isBuyer = (senderId != null) && isSenderBuyer(roomId, senderId);
+        chatRoomService.updateLastMessage(roomId, content, isBuyer);
+        
+        return savedMessage;
     }
 
-    public Mono<ChatMessage> sendSystemMessage(Long roomId, String content, ChatMessage.MessageType type) {
+    public ChatMessage sendSystemMessage(Long roomId, String content, ChatMessage.MessageType type) {
         return saveMessage(roomId, null, content, type);
     }
 
-    public Flux<ChatMessage> getChatHistory(Long roomId) {
+    public List<ChatMessage> getChatHistory(Long roomId) {
         return chatMessageRepository.findAllByRoomIdOrderByCreatedAtAsc(roomId);
     }
 
