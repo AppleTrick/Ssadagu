@@ -26,13 +26,49 @@ export interface Product {
 
 export interface ProductSummary {
   id: number;
+  sellerId: number;
   title: string;
+  description: string;
   price: number;
+  categoryCode: string;
   regionName: string;
   status: ProductStatus;
   wishCount: number;
   chatCount: number;
-  thumbnailUrl: string | null;
-  isWished: boolean;
   createdAt: string;
+  updatedAt: string;
+  thumbnailUrl?: string | null;
+}
+
+export interface ProductDetail {
+  id: number;
+  sellerId: number;
+  title: string;
+  description: string;
+  price: number;
+  categoryCode: string;
+  regionName: string;
+  status: ProductStatus;
+  wishCount: number;
+  chatCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProductRequest {
+  sellerId: number;
+  title: string;
+  description: string;
+  price: number;
+  categoryCode: string;
+  regionName: string;
+}
+
+export interface UpdateProductRequest {
+  title: string;
+  description: string;
+  price: number;
+  categoryCode: string;
+  regionName: string;
+  status: ProductStatus;
 }

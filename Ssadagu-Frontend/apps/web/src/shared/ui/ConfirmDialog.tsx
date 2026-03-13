@@ -132,7 +132,7 @@ const ConfirmDialog = ({
         <Title id="dialog-title">{title}</Title>
         <Message>{message}</Message>
         <ButtonRow>
-          <CancelButton onClick={onClose}>{cancelLabel}</CancelButton>
+          {cancelLabel && <CancelButton onClick={onClose}>{cancelLabel}</CancelButton>}
           <ConfirmButton variant={variant} onClick={onConfirm}>
             {confirmLabel}
           </ConfirmButton>
