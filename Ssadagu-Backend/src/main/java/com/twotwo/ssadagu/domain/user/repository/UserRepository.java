@@ -16,4 +16,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @org.springframework.data.jpa.repository.Query("UPDATE User u SET u.status = :status WHERE u.id = :userId")
     void updateStatus(@org.springframework.data.repository.query.Param("userId") Long userId,
             @org.springframework.data.repository.query.Param("status") String status);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("UPDATE User u SET u.region = :region WHERE u.id = :userId")
+    void updateRegion(@org.springframework.data.repository.query.Param("userId") Long userId,
+            @org.springframework.data.repository.query.Param("region") String region);
 }

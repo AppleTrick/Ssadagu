@@ -97,6 +97,6 @@ public class UserAccountService {
         // 상태 업데이트
         verificationRepository.updateVerificationStatus(verification.getId(), "VERIFIED", LocalDateTime.now());
         userAccountRepository.updateVerifiedStatus(verification.getAccount().getId(), "VERIFIED");
-        userRepository.updateStatus(user.getId(), "ACTIVE");
+        userRepository.updateStatus(user.getId(), "ACCOUNT_VERIFIED");
     }
 }

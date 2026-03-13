@@ -24,4 +24,13 @@ public class UserController {
         UserResponseDto responseDto = userService.signup(requestDto);
         return ApiResponse.success(responseDto);
     }
+
+    @Operation(summary = "동네 인증", description = "1원 인증 완료 후 로그인된 계정에 동네 정보를 인증합니다.")
+    @PostMapping("/region-verify")
+    public ApiResponse<Void> verifyRegion(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.twotwo.ssadagu.global.security.CustomUserDetails userDetails,
+            @RequestBody @Valid com.twotwo.ssadagu.domain.user.dto.RegionVerifyRequestDto requestDto) {
+        userService.verifyRegion(userDetails.getUser().getId(), requestDto);
+        return ApiResponse.success(null);
+    }
 }

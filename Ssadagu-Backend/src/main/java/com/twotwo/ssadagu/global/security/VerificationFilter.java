@@ -27,6 +27,7 @@ public class VerificationFilter extends OncePerRequestFilter {
     private final List<String> whitelist = Arrays.asList(
             "/api/auth/**",
             "/api/users/signup",
+            "/api/users/region-verify",
             "/api/accounts/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
