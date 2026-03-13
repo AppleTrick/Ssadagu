@@ -45,7 +45,7 @@ class ProductServiceTest {
         ReflectionTestUtils.setField(seller, "id", 1L);
 
         ProductCreateRequestDto request = new ProductCreateRequestDto(
-                1L, "테스트 상품", "명품 시계입니다.", 100000L, "FASHION", "강남구");
+                1L, "테스트 상품", "명품 시계입니다.", 100000L, "FASHION", "강남구", java.util.List.of("url1", "url2"));
 
         Product product = Product.builder()
                 .seller(seller)
@@ -147,7 +147,7 @@ class ProductServiceTest {
         given(productRepository.findById(1L)).willReturn(Optional.of(product));
 
         ProductUpdateRequestDto request = new ProductUpdateRequestDto(
-                "수정된 이름", "내용수정", 2000L, "CATEGORY", "SEOUL", "RESERVED");
+                "수정된 이름", "내용수정", 2000L, "CATEGORY", "SEOUL", "RESERVED", java.util.List.of("newUrl1"));
 
         // when
         ProductResponseDto response = productService.updateProduct(1L, request);
@@ -181,5 +181,43 @@ class ProductServiceTest {
         // then
         assertThat(product.getStatus()).isEqualTo("DELETED");
         assertThat(product.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("이미지가 5개를 초과하면 상품 생성 시 예외가 발생한다.")
+    void createProduct_ImageLimitExceeded() {
+        // given
+        User seller = User.builder().build();
+        ReflectionTestUtils.setField(seller, "id", 1L);
+
+        ProductCreateRequestDto request = new ProductCreateRequestDto(
+                1L, "테스트 상품", "설명", 1000L, "CATEGORY", "REGION", 
+                java.util.List.of("1", "2", "3", "4", "5", "6"));
+
+        given(userRepository.findById(1L)).willReturn(Optional.of(seller));
+
+        // when & then
+        assertThatThrownBy(() -> productService.createProduct(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Images cannot exceed 5");
+    }
+
+    @Test
+    @DisplayName("이미지가 5개를 초과하면 상품 수정 시 예외가 발생한다.")
+    void updateProduct_ImageLimitExceeded() {
+        // given
+        Product product = Product.builder().status("ON_SALE").build();
+        ReflectionTestUtils.setField(product, "id", 1L);
+
+        given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+        ProductUpdateRequestDto request = new ProductUpdateRequestDto(
+                "제목", "설명", 1000L, "CATEGORY", "REGION", "ON_SALE", 
+                java.util.List.of("1", "2", "3", "4", "5", "6"));
+
+        // when & then
+        assertThatThrownBy(() -> productService.updateProduct(1L, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Images cannot exceed 5");
     }
 }

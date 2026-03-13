@@ -33,6 +33,8 @@ public class ProductResponseDto {
     private java.time.LocalDateTime createdAt;
     @Schema(description = "수정일시")
     private java.time.LocalDateTime updatedAt;
+    @Schema(description = "상품 이미지 목록")
+    private java.util.List<ProductImageResponseDto> images;
 
     public static ProductResponseDto from(Product entity) {
         return ProductResponseDto.builder()
@@ -46,8 +48,10 @@ public class ProductResponseDto {
                 .status(entity.getStatus())
                 .wishCount(entity.getWishCount())
                 .chatCount(entity.getChatCount())
-                .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .images(entity.getImages().stream()
+                        .map(ProductImageResponseDto::from)
+                        .collect(java.util.stream.Collectors.toList()))
                 .build();
     }
 }

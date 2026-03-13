@@ -51,6 +51,10 @@ public class Product extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<ProductImage> images = new java.util.ArrayList<>();
+
     public void update(String title, String description, Long price, String categoryCode, String regionName,
             String status) {
         if (title != null)

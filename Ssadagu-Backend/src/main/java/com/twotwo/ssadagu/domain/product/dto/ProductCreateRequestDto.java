@@ -23,4 +23,6 @@ public class ProductCreateRequestDto {
     private String categoryCode;
     @Schema(description = "지역명", example = "강남구")
     private String regionName;
+    @Schema(description = "상품 이미지 URL 목록")
+    private java.util.List<String> imageUrls;
 }
