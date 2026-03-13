@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import styled from '@emotion/styled';
@@ -30,16 +30,15 @@ interface ItemRegistrationFormProps {
 }
 
 const CATEGORIES = [
-// ... (omitted if not changing, but I need to show the context)
-  { code: 'ELECTRONICS', label: '전자기기' },
-  { code: 'CLOTHING', label: '의류' },
-  { code: 'BOOKS', label: '도서' },
-  { code: 'FURNITURE', label: '가구/인테리어' },
-  { code: 'SPORTS', label: '스포츠/레저' },
-  { code: 'BEAUTY', label: '뷰티/미용' },
+  { code: 'ELEC', label: '전자기기' },
+  { code: 'CLOT', label: '의류' },
+  { code: 'BOOK', label: '도서' },
+  { code: 'FURN', label: '가구/인테리어' },
+  { code: 'SPOR', label: '스포츠/레저' },
+  { code: 'BEAU', label: '뷰티/미용' },
   { code: 'FOOD', label: '식품' },
-  { code: 'KIDS', label: '유아동' },
-  { code: 'HOBBY', label: '취미/게임' },
+  { code: 'KID', label: '유아동' },
+  { code: 'HOBB', label: '취미/게임' },
   { code: 'ETC', label: '기타' },
 ];
 
@@ -356,6 +355,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -367,6 +367,19 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
       status: initialData?.status || 'ON_SALE',
     },
   });
+ 
+  useEffect(() => {
+    if (initialData) {
+      reset({
+        title: initialData.title,
+        categoryCode: initialData.categoryCode,
+        price: initialData.price?.toString() || '',
+        description: initialData.description,
+        regionName: initialData.regionName,
+        status: initialData.status,
+      });
+    }
+  }, [initialData, reset]);
 
   const handlePhotoAdd = () => {
     if (photoCount < 10) {
