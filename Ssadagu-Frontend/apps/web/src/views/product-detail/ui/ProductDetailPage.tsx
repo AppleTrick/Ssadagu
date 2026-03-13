@@ -12,6 +12,7 @@ import type { ProductDetail } from '@/entities/product';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useModalStore } from '@/shared/hooks/useModalStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
 
 const Page = styled.div`
@@ -209,6 +210,7 @@ export function ProductDetailPage() {
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const productId = Number(rawId);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const { alert: modalAlert, confirm: modalConfirm } = useModalStore();
   const [isWished, setIsWished] = useState(false);
 
   const { data: product, isLoading, isError, refetch } = useQuery<ProductDetail>({
@@ -258,13 +260,19 @@ export function ProductDetailPage() {
   const deleteMutation = useDeleteProduct();
 
   const handleDelete = async () => {
-    if (!window.confirm('정말 이 상품을 삭제하시겠습니까?')) return;
+    const isConfirmed = await modalConfirm({
+      title: '삭제 확인',
+      message: '정말 이 상품을 삭제하시겠습니까?',
+      variant: 'danger',
+    });
+    
+    if (!isConfirmed) return;
     
     try {
       await deleteMutation.mutateAsync(productId);
       router.replace('/home');
     } catch (err: any) {
-      alert(err.message || '삭제에 실패했습니다.');
+      modalAlert({ message: err.message || '삭제에 실패했습니다.' });
     }
   };
 
@@ -272,7 +280,9 @@ export function ProductDetailPage() {
     if (navigator.share) {
       navigator.share({ title: product?.title, url: window.location.href });
     } else {
-      navigator.clipboard.writeText(window.location.href).then(() => alert('링크가 복사되었습니다.'));
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        modalAlert({ message: '링크가 복사되었습니다.' });
+      });
     }
   };
 

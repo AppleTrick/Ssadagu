@@ -12,6 +12,7 @@ import { QuickMenuItem, MenuListItem, ConfirmDialog } from "@/shared/ui";
 import { apiClient } from "@/shared/api/client";
 import { ENDPOINTS } from "@/shared/api/endpoints";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { useModalStore } from "@/shared/hooks/useModalStore";
 import { ROUTES } from "@/shared/constants/routes";
 import {
   colors,
@@ -148,10 +149,7 @@ export function MyPage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
   const clearToken = useAuthStore((s) => s.clearToken);
-
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
-  const [logoutLoading, setLogoutLoading] = useState(false);
+  const { confirm: modalConfirm } = useModalStore();
 
   const {
     data: user,
@@ -175,27 +173,40 @@ export function MyPage() {
   });
 
   const handleLogout = async () => {
-    setLogoutLoading(true);
+    const isConfirmed = await modalConfirm({
+      title: "로그아웃",
+      message: "정말 로그아웃 하시겠습니까?",
+      confirmLabel: "로그아웃",
+    });
+
+    if (!isConfirmed) return;
+
     try {
       await apiClient.post(ENDPOINTS.AUTH.LOGOUT, {}, accessToken ?? undefined);
     } catch {
       // ignore
     } finally {
       clearToken();
-      setShowLogoutDialog(false);
-      setLogoutLoading(false);
       router.push("/");
     }
   };
 
   const handleWithdraw = async () => {
+    const isConfirmed = await modalConfirm({
+      title: "탈퇴하기",
+      message: "탈퇴하면 모든 정보가 삭제됩니다. 정말 탈퇴하시겠습니까?",
+      confirmLabel: "탈퇴",
+      variant: "danger",
+    });
+
+    if (!isConfirmed) return;
+
     try {
       await apiClient.post("/users/me/withdraw", {}, accessToken ?? undefined);
     } catch {
       // ignore
     } finally {
       clearToken();
-      setShowWithdrawDialog(false);
       router.push("/");
     }
   };
@@ -248,40 +259,16 @@ export function MyPage() {
             onClick={() => router.push(ROUTES.MY_ACCOUNT)}
           />
           <MenuListItem label="알림 설정" onClick={() => {}} />
-          <MenuListItem
-            label="로그아웃"
-            onClick={() => setShowLogoutDialog(true)}
-          />
+          <MenuListItem label="로그아웃" onClick={handleLogout} />
           <MenuListItem
             label="탈퇴하기"
             color="danger"
-            onClick={() => setShowWithdrawDialog(true)}
+            onClick={handleWithdraw}
           />
         </MenuGroup>
       </ContentArea>
 
       <BottomNav />
-
-      <ConfirmDialog
-        isOpen={showLogoutDialog}
-        onClose={() => setShowLogoutDialog(false)}
-        title="로그아웃"
-        message="정말 로그아웃 하시겠습니까?"
-        confirmLabel={logoutLoading ? "로그아웃 중..." : "로그아웃"}
-        cancelLabel="취소"
-        onConfirm={handleLogout}
-        variant="default"
-      />
-      <ConfirmDialog
-        isOpen={showWithdrawDialog}
-        onClose={() => setShowWithdrawDialog(false)}
-        title="탈퇴하기"
-        message="탈퇴하면 모든 정보가 삭제됩니다. 정말 탈퇴하시겠습니까?"
-        confirmLabel="탈퇴"
-        cancelLabel="취소"
-        onConfirm={handleWithdraw}
-        variant="danger"
-      />
     </Page>
   );
 }

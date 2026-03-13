@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useModalStore } from "@/shared/hooks/useModalStore";
 
 export default function DemandDepositTestPage() {
+  const { alert: modalAlert } = useModalStore();
   const [accountTypeUniqueNo, setAccountTypeUniqueNo] = useState("001-1-7a336b19062347"); // 초기값으로 테스트용 방금 생성된 상품 번호
   const [testUserKey, setTestUserKey] = useState("9d60d884-543c-4ff1-abe0-b6f70251bea3"); // 신규 발급 키
   const [accountNo, setAccountNo] = useState("");
@@ -39,7 +41,7 @@ export default function DemandDepositTestPage() {
 
   const handleInquireAccount = async () => {
     if (!accountNo) {
-      alert("조회할 계좌번호를 입력하세요.");
+      modalAlert({ message: "조회할 계좌번호를 입력하세요." });
       return;
     }
     setLoading(true);
@@ -64,7 +66,7 @@ export default function DemandDepositTestPage() {
 
   const handleHistory = async () => {
     if (!accountNo) {
-      alert("조회할 계좌번호를 먼저 입력하세요.");
+      modalAlert({ message: "조회할 계좌번호를 먼저 입력하세요." });
       return;
     }
     setLoading(true);

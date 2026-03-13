@@ -3,6 +3,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
+import { useModalStore } from '@/shared/hooks/useModalStore';
 import AttachmentMenu from './AttachmentMenu';
 
 interface ChatInputAreaProps {
@@ -12,6 +13,7 @@ interface ChatInputAreaProps {
 }
 
 const ChatInputArea = ({ onSend, bottomOffset = 0 }: ChatInputAreaProps) => {
+  const { alert: modalAlert } = useModalStore();
   const [value, setValue] = useState('');
   const [attachOpen, setAttachOpen] = useState(false);
 
@@ -34,8 +36,8 @@ const ChatInputArea = ({ onSend, bottomOffset = 0 }: ChatInputAreaProps) => {
       <AttachmentMenu
         isOpen={attachOpen}
         onClose={() => setAttachOpen(false)}
-        onSelectPhoto={() => alert('사진 첨부 기능은 준비 중입니다.')}
-        onSelectLocation={() => alert('위치 공유 기능은 준비 중입니다.')}
+        onSelectPhoto={() => modalAlert({ message: '사진 첨부 기능은 준비 중입니다.' })}
+        onSelectLocation={() => modalAlert({ message: '위치 공유 기능은 준비 중입니다.' })}
       />
     <Bar $bottomOffset={bottomOffset}>
       <AttachButton onClick={() => setAttachOpen((v) => !v)} aria-label="첨부">
