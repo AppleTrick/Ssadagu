@@ -23,4 +23,6 @@ public class ProductUpdateRequestDto {
     private String regionName;
     @Schema(description = "상품 상태", example = "ON_SALE")
     private String status;
+    @Schema(description = "상품 이미지 URL 목록")
+    private java.util.List<String> imageUrls;
 }

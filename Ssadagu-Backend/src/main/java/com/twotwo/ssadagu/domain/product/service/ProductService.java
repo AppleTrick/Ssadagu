@@ -39,6 +39,20 @@ public class ProductService {
                 .chatCount(0)
                 .build();
 
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            if (request.getImageUrls().size() > 5) {
+                throw new IllegalArgumentException("Images cannot exceed 5");
+            }
+            for (int i = 0; i < request.getImageUrls().size(); i++) {
+                com.twotwo.ssadagu.domain.product.entity.ProductImage image = com.twotwo.ssadagu.domain.product.entity.ProductImage.builder()
+                        .product(product)
+                        .imageUrl(request.getImageUrls().get(i))
+                        .sortOrder(i)
+                        .build();
+                product.getImages().add(image);
+            }
+        }
+
         Product savedProduct = productRepository.save(product);
         return ProductResponseDto.from(savedProduct);
     }
@@ -77,6 +91,21 @@ public class ProductService {
                 request.getCategoryCode(),
                 request.getRegionName(),
                 request.getStatus());
+
+        product.getImages().clear();
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            if (request.getImageUrls().size() > 5) {
+                throw new IllegalArgumentException("Images cannot exceed 5");
+            }
+            for (int i = 0; i < request.getImageUrls().size(); i++) {
+                com.twotwo.ssadagu.domain.product.entity.ProductImage image = com.twotwo.ssadagu.domain.product.entity.ProductImage.builder()
+                        .product(product)
+                        .imageUrl(request.getImageUrls().get(i))
+                        .sortOrder(i)
+                        .build();
+                product.getImages().add(image);
+            }
+        }
 
         return ProductResponseDto.from(product);
     }

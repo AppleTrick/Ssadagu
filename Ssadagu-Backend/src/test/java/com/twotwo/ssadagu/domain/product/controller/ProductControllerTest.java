@@ -48,12 +48,13 @@ class ProductControllerTest {
         void createProduct() throws Exception {
                 // given
                 ProductCreateRequestDto request = new ProductCreateRequestDto(
-                                1L, "TITLE", "DESC", 1000L, "CAT", "REGION");
+                                1L, "TITLE", "DESC", 1000L, "CAT", "REGION", java.util.List.of("url1"));
                 ProductResponseDto response = ProductResponseDto.builder()
                                 .id(1L)
                                 .title("TITLE")
                                 .price(1000L)
                                 .status("ON_SALE")
+                                .images(java.util.List.of(com.twotwo.ssadagu.domain.product.dto.ProductImageResponseDto.builder().id(1L).imageUrl("url1").build()))
                                 .build();
 
                 given(productService.createProduct(any(ProductCreateRequestDto.class))).willReturn(response);
@@ -64,7 +65,8 @@ class ProductControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.id").value(1L))
-                                .andExpect(jsonPath("$.title").value("TITLE"));
+                                .andExpect(jsonPath("$.title").value("TITLE"))
+                                .andExpect(jsonPath("$.images[0].imageUrl").value("url1"));
         }
 
         @Test
@@ -107,12 +109,13 @@ class ProductControllerTest {
         void updateProduct() throws Exception {
                 // given
                 ProductUpdateRequestDto request = new ProductUpdateRequestDto(
-                                "UPDATED TITLE", "DESC", 2000L, "CAT", "REGION", "RESERVED");
+                                "UPDATED TITLE", "DESC", 2000L, "CAT", "REGION", "RESERVED", java.util.List.of("url2"));
                 ProductResponseDto response = ProductResponseDto.builder()
                                 .id(1L)
                                 .title("UPDATED TITLE")
                                 .price(2000L)
                                 .status("RESERVED")
+                                .images(java.util.List.of(com.twotwo.ssadagu.domain.product.dto.ProductImageResponseDto.builder().id(2L).imageUrl("url2").build()))
                                 .build();
 
                 given(productService.updateProduct(eq(1L), any(ProductUpdateRequestDto.class))).willReturn(response);
@@ -123,7 +126,8 @@ class ProductControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.title").value("UPDATED TITLE"))
-                                .andExpect(jsonPath("$.status").value("RESERVED"));
+                                .andExpect(jsonPath("$.status").value("RESERVED"))
+                                .andExpect(jsonPath("$.images[0].imageUrl").value("url2"));
         }
 
         @Test
