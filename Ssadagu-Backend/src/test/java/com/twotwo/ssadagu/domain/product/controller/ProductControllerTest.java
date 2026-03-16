@@ -94,7 +94,7 @@ class ProductControllerTest {
                 ProductResponseDto p1 = ProductResponseDto.builder().id(1L).title("T1").build();
                 ProductResponseDto p2 = ProductResponseDto.builder().id(2L).title("T2").build();
 
-                given(productService.getProducts()).willReturn(List.of(p1, p2));
+                given(productService.getProducts(null)).willReturn(List.of(p1, p2));
 
                 // when & then
                 mockMvc.perform(get("/api/v1/products"))
@@ -102,6 +102,22 @@ class ProductControllerTest {
                                 .andExpect(jsonPath("$.length()").value(2))
                                 .andExpect(jsonPath("$[0].title").value("T1"))
                                 .andExpect(jsonPath("$[1].title").value("T2"));
+        }
+
+        @Test
+        @DisplayName("동네별 상품 목록 조회 API 호출 (GET /api/v1/products?regionName=강남구)")
+        void getProducts_withRegionName() throws Exception {
+                // given
+                ProductResponseDto p1 = ProductResponseDto.builder().id(1L).title("강남 상품").regionName("강남구").build();
+
+                given(productService.getProducts("강남구")).willReturn(List.of(p1));
+
+                // when & then
+                mockMvc.perform(get("/api/v1/products").param("regionName", "강남구"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(1))
+                                .andExpect(jsonPath("$[0].title").value("강남 상품"))
+                                .andExpect(jsonPath("$[0].regionName").value("강남구"));
         }
 
         @Test

@@ -68,9 +68,15 @@ public class ProductService {
         return ProductResponseDto.from(product);
     }
 
-    public List<ProductResponseDto> getProducts() {
-        return productRepository.findAll().stream()
-                .filter(p -> !"DELETED".equals(p.getStatus()) && p.getDeletedAt() == null)
+    public List<ProductResponseDto> getProducts(String regionName) {
+        List<Product> products;
+        if (regionName != null && !regionName.isBlank()) {
+            products = productRepository.findByRegionNameAndStatusNot(regionName, "DELETED");
+        } else {
+            products = productRepository.findByStatusNot("DELETED");
+        }
+        return products.stream()
+                .filter(p -> p.getDeletedAt() == null)
                 .map(ProductResponseDto::from)
                 .collect(Collectors.toList());
     }
