@@ -14,26 +14,44 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomService chatRoomService;
 
-    public ChatMessage saveMessage(Long roomId, Long senderId, String content, ChatMessage.MessageType type) {
+    public ChatMessage saveMessage(ChatMessage incomingMessage) {
         ChatMessage message = ChatMessage.builder()
-                .roomId(roomId)
-                .senderId(senderId)
-                .content(content)
-                .type(type)
+                .roomId(incomingMessage.getRoomId())
+                .senderId(incomingMessage.getSenderId())
+                .content(incomingMessage.getContent())
+                .type(incomingMessage.getType())
+                .imageUrl(incomingMessage.getImageUrl())
+                .latitude(incomingMessage.getLatitude())
+                .longitude(incomingMessage.getLongitude())
+                .locationName(incomingMessage.getLocationName())
                 .createdAt(LocalDateTime.now())
                 .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
         
         // Update ChatRoom's last message
-        boolean isBuyer = (senderId != null) && isSenderBuyer(roomId, senderId);
-        chatRoomService.updateLastMessage(roomId, content, isBuyer);
+        boolean isBuyer = (incomingMessage.getSenderId() != null) && isSenderBuyer(incomingMessage.getRoomId(), incomingMessage.getSenderId());
+        
+        // For image/map messages, we might want to display a different last message text
+        String lastMessageContent = incomingMessage.getContent();
+        if (incomingMessage.getType() == ChatMessage.MessageType.IMAGE) {
+            lastMessageContent = "(사진)";
+        } else if (incomingMessage.getType() == ChatMessage.MessageType.MAP) {
+            lastMessageContent = "(지도)";
+        }
+        
+        chatRoomService.updateLastMessage(incomingMessage.getRoomId(), lastMessageContent, isBuyer);
         
         return savedMessage;
     }
 
     public ChatMessage sendSystemMessage(Long roomId, String content, ChatMessage.MessageType type) {
-        return saveMessage(roomId, null, content, type);
+        ChatMessage sysMsg = ChatMessage.builder()
+                .roomId(roomId)
+                .content(content)
+                .type(type)
+                .build();
+        return saveMessage(sysMsg);
     }
 
     public List<ChatMessage> getChatHistory(Long roomId) {
