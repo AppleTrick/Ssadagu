@@ -17,12 +17,7 @@ public class ChatController {
     @MessageMapping("/chat/message")
     public void message(ChatMessage message) {
         // Save message to MongoDB and notify subscribers
-        ChatMessage savedMessage = chatMessageService.saveMessage(
-                message.getRoomId(),
-                message.getSenderId(),
-                message.getContent(),
-                message.getType()
-        );
+        ChatMessage savedMessage = chatMessageService.saveMessage(message);
         messagingTemplate.convertAndSend("/sub/chat/room/" + savedMessage.getRoomId(), savedMessage);
     }
 }
