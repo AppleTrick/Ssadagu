@@ -62,14 +62,14 @@ const ItemCard = ({ product, onClick }: ItemCardProps) => {
           <StatsContainer>
             <StatItem>
               {/* Chat bubble icon */}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill={colors.textSecondary}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={colors.textSecondary}>
                 <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
               </svg>
               {product.chatCount ?? 0}
             </StatItem>
             <StatItem>
               {/* Heart icon */}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill={colors.textSecondary}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={colors.textSecondary}>
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
               {product.wishCount ?? 0}
@@ -86,7 +86,7 @@ export default ItemCard;
 const Card = styled.div`
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   padding: 16px 20px;
   background: ${colors.surface};
@@ -169,7 +169,7 @@ const StatsContainer = styled.div`
 const StatItem = styled.span`
   display: flex;
   align-items: center;
-  gap: 3px;
-  font-size: ${typography.size.xs};
+  gap: 4px;
+  font-size: ${typography.size.sm};
   color: ${colors.textSecondary};
 `;

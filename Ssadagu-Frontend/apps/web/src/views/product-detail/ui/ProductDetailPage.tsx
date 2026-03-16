@@ -240,8 +240,9 @@ export function ProductDetailPage() {
   });
 
   useEffect(() => {
-    // Note: ProductDetail에는 isWished가 없으므로 API 변경 전까지는 false로 유지하거나
-    // wishCount 등을 활용한 추측이 필요함. 여기서는 API 스펙을 우선함.
+    if (product) {
+      setIsWished((product as any).isLiked ?? false);
+    }
   }, [product]);
 
   const wishMutation = useMutation({
@@ -252,8 +253,7 @@ export function ProductDetailPage() {
         accessToken ?? undefined,
       );
       if (!res.ok) throw new Error('찜 실패');
-      const json = await res.json() as { data?: { isWished: boolean } };
-      return json.data?.isWished ?? !isWished;
+      return !isWished;
     },
     onSuccess: (newWished) => {
       setIsWished(newWished);
