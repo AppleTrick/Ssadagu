@@ -40,4 +40,23 @@ public class ChatRoomController {
     public List<ChatMessage> getChatHistory(@PathVariable Long roomId) {
         return chatMessageService.getChatHistory(roomId);
     }
+
+    @Operation(summary = "내 채팅방 목록 조회", description = "사용자가 속한(구매자 또는 판매자) 모든 채팅방 목록을 조회합니다.")
+    @GetMapping("/rooms/user")
+    public ResponseEntity<List<com.twotwo.ssadagu.domain.chat.dto.ChatRoomResponseDto>> getChatRoomsByUser(@RequestParam Long userId) {
+        return ResponseEntity.ok(chatRoomService.getChatRoomsByUserId(userId));
+    }
+
+    @Operation(summary = "상품별 채팅방 목록 조회", description = "특정 상품에 대해 생성된 모든 채팅방 목록을 조회합니다.")
+    @GetMapping("/products/{productId}/rooms")
+    public ResponseEntity<List<com.twotwo.ssadagu.domain.chat.dto.ChatRoomResponseDto>> getChatRoomsByProduct(
+            @PathVariable Long productId, @RequestParam Long userId) {
+        return ResponseEntity.ok(chatRoomService.getChatRoomsByProductId(productId, userId));
+    }
+
+    @Operation(summary = "상품별 채팅방 개수 조회", description = "특정 상품에 대해 생성된 채팅방의 개수를 조회합니다.")
+    @GetMapping("/products/{productId}/rooms/count")
+    public ResponseEntity<Integer> getChatRoomCountByProduct(@PathVariable Long productId) {
+        return ResponseEntity.ok(chatRoomService.getChatRoomCountByProductId(productId));
+    }
 }

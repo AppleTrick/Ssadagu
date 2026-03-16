@@ -90,4 +90,22 @@ public class ChatRoomService {
         
         chatRoomRepository.save(updatedChatRoom);
     }
+    @Transactional(readOnly = true)
+    public java.util.List<com.twotwo.ssadagu.domain.chat.dto.ChatRoomResponseDto> getChatRoomsByUserId(Long userId) {
+        return chatRoomRepository.findByBuyerIdOrSellerId(userId, userId).stream()
+                .map(chatRoom -> com.twotwo.ssadagu.domain.chat.dto.ChatRoomResponseDto.from(chatRoom, userId))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<com.twotwo.ssadagu.domain.chat.dto.ChatRoomResponseDto> getChatRoomsByProductId(Long productId, Long userId) {
+        return chatRoomRepository.findByProductId(productId).stream()
+                .map(chatRoom -> com.twotwo.ssadagu.domain.chat.dto.ChatRoomResponseDto.from(chatRoom, userId))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public int getChatRoomCountByProductId(Long productId) {
+        return chatRoomRepository.countByProductId(productId);
+    }
 }
