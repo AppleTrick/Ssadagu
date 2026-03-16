@@ -262,21 +262,9 @@ export function ProductDetailPage() {
     },
   });
 
-  const chatMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiClient.post(
-        ENDPOINTS.CHATS.CREATE,
-        { productId, buyerId: myProfile?.id },
-        accessToken ?? undefined,
-      );
-      if (!res.ok) throw new Error('채팅방 생성 실패');
-      const json = await res.json() as { data?: { id: number }; id?: number };
-      return json.data ? json.data.id : json.id;
-    },
-    onSuccess: (roomId) => {
-      if (roomId) router.push(`/chat/${roomId}`);
-    },
-  });
+  const handleChatClick = () => {
+    router.push(`/chat/new?productId=${productId}`);
+  };
 
   const deleteMutation = useDeleteProduct();
 
@@ -371,7 +359,7 @@ export function ProductDetailPage() {
               isMine={product.isMine ?? false}
               isWished={isWished}
               onWish={() => wishMutation.mutate()}
-              onChat={() => chatMutation.mutate()}
+              onChat={handleChatClick}
               onEdit={() => router.push(`/products/${productId}/edit`)}
               onDelete={handleDelete}
               bottomOffset={0}

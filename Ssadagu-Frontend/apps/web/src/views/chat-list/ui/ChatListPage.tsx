@@ -159,12 +159,12 @@ export function ChatListPage() {
           <>
             {filteredRooms.length > 0 ? (
               <ListWrapper>
-                {filteredRooms.map((room) => (
-                  <li key={room.id}>
+                {filteredRooms.map((room: any) => (
+                  <li key={room.roomId || room.id}>
                     <ChatListItem
                       room={room}
                       currentUserId={currentUser?.id}
-                      onClick={() => router.push(`/chat/${room.id}`)}
+                      onClick={() => router.push(`/chat/${room.roomId || room.id}`)}
                     />
                   </li>
                 ))}
