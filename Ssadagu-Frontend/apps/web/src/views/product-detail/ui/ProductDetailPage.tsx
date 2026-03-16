@@ -369,7 +369,7 @@ export function ProductDetailPage() {
 
             <ItemDetailBottomBar
               product={product as any}
-              isMine={myProfile?.id === product.sellerId}
+              isMine={product.isMine ?? false}
               isWished={isWished}
               onWish={() => wishMutation.mutate()}
               onChat={() => chatMutation.mutate()}
