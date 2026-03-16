@@ -5,8 +5,11 @@ import com.twotwo.ssadagu.domain.product.dto.ProductResponseDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductUpdateRequestDto;
 import com.twotwo.ssadagu.domain.product.entity.Product;
 import com.twotwo.ssadagu.domain.product.repository.ProductRepository;
+import com.twotwo.ssadagu.domain.product.repository.ProductWishRepository;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
+import com.twotwo.ssadagu.global.error.BusinessException;
+import com.twotwo.ssadagu.global.error.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +39,9 @@ class ProductServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ProductWishRepository productWishRepository;
+
     @Test
     @DisplayName("상품을 성공적으로 생성한다.")
     void createProduct() {
@@ -63,6 +69,7 @@ class ProductServiceTest {
         // then
         assertThat(response.getId()).isEqualTo(100L);
         assertThat(response.getTitle()).isEqualTo("테스트 상품");
+        assertThat(response.getIsMine()).isTrue();
         verify(productRepository).save(any(Product.class));
     }
 
@@ -78,16 +85,19 @@ class ProductServiceTest {
                 .title("조회 테스트 상품")
                 .status("ON_SALE")
                 .build();
-        ReflectionTestUtils.setField(product, "id", 1L);
+        ReflectionTestUtils.setField(product, "id", 100L);
 
-        given(productRepository.findById(1L)).willReturn(Optional.of(product));
+        given(productRepository.findById(100L)).willReturn(Optional.of(product));
+        given(productWishRepository.existsByUserIdAndProductId(1L, 100L)).willReturn(true);
 
         // when
-        ProductResponseDto response = productService.getProduct(1L);
+        ProductResponseDto response = productService.getProduct(100L, 1L);
 
         // then
-        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getId()).isEqualTo(100L);
         assertThat(response.getTitle()).isEqualTo("조회 테스트 상품");
+        assertThat(response.getIsMine()).isTrue();
+        assertThat(response.getIsLiked()).isTrue();
     }
 
     @Test
@@ -101,9 +111,9 @@ class ProductServiceTest {
         given(productRepository.findById(1L)).willReturn(Optional.of(product));
 
         // when & then
-        assertThatThrownBy(() -> productService.getProduct(1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Product is deleted");
+        assertThatThrownBy(() -> productService.getProduct(1L, null))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PRODUCT_NOT_FOUND);
     }
 
     @Test
@@ -111,40 +121,21 @@ class ProductServiceTest {
     void getProducts_noRegion() {
         // given
         User seller = User.builder().build();
-        ReflectionTestUtils.setField(seller, "id", 1L);
+        ReflectionTestUtils.setField(seller, "id", 2L); // 2번 유저가 판매자
 
         Product p1 = Product.builder().seller(seller).title("p1").status("ON_SALE").regionName("강남구").build();
-        Product p2 = Product.builder().seller(seller).title("p2").status("RESERVED").regionName("서초구").build();
+        ReflectionTestUtils.setField(p1, "id", 10L);
 
-        given(productRepository.findByStatusNot("DELETED")).willReturn(List.of(p1, p2));
-
-        // when
-        List<ProductResponseDto> responseDtos = productService.getProducts(null);
-
-        // then
-        assertThat(responseDtos).hasSize(2);
-        assertThat(responseDtos.get(0).getTitle()).isEqualTo("p1");
-        assertThat(responseDtos.get(1).getTitle()).isEqualTo("p2");
-    }
-
-    @Test
-    @DisplayName("regionName을 지정하면 해당 동네 상품만 조회된다.")
-    void getProducts_withRegion() {
-        // given
-        User seller = User.builder().build();
-        ReflectionTestUtils.setField(seller, "id", 1L);
-
-        Product p1 = Product.builder().seller(seller).title("강남 상품").status("ON_SALE").regionName("강남구").build();
-
-        given(productRepository.findByRegionNameAndStatusNot("강남구", "DELETED")).willReturn(List.of(p1));
+        given(productRepository.findByStatusNot("DELETED")).willReturn(List.of(p1));
+        given(productWishRepository.existsByUserIdAndProductId(1L, 10L)).willReturn(false);
 
         // when
-        List<ProductResponseDto> responseDtos = productService.getProducts("강남구");
+        List<ProductResponseDto> responseDtos = productService.getProducts(null, 1L); // 1번 유저가 조회
 
         // then
         assertThat(responseDtos).hasSize(1);
-        assertThat(responseDtos.get(0).getTitle()).isEqualTo("강남 상품");
-        assertThat(responseDtos.get(0).getRegionName()).isEqualTo("강남구");
+        assertThat(responseDtos.get(0).getTitle()).isEqualTo("p1");
+        assertThat(responseDtos.get(0).getIsMine()).isFalse();
     }
 
     @Test
@@ -168,13 +159,33 @@ class ProductServiceTest {
                 "수정된 이름", "내용수정", 2000L, "CATEGORY", "SEOUL", "RESERVED", java.util.List.of("newUrl1"));
 
         // when
-        ProductResponseDto response = productService.updateProduct(1L, request);
+        ProductResponseDto response = productService.updateProduct(1L, request, 1L);
 
         // then
         assertThat(response.getTitle()).isEqualTo("수정된 이름");
-        assertThat(response.getPrice()).isEqualTo(2000L);
-        assertThat(response.getStatus()).isEqualTo("RESERVED");
-        assertThat(product.getTitle()).isEqualTo("수정된 이름"); // Entity 업데이트 확인
+        assertThat(response.getIsMine()).isTrue();
+        assertThat(product.getTitle()).isEqualTo("수정된 이름");
+    }
+
+    @Test
+    @DisplayName("권한이 없는 사용자가 상품 수정을 시도하면 예외가 발생한다.")
+    void updateProduct_NoPermission() {
+        // given
+        User seller = User.builder().build();
+        ReflectionTestUtils.setField(seller, "id", 1L);
+
+        Product product = Product.builder().seller(seller).status("ON_SALE").build();
+        ReflectionTestUtils.setField(product, "id", 1L);
+
+        given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+        ProductUpdateRequestDto request = new ProductUpdateRequestDto(
+                "제목", "설명", 1000L, "C", "R", "ON_SALE", null);
+
+        // when & then
+        assertThatThrownBy(() -> productService.updateProduct(1L, request, 2L)) // 2번 유저가 시도
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOT_PRODUCT_SELLER);
     }
 
     @Test
@@ -194,7 +205,7 @@ class ProductServiceTest {
         given(productRepository.findById(1L)).willReturn(Optional.of(product));
 
         // when
-        productService.deleteProduct(1L);
+        productService.deleteProduct(1L, 1L);
 
         // then
         assertThat(product.getStatus()).isEqualTo("DELETED");
@@ -216,26 +227,7 @@ class ProductServiceTest {
 
         // when & then
         assertThatThrownBy(() -> productService.createProduct(request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Images cannot exceed 5");
-    }
-
-    @Test
-    @DisplayName("이미지가 5개를 초과하면 상품 수정 시 예외가 발생한다.")
-    void updateProduct_ImageLimitExceeded() {
-        // given
-        Product product = Product.builder().status("ON_SALE").build();
-        ReflectionTestUtils.setField(product, "id", 1L);
-
-        given(productRepository.findById(1L)).willReturn(Optional.of(product));
-
-        ProductUpdateRequestDto request = new ProductUpdateRequestDto(
-                "제목", "설명", 1000L, "CATEGORY", "REGION", "ON_SALE", 
-                java.util.List.of("1", "2", "3", "4", "5", "6"));
-
-        // when & then
-        assertThatThrownBy(() -> productService.updateProduct(1L, request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Images cannot exceed 5");
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
     }
 }

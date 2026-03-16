@@ -35,8 +35,16 @@ public class ProductResponseDto {
     private java.time.LocalDateTime updatedAt;
     @Schema(description = "상품 이미지 목록")
     private java.util.List<ProductImageResponseDto> images;
+    @Schema(description = "본인 게시글 여부", example = "true")
+    private Boolean isMine;
+    @Schema(description = "찜 여부", example = "false")
+    private Boolean isLiked;
 
     public static ProductResponseDto from(Product entity) {
+        return from(entity, null, false);
+    }
+
+    public static ProductResponseDto from(Product entity, Long currentUserId, boolean isLiked) {
         return ProductResponseDto.builder()
                 .id(entity.getId())
                 .sellerId(entity.getSeller().getId())
@@ -53,6 +61,8 @@ public class ProductResponseDto {
                 .images(entity.getImages().stream()
                         .map(ProductImageResponseDto::from)
                         .collect(java.util.stream.Collectors.toList()))
+                .isMine(currentUserId != null && entity.getSeller().getId().equals(currentUserId))
+                .isLiked(isLiked)
                 .build();
     }
 }

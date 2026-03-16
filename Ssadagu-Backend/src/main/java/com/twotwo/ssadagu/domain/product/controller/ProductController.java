@@ -27,23 +27,31 @@ public class ProductController {
 
     @Operation(summary = "상품 등록", description = "새로운 상품을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ProductResponseDto> createProduct(@RequestBody ProductCreateRequestDto request) {
+    public ResponseEntity<ProductResponseDto> createProduct(
+            @RequestBody ProductCreateRequestDto request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        // 등록 시에도 토큰의 유저와 요청의 sellerId가 일치하는지 검증 (필요시)
         ProductResponseDto response = productService.createProduct(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @Operation(summary = "상품 상세 조회", description = "특정 상품의 상세 정보를 조회합니다.")
     @GetMapping("/{productId}")
-    public ResponseEntity<ProductResponseDto> getProduct(@PathVariable Long productId) {
-        ProductResponseDto response = productService.getProduct(productId);
+    public ResponseEntity<ProductResponseDto> getProduct(
+            @PathVariable Long productId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long currentUserId = (userDetails != null) ? userDetails.getUser().getId() : null;
+        ProductResponseDto response = productService.getProduct(productId, currentUserId);
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "상품 목록 조회", description = "상품 목록을 조회합니다. regionName 파라미터로 동네별 필터링이 가능합니다.")
     @GetMapping
     public ResponseEntity<List<ProductResponseDto>> getProducts(
-            @RequestParam(required = false) String regionName) {
-        List<ProductResponseDto> response = productService.getProducts(regionName);
+            @RequestParam(required = false) String regionName,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long currentUserId = (userDetails != null) ? userDetails.getUser().getId() : null;
+        List<ProductResponseDto> response = productService.getProducts(regionName, currentUserId);
         return ResponseEntity.ok(response);
     }
 
@@ -51,15 +59,24 @@ public class ProductController {
     @PatchMapping("/{productId}")
     public ResponseEntity<ProductResponseDto> updateProduct(
             @PathVariable Long productId,
-            @RequestBody ProductUpdateRequestDto request) {
-        ProductResponseDto response = productService.updateProduct(productId, request);
+            @RequestBody ProductUpdateRequestDto request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INTERNAL_SERVER_ERROR); // 실제로는 Security에서 걸러지나 NPE 방지 차원
+        }
+        ProductResponseDto response = productService.updateProduct(productId, request, userDetails.getUser().getId());
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "상품 삭제", description = "상품을 삭제합니다.")
     @DeleteMapping("/{productId}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long productId) {
-        productService.deleteProduct(productId);
+    public ResponseEntity<Void> deleteProduct(
+            @PathVariable Long productId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        productService.deleteProduct(productId, userDetails.getUser().getId());
         return ResponseEntity.noContent().build();
     }
 

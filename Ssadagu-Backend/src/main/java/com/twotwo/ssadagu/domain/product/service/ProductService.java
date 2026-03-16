@@ -21,11 +21,12 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final com.twotwo.ssadagu.domain.product.repository.ProductWishRepository productWishRepository;
 
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequestDto request) {
         User seller = userRepository.findById(request.getSellerId())
-                .orElseThrow(() -> new IllegalArgumentException("Seller not found"));
+                .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.USER_NOT_FOUND));
 
         Product product = Product.builder()
                 .seller(seller)
@@ -41,7 +42,7 @@ public class ProductService {
 
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
             if (request.getImageUrls().size() > 5) {
-                throw new IllegalArgumentException("Images cannot exceed 5");
+                throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INVALID_INPUT_VALUE);
             }
             for (int i = 0; i < request.getImageUrls().size(); i++) {
                 com.twotwo.ssadagu.domain.product.entity.ProductImage image = com.twotwo.ssadagu.domain.product.entity.ProductImage.builder()
@@ -54,40 +55,58 @@ public class ProductService {
         }
 
         Product savedProduct = productRepository.save(product);
-        return ProductResponseDto.from(savedProduct);
+        return ProductResponseDto.from(savedProduct, seller.getId(), false);
     }
 
-    public ProductResponseDto getProduct(Long productId) {
+    public ProductResponseDto getProduct(Long productId, Long currentUserId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+                .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.PRODUCT_NOT_FOUND));
 
         if ("DELETED".equals(product.getStatus()) || product.getDeletedAt() != null) {
-            throw new IllegalArgumentException("Product is deleted");
+            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.PRODUCT_NOT_FOUND);
         }
 
-        return ProductResponseDto.from(product);
+        boolean isLiked = false;
+        if (currentUserId != null) {
+            isLiked = productWishRepository.existsByUserIdAndProductId(currentUserId, productId);
+        }
+
+        return ProductResponseDto.from(product, currentUserId, isLiked);
     }
 
-    public List<ProductResponseDto> getProducts(String regionName) {
+    public List<ProductResponseDto> getProducts(String regionName, Long currentUserId) {
         List<Product> products;
         if (regionName != null && !regionName.isBlank()) {
             products = productRepository.findByRegionNameAndStatusNot(regionName, "DELETED");
         } else {
             products = productRepository.findByStatusNot("DELETED");
         }
+        
         return products.stream()
                 .filter(p -> p.getDeletedAt() == null)
-                .map(ProductResponseDto::from)
+                .map(p -> {
+                    boolean isLiked = false;
+                    if (currentUserId != null) {
+                        isLiked = productWishRepository.existsByUserIdAndProductId(currentUserId, p.getId());
+                    }
+                    return ProductResponseDto.from(p, currentUserId, isLiked);
+                })
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public ProductResponseDto updateProduct(Long productId, ProductUpdateRequestDto request) {
+    public ProductResponseDto updateProduct(Long productId, ProductUpdateRequestDto request, Long currentUserId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+                .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.PRODUCT_NOT_FOUND));
 
+        // 삭제 확인
         if ("DELETED".equals(product.getStatus()) || product.getDeletedAt() != null) {
-            throw new IllegalArgumentException("Product is deleted");
+            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        // 권한 확인
+        if (!product.getSeller().getId().equals(currentUserId)) {
+            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.NOT_PRODUCT_SELLER);
         }
 
         product.update(
@@ -101,7 +120,7 @@ public class ProductService {
         product.getImages().clear();
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
             if (request.getImageUrls().size() > 5) {
-                throw new IllegalArgumentException("Images cannot exceed 5");
+                throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INVALID_INPUT_VALUE);
             }
             for (int i = 0; i < request.getImageUrls().size(); i++) {
                 com.twotwo.ssadagu.domain.product.entity.ProductImage image = com.twotwo.ssadagu.domain.product.entity.ProductImage.builder()
@@ -113,13 +132,19 @@ public class ProductService {
             }
         }
 
-        return ProductResponseDto.from(product);
+        boolean isLiked = productWishRepository.existsByUserIdAndProductId(currentUserId, productId);
+        return ProductResponseDto.from(product, currentUserId, isLiked);
     }
 
     @Transactional
-    public void deleteProduct(Long productId) {
+    public void deleteProduct(Long productId, Long currentUserId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+                .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.PRODUCT_NOT_FOUND));
+
+        // 권한 확인
+        if (!product.getSeller().getId().equals(currentUserId)) {
+            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.NOT_PRODUCT_SELLER);
+        }
 
         product.markAsDeleted();
     }
