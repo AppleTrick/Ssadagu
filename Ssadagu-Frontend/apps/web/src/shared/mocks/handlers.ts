@@ -18,7 +18,11 @@ export const handlers = [
   // ── Auth ──────────────────────────────────────────────────────────────
   http.post(`${BASE}/auth/login`, async () => {
     await d();
-    return HttpResponse.json({ data: { accessToken: MOCK_TOKEN } });
+    return HttpResponse.json({ data: { accessToken: MOCK_TOKEN, refreshToken: 'mock-refresh-token' } });
+  }),
+  http.post(`${BASE}/auth/reissue`, async () => {
+    await d();
+    return HttpResponse.json({ data: { accessToken: MOCK_TOKEN, refreshToken: 'mock-refresh-token' } });
   }),
   http.post(`${BASE}/auth/logout`, async () => {
     await d(100);
