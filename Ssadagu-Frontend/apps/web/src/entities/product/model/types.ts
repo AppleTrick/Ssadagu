@@ -38,6 +38,8 @@ export interface ProductSummary {
   createdAt: string;
   updatedAt: string;
   thumbnailUrl?: string | null;
+  isMine?: boolean;
+  isLiked?: boolean;
 }
 
 export interface ProductDetail {
@@ -53,6 +55,8 @@ export interface ProductDetail {
   chatCount: number;
   createdAt: string;
   updatedAt: string;
+  isMine?: boolean;
+  isLiked?: boolean;
 }
 
 export interface CreateProductRequest {

@@ -2,8 +2,10 @@
 
 import { useEffect, useRef } from 'react';
 import styled from '@emotion/styled';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { apiClient } from '@/shared/api/client';
+import { ENDPOINTS } from '@/shared/api/endpoints';
 import { ItemCard, type ProductSummary, useInfiniteProducts } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { typography, colors } from '@/shared/styles/theme';
@@ -58,8 +60,37 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
     console.log('Current Token:', accessToken);
   }, [accessToken]);
 
+  const queryClient = useQueryClient();
+
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteProducts(searchQuery);
+
+  const wishMutation = useMutation({
+    mutationFn: async ({ productId, isWished }: { productId: number; isWished: boolean }) => {
+      const res = await apiClient.post(
+        ENDPOINTS.PRODUCTS.WISH(productId),
+        {},
+        accessToken ?? undefined,
+      );
+      if (!res.ok) throw new Error('찜 실패');
+      return { productId, isWished: !isWished };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    onError: () => {
+      alert('찜하기에 실패했습니다. 다시 시도해주세요.');
+    }
+  });
+
+  const handleWishClick = (e: React.MouseEvent, productId: number, isWished: boolean) => {
+    e.stopPropagation();
+    if (!accessToken) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    wishMutation.mutate({ productId, isWished });
+  };
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -99,7 +130,11 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
       <ListWrapper>
         {allProducts.map((product) => (
           <li key={product.id}>
-            <ItemCard product={product} onClick={() => router.push(`/products/${product.id}`)} />
+            <ItemCard 
+              product={product} 
+              onClick={() => router.push(`/products/${product.id}`)} 
+              onWishClick={(e) => handleWishClick(e, product.id, !!product.isLiked)}
+            />
           </li>
         ))}
       </ListWrapper>

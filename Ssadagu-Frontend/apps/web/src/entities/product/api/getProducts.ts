@@ -28,5 +28,7 @@ export const getProducts = async (accessToken?: string): Promise<ProductSummary[
     chatCount: item.chatCount ?? 0,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt ?? '',
+    isMine: item.isMine,
+    isLiked: item.isLiked,
   }));
 };

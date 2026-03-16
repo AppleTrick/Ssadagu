@@ -7,6 +7,7 @@ import type { ProductSummary } from '../model/types';
 interface ItemCardProps {
   product: ProductSummary;
   onClick?: () => void;
+  onWishClick?: (e: React.MouseEvent) => void;
 }
 
 const formatPrice = (price: number) =>
@@ -42,7 +43,7 @@ const formatTimeAgo = (dateInput: string | number[] | null | undefined) => {
   return `${days}일 전`;
 };
 
-const ItemCard = ({ product, onClick }: ItemCardProps) => {
+const ItemCard = ({ product, onClick, onWishClick }: ItemCardProps) => {
   return (
     <Card onClick={onClick}>
       <Thumbnail>
@@ -69,9 +70,26 @@ const ItemCard = ({ product, onClick }: ItemCardProps) => {
             </StatItem>
             <StatItem>
               {/* Heart icon */}
-              <svg width="15" height="15" viewBox="0 0 24 24" fill={colors.textSecondary}>
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
+              <WishButton 
+                onClick={(e) => {
+                  if (onWishClick) {
+                    e.stopPropagation();
+                    onWishClick(e);
+                  }
+                }}
+                disabled={!onWishClick}
+              >
+                <svg 
+                  width="15" 
+                  height="15" 
+                  viewBox="0 0 24 24" 
+                  fill={product.isLiked ? colors.red : 'none'} 
+                  stroke={product.isLiked ? colors.red : colors.textSecondary} 
+                  strokeWidth="2"
+                >
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </WishButton>
               {product.wishCount ?? 0}
             </StatItem>
           </StatsContainer>
@@ -172,4 +190,17 @@ const StatItem = styled.span`
   gap: 4px;
   font-size: ${typography.size.sm};
   color: ${colors.textSecondary};
+`;
+
+const WishButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  &:disabled {
+    cursor: default;
+  }
 `;
