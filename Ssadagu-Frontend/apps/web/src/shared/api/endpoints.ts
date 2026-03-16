@@ -23,9 +23,10 @@ export const ENDPOINTS = {
     WISH: (id: number) => `/v1/products/${id}/wish`,
   },
   CHATS: {
-    ROOMS: '/chats/rooms',
-    CREATE: '/chats/rooms',
-    MESSAGES: (roomId: number) => `/chats/rooms/${roomId}/messages`,
+    USER_ROOMS: '/chat/rooms/user',
+    CREATE: '/chat/rooms',
+    DETAIL: (roomId: number) => `/chat/rooms/${roomId}`,
+    MESSAGES: (roomId: number) => `/chat/rooms/${roomId}/messages`,
   },
   TRANSFERS: {
     BASE: '/transfers',

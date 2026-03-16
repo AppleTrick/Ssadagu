@@ -5,7 +5,7 @@ import { colors, typography } from '@/shared/styles/theme';
 import type { ChatRoom } from '../model/types';
 
 interface ChatListItemProps {
-  room: ChatRoom;
+  room: any;
   currentUserId?: number;
   onClick?: () => void;
 }
@@ -30,9 +30,7 @@ const formatTime = (dateStr: string | null) => {
 };
 
 const ChatListItem = ({ room, currentUserId, onClick }: ChatListItemProps) => {
-  const otherNickname = currentUserId === room.buyerId
-    ? room.sellerNickname
-    : room.buyerNickname;
+  const otherNickname = room.partnerNickname || room.buyerNickname || '상대방';
 
   return (
     <Container onClick={onClick}>
