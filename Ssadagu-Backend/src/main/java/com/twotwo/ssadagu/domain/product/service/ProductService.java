@@ -22,9 +22,10 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final com.twotwo.ssadagu.domain.product.repository.ProductWishRepository productWishRepository;
+    private final com.twotwo.ssadagu.global.service.S3Service s3Service;
 
     @Transactional
-    public ProductResponseDto createProduct(ProductCreateRequestDto request) {
+    public ProductResponseDto createProduct(ProductCreateRequestDto request, List<org.springframework.web.multipart.MultipartFile> imageFiles) {
         User seller = userRepository.findById(request.getSellerId())
                 .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.USER_NOT_FOUND));
 
@@ -95,7 +96,7 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponseDto updateProduct(Long productId, ProductUpdateRequestDto request, Long currentUserId) {
+    public ProductResponseDto updateProduct(Long productId, ProductUpdateRequestDto request, List<org.springframework.web.multipart.MultipartFile> imageFiles, Long currentUserId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.PRODUCT_NOT_FOUND));
 
@@ -117,15 +118,17 @@ public class ProductService {
                 request.getRegionName(),
                 request.getStatus());
 
-        product.getImages().clear();
-        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            if (request.getImageUrls().size() > 5) {
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            if (imageFiles.size() > 5) {
                 throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INVALID_INPUT_VALUE);
             }
-            for (int i = 0; i < request.getImageUrls().size(); i++) {
+            // 기존 이미지 삭제 (S3에서도 삭제 연동 시 여기에 추가 가능)
+            product.getImages().clear();
+            for (int i = 0; i < imageFiles.size(); i++) {
+                String imageUrl = s3Service.uploadImage(imageFiles.get(i));
                 com.twotwo.ssadagu.domain.product.entity.ProductImage image = com.twotwo.ssadagu.domain.product.entity.ProductImage.builder()
                         .product(product)
-                        .imageUrl(request.getImageUrls().get(i))
+                        .imageUrl(imageUrl)
                         .sortOrder(i)
                         .build();
                 product.getImages().add(image);

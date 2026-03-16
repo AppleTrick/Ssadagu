@@ -26,12 +26,12 @@ public class ProductController {
     private final ProductWishService productWishService;
 
     @Operation(summary = "상품 등록", description = "새로운 상품을 등록합니다.")
-    @PostMapping
+    @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDto> createProduct(
-            @RequestBody ProductCreateRequestDto request,
+            @RequestPart("request") ProductCreateRequestDto request,
+            @RequestPart(value = "images", required = false) List<org.springframework.web.multipart.MultipartFile> images,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        // 등록 시에도 토큰의 유저와 요청의 sellerId가 일치하는지 검증 (필요시)
-        ProductResponseDto response = productService.createProduct(request);
+        ProductResponseDto response = productService.createProduct(request, images);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -56,15 +56,16 @@ public class ProductController {
     }
 
     @Operation(summary = "상품 수정", description = "등록된 상품 정보를 수정합니다.")
-    @PatchMapping("/{productId}")
+    @PatchMapping(value = "/{productId}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponseDto> updateProduct(
             @PathVariable Long productId,
-            @RequestBody ProductUpdateRequestDto request,
+            @RequestPart("request") ProductUpdateRequestDto request,
+            @RequestPart(value = "images", required = false) List<org.springframework.web.multipart.MultipartFile> images,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null) {
             throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INTERNAL_SERVER_ERROR); // 실제로는 Security에서 걸러지나 NPE 방지 차원
         }
-        ProductResponseDto response = productService.updateProduct(productId, request, userDetails.getUser().getId());
+        ProductResponseDto response = productService.updateProduct(productId, request, images, userDetails.getUser().getId());
         return ResponseEntity.ok(response);
     }
 
