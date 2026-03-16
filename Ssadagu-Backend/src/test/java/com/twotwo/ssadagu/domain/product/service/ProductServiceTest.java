@@ -42,6 +42,9 @@ class ProductServiceTest {
     @Mock
     private ProductWishRepository productWishRepository;
 
+    @Mock
+    private com.twotwo.ssadagu.global.service.S3Service s3Service;
+
     @Test
     @DisplayName("상품을 성공적으로 생성한다.")
     void createProduct() {
@@ -64,7 +67,7 @@ class ProductServiceTest {
         given(productRepository.save(any(Product.class))).willReturn(product);
 
         // when
-        ProductResponseDto response = productService.createProduct(request);
+        ProductResponseDto response = productService.createProduct(request, null);
 
         // then
         assertThat(response.getId()).isEqualTo(100L);
@@ -159,7 +162,7 @@ class ProductServiceTest {
                 "수정된 이름", "내용수정", 2000L, "CATEGORY", "SEOUL", "RESERVED", java.util.List.of("newUrl1"));
 
         // when
-        ProductResponseDto response = productService.updateProduct(1L, request, 1L);
+        ProductResponseDto response = productService.updateProduct(1L, request, null, 1L);
 
         // then
         assertThat(response.getTitle()).isEqualTo("수정된 이름");
@@ -183,7 +186,7 @@ class ProductServiceTest {
                 "제목", "설명", 1000L, "C", "R", "ON_SALE", null);
 
         // when & then
-        assertThatThrownBy(() -> productService.updateProduct(1L, request, 2L)) // 2번 유저가 시도
+        assertThatThrownBy(() -> productService.updateProduct(1L, request, null, 2L)) // 2번 유저가 시도
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOT_PRODUCT_SELLER);
     }
@@ -226,7 +229,14 @@ class ProductServiceTest {
         given(userRepository.findById(1L)).willReturn(Optional.of(seller));
 
         // when & then
-        assertThatThrownBy(() -> productService.createProduct(request))
+        assertThatThrownBy(() -> productService.createProduct(request, List.of(
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class)
+        )))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
     }

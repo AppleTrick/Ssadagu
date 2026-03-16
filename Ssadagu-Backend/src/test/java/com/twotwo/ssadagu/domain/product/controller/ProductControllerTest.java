@@ -78,12 +78,17 @@ class ProductControllerTest {
                                 .images(java.util.List.of(com.twotwo.ssadagu.domain.product.dto.ProductImageResponseDto.builder().id(1L).imageUrl("url1").build()))
                                 .build();
 
-                given(productService.createProduct(any(ProductCreateRequestDto.class))).willReturn(response);
+                org.springframework.mock.web.MockMultipartFile requestPart = new org.springframework.mock.web.MockMultipartFile(
+                                "request", "", "application/json", objectMapper.writeValueAsString(request).getBytes());
+                org.springframework.mock.web.MockMultipartFile imagePart = new org.springframework.mock.web.MockMultipartFile(
+                                "images", "test.jpg", "image/jpeg", "test image content".getBytes());
+
+                given(productService.createProduct(any(ProductCreateRequestDto.class), any())).willReturn(response);
 
                 // when & then
-                mockMvc.perform(post("/api/v1/products")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                mockMvc.perform(multipart("/api/v1/products")
+                                .file(requestPart)
+                                .file(imagePart))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.id").value(1L))
                                 .andExpect(jsonPath("$.title").value("TITLE"))
@@ -155,12 +160,18 @@ class ProductControllerTest {
                                 .images(java.util.List.of(com.twotwo.ssadagu.domain.product.dto.ProductImageResponseDto.builder().id(2L).imageUrl("url2").build()))
                                 .build();
 
-                given(productService.updateProduct(eq(1L), any(ProductUpdateRequestDto.class), any())).willReturn(response);
+                org.springframework.mock.web.MockMultipartFile requestPart = new org.springframework.mock.web.MockMultipartFile(
+                                "request", "", "application/json", objectMapper.writeValueAsString(request).getBytes());
+                org.springframework.mock.web.MockMultipartFile imagePart = new org.springframework.mock.web.MockMultipartFile(
+                                "images", "updated.jpg", "image/jpeg", "updated image content".getBytes());
+
+                given(productService.updateProduct(eq(1L), any(ProductUpdateRequestDto.class), any(), any())).willReturn(response);
 
                 // when & then
-                mockMvc.perform(patch("/api/v1/products/{id}", 1L)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(request)))
+                // PATCH multipart 요청을 위해 MockMvcRequestBuilders.multipart() 사용 시 HttpMethod 지정
+                mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart(org.springframework.http.HttpMethod.PATCH, "/api/v1/products/{id}", 1L)
+                                .file(requestPart)
+                                .file(imagePart))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.title").value("UPDATED TITLE"))
                                 .andExpect(jsonPath("$.status").value("RESERVED"))
