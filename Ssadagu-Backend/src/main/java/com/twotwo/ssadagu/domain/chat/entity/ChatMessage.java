@@ -1,13 +1,12 @@
 package com.twotwo.ssadagu.domain.chat.entity;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "chat_messages")
+@Entity
+@Table(name = "chat_messages")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -15,33 +14,36 @@ import java.time.LocalDateTime;
 public class ChatMessage {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "message_id")
+    private Long id;
 
-    @Field("room_id")
+    @Column(name = "room_id", nullable = false)
     private Long roomId;
 
-    @Field("sender_id")
+    @Column(name = "sender_id")
     private Long senderId;
 
-    @Field("content")
+    @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
-    @Field("message_type")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "message_type", nullable = false)
     private MessageType type;
 
-    @Field("image_url")
+    @Column(name = "image_url", length = 500)
     private String imageUrl;
 
-    @Field("latitude")
+    @Column(name = "latitude")
     private Double latitude;
 
-    @Field("longitude")
+    @Column(name = "longitude")
     private Double longitude;
 
-    @Field("location_name")
+    @Column(name = "location_name")
     private String locationName;
 
-    @Field("created_at")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public enum MessageType {
