@@ -27,6 +27,7 @@ export interface Product {
 export interface ProductSummary {
   id: number;
   sellerId: number;
+  sellerNickname?: string;
   title: string;
   description: string;
   price: number;
@@ -38,11 +39,14 @@ export interface ProductSummary {
   createdAt: string;
   updatedAt: string;
   thumbnailUrl?: string | null;
+  isMine?: boolean;
+  isLiked?: boolean;
 }
 
 export interface ProductDetail {
   id: number;
   sellerId: number;
+  sellerNickname?: string;
   title: string;
   description: string;
   price: number;
@@ -53,6 +57,8 @@ export interface ProductDetail {
   chatCount: number;
   createdAt: string;
   updatedAt: string;
+  isMine?: boolean;
+  isLiked?: boolean;
 }
 
 export interface CreateProductRequest {

@@ -13,6 +13,8 @@ import { useCreateProduct } from '../model/useCreateProduct';
 import { useUpdateProduct } from '../model/useUpdateProduct';
 import { LocationPicker } from '@/features/location-picker';
 import type { ProductDetail } from '@/entities/product';
+import { useQuery } from '@tanstack/react-query';
+import type { User } from '@/entities/user';
 /* ── Types ─────────────────────────────────────────────── */
 
 interface FormValues {
@@ -357,6 +359,18 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   const [photoCount, setPhotoCount] = useState(0);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const { data: myProfile } = useQuery<User>({
+    queryKey: ['myProfile'],
+    queryFn: async () => {
+      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
+      if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
+      const json = await res.json() as any;
+      if (json.data) return json.data as User;
+      return json as User;
+    },
+    enabled: !!accessToken,
+  });
+
   const isEdit = !!productId;
 
   const {
@@ -422,7 +436,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
         router.replace(`/products/${productId}`);
       } else {
         const result = await createMutation.mutateAsync({
-          sellerId: 1, // API 명세에 따른 임시 판매자 ID
+          sellerId: myProfile?.id || 0,
           title: data.title,
           categoryCode: data.categoryCode,
           price: Number(data.price.replace(/[^0-9]/g, '')),
