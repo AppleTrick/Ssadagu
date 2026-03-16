@@ -12,4 +12,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // 전체 조회 (DELETED 상태 상품 제외)
     List<Product> findByStatusNot(String status);
+
+    // 판매자 ID로 조회 (DELETED 상태 상품 제외) - 마이페이지 판매 내역
+    List<Product> findBySellerIdAndStatusNot(Long sellerId, String status);
 }

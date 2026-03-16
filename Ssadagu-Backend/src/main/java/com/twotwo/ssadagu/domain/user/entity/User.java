@@ -40,4 +40,21 @@ public class User extends BaseEntity {
 
     @Column(name = "user_key", length = 100)
     private String userKey;
+
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void updateRegion(String region) {
+        this.region = region;
+    }
+
+    public void verifyAccount() {
+        this.status = "ACTIVE";
+    }
+
+    public void markAsDeleted() {
+        this.status = "DELETED";
+        this.deletedAt = java.time.LocalDateTime.now();
+    }
 }

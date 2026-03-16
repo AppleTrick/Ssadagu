@@ -44,4 +44,9 @@ public class AccountVerification {
 
     @Column(name = "verified_at")
     private LocalDateTime verifiedAt;
+
+    public void verify(LocalDateTime verifiedAt) {
+        this.status = "VERIFIED";
+        this.verifiedAt = verifiedAt;
+    }
 }
