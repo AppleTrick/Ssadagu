@@ -68,8 +68,11 @@ const MetaRow = styled.div`
 `;
 
 const SellerSection = styled.div`
-  padding: 0 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid ${colors.border};
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 `;
 
 const MapSection = styled.div`
@@ -336,18 +339,14 @@ export function ProductDetailPage() {
             <SellerSection>
               {/* API에서 닉네임을 제공하지 않으므로 판매자 ID로 표시 */}
               <SellerCard sellerId={product.sellerId} sellerNickname={`판매자 ${product.sellerId}`} />
-            </SellerSection>
-            <InfoSection>
               <StatusBadge $status={product.status}>
                 {statusLabel[product.status] ?? product.status}
               </StatusBadge>
+            </SellerSection>
+            <InfoSection>
               <ProductTitle>{product.title}</ProductTitle>
               <MetaRow>
                 <span>{product.regionName}</span>
-                <span>·</span>
-                <span>관심 {product.wishCount}</span>
-                <span>·</span>
-                <span>채팅 {product.chatCount}</span>
               </MetaRow>
               <ProductTitle as="p" style={{ fontSize: '20px', fontWeight: 700 }}>
                 {product.price.toLocaleString('ko-KR')}원
@@ -360,6 +359,11 @@ export function ProductDetailPage() {
               <MapTitle>거래 희망 장소</MapTitle>
               <KakaoMap regionName={product.regionName} />
               <MapLocationText>📍 {product.regionName}</MapLocationText>
+              <MetaRow style={{ marginTop: '16px' }}>
+                <span>관심 {product.wishCount}</span>
+                <span>·</span>
+                <span>채팅 {product.chatCount}</span>
+              </MetaRow>
             </MapSection>
 
             <ItemDetailBottomBar

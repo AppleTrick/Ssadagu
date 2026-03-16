@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -108,25 +107,44 @@ class ProductServiceTest {
     }
 
     @Test
-    @DisplayName("삭제되지 않은 상품 목록을 전체 조회한다.")
-    void getProducts() {
+    @DisplayName("regionName 없으면 삭제되지 않은 상품 전체를 조회한다.")
+    void getProducts_noRegion() {
         // given
         User seller = User.builder().build();
         ReflectionTestUtils.setField(seller, "id", 1L);
 
-        Product p1 = Product.builder().seller(seller).title("p1").status("ON_SALE").build();
-        Product p2 = Product.builder().seller(seller).title("p2").status("DELETED").build();
-        Product p3 = Product.builder().seller(seller).title("p3").status("RESERVED").build();
+        Product p1 = Product.builder().seller(seller).title("p1").status("ON_SALE").regionName("강남구").build();
+        Product p2 = Product.builder().seller(seller).title("p2").status("RESERVED").regionName("서초구").build();
 
-        given(productRepository.findAll()).willReturn(List.of(p1, p2, p3));
+        given(productRepository.findByStatusNot("DELETED")).willReturn(List.of(p1, p2));
 
         // when
-        List<ProductResponseDto> responseDtos = productService.getProducts();
+        List<ProductResponseDto> responseDtos = productService.getProducts(null);
 
         // then
-        assertThat(responseDtos).hasSize(2); // p1, p3
+        assertThat(responseDtos).hasSize(2);
         assertThat(responseDtos.get(0).getTitle()).isEqualTo("p1");
-        assertThat(responseDtos.get(1).getTitle()).isEqualTo("p3");
+        assertThat(responseDtos.get(1).getTitle()).isEqualTo("p2");
+    }
+
+    @Test
+    @DisplayName("regionName을 지정하면 해당 동네 상품만 조회된다.")
+    void getProducts_withRegion() {
+        // given
+        User seller = User.builder().build();
+        ReflectionTestUtils.setField(seller, "id", 1L);
+
+        Product p1 = Product.builder().seller(seller).title("강남 상품").status("ON_SALE").regionName("강남구").build();
+
+        given(productRepository.findByRegionNameAndStatusNot("강남구", "DELETED")).willReturn(List.of(p1));
+
+        // when
+        List<ProductResponseDto> responseDtos = productService.getProducts("강남구");
+
+        // then
+        assertThat(responseDtos).hasSize(1);
+        assertThat(responseDtos.get(0).getTitle()).isEqualTo("강남 상품");
+        assertThat(responseDtos.get(0).getRegionName()).isEqualTo("강남구");
     }
 
     @Test
