@@ -14,6 +14,11 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useModalStore } from '@/shared/hooks/useModalStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
+import type { User } from '@/entities/user';
+
+interface UserResponse {
+  data?: User;
+}
 
 const Page = styled.div`
   display: flex;
@@ -222,6 +227,18 @@ export function ProductDetailPage() {
     enabled: !isNaN(productId),
   });
 
+  const { data: myProfile } = useQuery<User>({
+    queryKey: ['myProfile'],
+    queryFn: async () => {
+      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
+      if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
+      const json = await res.json() as User | UserResponse;
+      if ((json as UserResponse).data) return (json as UserResponse).data as User;
+      return json as User;
+    },
+    enabled: !!accessToken,
+  });
+
   useEffect(() => {
     // Note: ProductDetail에는 isWished가 없으므로 API 변경 전까지는 false로 유지하거나
     // wishCount 등을 활용한 추측이 필요함. 여기서는 API 스펙을 우선함.
@@ -351,7 +368,7 @@ export function ProductDetailPage() {
 
             <ItemDetailBottomBar
               product={product as any}
-              isMine={product.sellerId === 1} // Mock: sellerId가 1이면 내 상품으로 간주
+              isMine={myProfile?.id === product.sellerId}
               isWished={isWished}
               onWish={() => wishMutation.mutate()}
               onChat={() => chatMutation.mutate()}
