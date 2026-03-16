@@ -12,6 +12,7 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "U001", "동일한 이메일이 존재합니다."),
     NICKNAME_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "U002", "동일한 닉네임입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U003", "사용자를 찾을 수 없습니다."),
+    USER_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "U004", "이미 탈퇴한 사용자입니다."),
 
     // Global
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "G001", "서버 내부 오류가 발생했습니다."),
