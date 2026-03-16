@@ -27,6 +27,7 @@ export interface Product {
 export interface ProductSummary {
   id: number;
   sellerId: number;
+  sellerNickname?: string;
   title: string;
   description: string;
   price: number;
@@ -45,6 +46,7 @@ export interface ProductSummary {
 export interface ProductDetail {
   id: number;
   sellerId: number;
+  sellerNickname?: string;
   title: string;
   description: string;
   price: number;

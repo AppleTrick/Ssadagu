@@ -338,8 +338,7 @@ export function ProductDetailPage() {
               이미지가 없습니다
             </div>
             <SellerSection>
-              {/* API에서 닉네임을 제공하지 않으므로 판매자 ID로 표시 */}
-              <SellerCard sellerId={product.sellerId} sellerNickname={`판매자 ${product.sellerId}`} />
+              <SellerCard sellerId={product.sellerId} sellerNickname={product.sellerNickname || `판매자 ${product.sellerId}`} />
               <StatusBadge $status={product.status}>
                 {statusLabel[product.status] ?? product.status}
               </StatusBadge>

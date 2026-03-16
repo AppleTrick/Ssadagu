@@ -56,7 +56,7 @@ const ItemCard = ({ product, onClick, onWishClick }: ItemCardProps) => {
       <Info>
         <Title>{product.title}</Title>
         <Meta>
-          {product.regionName} · {formatTimeAgo(product.createdAt)}
+          {product.sellerNickname || `판매자 ${product.sellerId}`} · {product.regionName} · {formatTimeAgo(product.createdAt)}
         </Meta>
         <Bottom>
           <Price>{formatPrice(product.price)}</Price>

@@ -18,6 +18,7 @@ export const getProducts = async (accessToken?: string): Promise<ProductSummary[
   return allItems.map((item) => ({
     id: item.id,
     sellerId: item.sellerId,
+    sellerNickname: item.sellerNickname,
     title: item.title,
     description: item.description ?? '',
     price: item.price,
