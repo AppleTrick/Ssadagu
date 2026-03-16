@@ -4,6 +4,9 @@ import com.twotwo.ssadagu.domain.product.dto.ProductCreateRequestDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductResponseDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductUpdateRequestDto;
 import com.twotwo.ssadagu.domain.product.service.ProductService;
+import com.twotwo.ssadagu.domain.product.service.ProductWishService;
+import com.twotwo.ssadagu.global.security.CustomUserDetails;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import lombok.RequiredArgsConstructor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +23,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductWishService productWishService;
 
     @Operation(summary = "상품 등록", description = "새로운 상품을 등록합니다.")
     @PostMapping
@@ -57,5 +61,14 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable Long productId) {
         productService.deleteProduct(productId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "상품 찜/취소", description = "특정 상품을 찜하거나 찜을 취소합니다.")
+    @PostMapping("/{productId}/wish")
+    public ResponseEntity<Void> toggleWish(
+            @PathVariable Long productId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        productWishService.toggleWish(userDetails.getUser().getId(), productId);
+        return ResponseEntity.ok().build();
     }
 }

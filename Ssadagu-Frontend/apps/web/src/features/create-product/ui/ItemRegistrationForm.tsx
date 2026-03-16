@@ -11,8 +11,8 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useCreateProduct } from '../model/useCreateProduct';
 import { useUpdateProduct } from '../model/useUpdateProduct';
+import { LocationPicker } from '@/features/location-picker';
 import type { ProductDetail } from '@/entities/product';
-
 /* ── Types ─────────────────────────────────────────────── */
 
 interface FormValues {
@@ -148,8 +148,16 @@ const PhotoCount = styled.span`
 const FieldWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
+  margin-bottom: 8px;
+`;
+
+const Label = styled.label`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.sm};
+  font-weight: ${typography.weight.semibold};
+  color: ${colors.textSecondary};
 `;
 
 const FieldInput = styled.input<{ hasError?: boolean }>`
@@ -159,8 +167,8 @@ const FieldInput = styled.input<{ hasError?: boolean }>`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
   color: ${colors.textPrimary};
-  background: ${colors.bg};
-  border: 1.5px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
+  background: ${colors.surface};
+  border: 1px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
   border-radius: ${radius.sm};
   outline: none;
   transition: border-color 0.15s;
@@ -197,8 +205,8 @@ const StyledSelect = styled.select<{ hasError?: boolean }>`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
   color: ${colors.textPrimary};
-  background: ${colors.bg};
-  border: 1.5px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
+  background: ${colors.surface};
+  border: 1px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
   border-radius: ${radius.sm};
   outline: none;
   cursor: pointer;
@@ -223,8 +231,8 @@ const TextArea = styled.textarea<{ hasError?: boolean }>`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
   color: ${colors.textPrimary};
-  background: ${colors.bg};
-  border: 1.5px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
+  background: ${colors.surface};
+  border: 1px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
   border-radius: ${radius.sm};
   outline: none;
   resize: vertical;
@@ -255,15 +263,14 @@ const LocationRow = styled.button`
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 20px;
-  background: none;
-  border: none;
-  border-top: 1px solid ${colors.border};
-  border-bottom: 1px solid ${colors.border};
+  padding: 16px;
+  background: ${colors.surface};
+  border: 1px solid ${colors.border};
+  border-radius: ${radius.sm};
   cursor: pointer;
   width: 100%;
   text-align: left;
-  margin-top: 4px;
+  margin-top: 8px;
   transition: background 0.1s;
 
   &:active {
@@ -356,6 +363,8 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
@@ -367,7 +376,10 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
       status: initialData?.status || 'ON_SALE',
     },
   });
- 
+
+  const selectedRegion = watch('regionName');
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+
   useEffect(() => {
     if (initialData) {
       reset({
@@ -388,7 +400,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   };
 
   const handleLocationClick = () => {
-    // Location picker — placeholder for future feature
+    setIsLocationPickerOpen(true);
   };
 
   const createMutation = useCreateProduct();
@@ -471,9 +483,9 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
 
           {/* Title */}
           <FieldWrapper>
+            <Label>물품명</Label>
             <FieldInput
               type="text"
-              placeholder="물품명"
               hasError={!!errors.title}
               {...register('title', { required: '물품명을 입력해주세요' })}
             />
@@ -482,6 +494,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
 
           {/* Category */}
           <FieldWrapper>
+            <Label>카테고리 선택</Label>
             <StyledSelect
               hasError={!!errors.categoryCode}
               defaultValue=""
@@ -503,11 +516,11 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
 
           {/* Price */}
           <FieldWrapper>
+            <Label>가격 (원)</Label>
             <PriceRow>
               <FieldInput
                 type="text"
                 inputMode="numeric"
-                placeholder="가격"
                 hasError={!!errors.price}
                 style={{ flex: 1 }}
                 {...register('price', {
@@ -515,13 +528,13 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
                   pattern: { value: /^[0-9,]+$/, message: '숫자만 입력해주세요' },
                 })}
               />
-              <PriceUnit>원</PriceUnit>
             </PriceRow>
             {errors.price && <FieldError role="alert">{errors.price.message}</FieldError>}
           </FieldWrapper>
 
           {/* Description */}
           <FieldWrapper>
+            <Label>상세 설명</Label>
             <TextArea
               placeholder="물품에 대한 상세한 설명을 적어주세요"
               hasError={!!errors.description}
@@ -537,13 +550,13 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
               {serverError}
             </FieldError>
           )}
-        </Section>
 
-        {/* Location Picker */}
-        <LocationRow type="button" onClick={handleLocationClick} aria-label="거래 희망 장소 추가">
-          <MapPinIcon />
-          <LocationText>거래 희망 장소 추가</LocationText>
-        </LocationRow>
+          {/* Location Picker */}
+          <LocationRow type="button" onClick={handleLocationClick} aria-label="거래 희망 장소 추가">
+            <MapPinIcon />
+            <LocationText>{selectedRegion ? selectedRegion : '거래 희망 장소 추가'}</LocationText>
+          </LocationRow>
+        </Section>
       </Content>
 
       <BottomBar>
@@ -559,6 +572,38 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           등록하기
         </Button>
       </BottomBar>
+
+      {/* Location Picker Overlay */}
+      {isLocationPickerOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            backgroundColor: colors.surface,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <Header>
+            <BackButton type="button" onClick={() => setIsLocationPickerOpen(false)} aria-label="닫기">
+              <CloseIcon />
+            </BackButton>
+            <HeaderTitle>거래 희망 장소 선택</HeaderTitle>
+          </Header>
+          <div style={{ flex: 1, paddingTop: HEADER_HEIGHT }}>
+            <LocationPicker
+              onSelect={(regionName) => {
+                setValue('regionName', regionName, { shouldValidate: true, shouldDirty: true });
+                setIsLocationPickerOpen(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </Page>
   );
 };

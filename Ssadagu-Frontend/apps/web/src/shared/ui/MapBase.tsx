@@ -73,6 +73,10 @@ const MapBase = ({ lat = 37.5665, lng = 126.978, zoom = 4, onMapReady }: MapBase
     loadKakao()
       .then(() => {
         if (cancelled || !containerRef.current) return;
+
+        // 카카오 지도가 중복 생성되는 현상 방지 (React 18 Strict Mode 대응)
+        containerRef.current.innerHTML = '';
+
         const center = new window.kakao.maps.LatLng(lat, lng);
         const map = new window.kakao.maps.Map(containerRef.current, {
           center,
@@ -87,6 +91,9 @@ const MapBase = ({ lat = 37.5665, lng = 126.978, zoom = 4, onMapReady }: MapBase
 
     return () => {
       cancelled = true;
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
     };
     // onMapReady는 최초 마운트 시에만 실행
     // eslint-disable-next-line react-hooks/exhaustive-deps

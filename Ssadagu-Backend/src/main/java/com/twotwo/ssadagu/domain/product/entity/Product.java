@@ -75,4 +75,14 @@ public class Product extends BaseEntity {
         this.status = "DELETED";
         this.deletedAt = LocalDateTime.now();
     }
+
+    public void increaseWishCount() {
+        this.wishCount++;
+    }
+
+    public void decreaseWishCount() {
+        if (this.wishCount > 0) {
+            this.wishCount--;
+        }
+    }
 }
