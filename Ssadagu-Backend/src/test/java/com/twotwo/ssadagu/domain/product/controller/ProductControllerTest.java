@@ -34,12 +34,33 @@ class ProductControllerTest {
         @Mock
         private ProductService productService;
 
+        @Mock
+        private com.twotwo.ssadagu.domain.product.service.ProductWishService productWishService;
+
         @InjectMocks
         private ProductController productController;
 
         @BeforeEach
         void setUp() {
-                mockMvc = MockMvcBuilders.standaloneSetup(productController).build();
+                mockMvc = MockMvcBuilders.standaloneSetup(productController)
+                                .setCustomArgumentResolvers(new org.springframework.web.method.support.HandlerMethodArgumentResolver() {
+                                        @Override
+                                        public boolean supportsParameter(org.springframework.core.MethodParameter parameter) {
+                                                return parameter.hasParameterAnnotation(org.springframework.security.core.annotation.AuthenticationPrincipal.class);
+                                        }
+
+                                        @Override
+                                        public Object resolveArgument(org.springframework.core.MethodParameter parameter,
+                                                                      org.springframework.web.method.support.ModelAndViewContainer mavContainer,
+                                                                      org.springframework.web.context.request.NativeWebRequest webRequest,
+                                                                      org.springframework.web.bind.support.WebDataBinderFactory binderFactory) {
+                                                // 인증이 필요한 테스트를 위해 Mock UserDetails 반환
+                                                com.twotwo.ssadagu.domain.user.entity.User user = com.twotwo.ssadagu.domain.user.entity.User.builder().build();
+                                                org.springframework.test.util.ReflectionTestUtils.setField(user, "id", 1L);
+                                                return new com.twotwo.ssadagu.global.security.CustomUserDetails(user);
+                                        }
+                                })
+                                .build();
                 objectMapper = new ObjectMapper();
         }
 
@@ -78,7 +99,7 @@ class ProductControllerTest {
                                 .title("GET TITLE")
                                 .build();
 
-                given(productService.getProduct(1L)).willReturn(response);
+                given(productService.getProduct(eq(1L), any())).willReturn(response);
 
                 // when & then
                 mockMvc.perform(get("/api/v1/products/{id}", 1L))
@@ -94,7 +115,7 @@ class ProductControllerTest {
                 ProductResponseDto p1 = ProductResponseDto.builder().id(1L).title("T1").build();
                 ProductResponseDto p2 = ProductResponseDto.builder().id(2L).title("T2").build();
 
-                given(productService.getProducts(null)).willReturn(List.of(p1, p2));
+                given(productService.getProducts(eq(null), any())).willReturn(List.of(p1, p2));
 
                 // when & then
                 mockMvc.perform(get("/api/v1/products"))
@@ -110,7 +131,7 @@ class ProductControllerTest {
                 // given
                 ProductResponseDto p1 = ProductResponseDto.builder().id(1L).title("강남 상품").regionName("강남구").build();
 
-                given(productService.getProducts("강남구")).willReturn(List.of(p1));
+                given(productService.getProducts(eq("강남구"), any())).willReturn(List.of(p1));
 
                 // when & then
                 mockMvc.perform(get("/api/v1/products").param("regionName", "강남구"))
@@ -134,7 +155,7 @@ class ProductControllerTest {
                                 .images(java.util.List.of(com.twotwo.ssadagu.domain.product.dto.ProductImageResponseDto.builder().id(2L).imageUrl("url2").build()))
                                 .build();
 
-                given(productService.updateProduct(eq(1L), any(ProductUpdateRequestDto.class))).willReturn(response);
+                given(productService.updateProduct(eq(1L), any(ProductUpdateRequestDto.class), any())).willReturn(response);
 
                 // when & then
                 mockMvc.perform(patch("/api/v1/products/{id}", 1L)
@@ -153,6 +174,6 @@ class ProductControllerTest {
                 mockMvc.perform(delete("/api/v1/products/{id}", 1L))
                                 .andExpect(status().isNoContent());
 
-                verify(productService).deleteProduct(1L);
+                verify(productService).deleteProduct(eq(1L), any());
         }
 }

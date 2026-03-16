@@ -14,6 +14,10 @@ public enum ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U003", "사용자를 찾을 수 없습니다."),
     USER_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "U004", "이미 탈퇴한 사용자입니다."),
 
+    // Product
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "상품을 찾을 수 없습니다."),
+    NOT_PRODUCT_SELLER(HttpStatus.FORBIDDEN, "P002", "해당 상품의 판매자가 아닙니다."),
+
     // Global
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "G001", "서버 내부 오류가 발생했습니다."),
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "G002", "유효하지 않은 입력 값입니다.");
