@@ -258,6 +258,7 @@ export function ProductDetailPage() {
     onSuccess: (newWished) => {
       setIsWished(newWished);
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
 
