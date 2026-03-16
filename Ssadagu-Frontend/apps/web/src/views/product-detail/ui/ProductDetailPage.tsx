@@ -270,8 +270,8 @@ export function ProductDetailPage() {
         accessToken ?? undefined,
       );
       if (!res.ok) throw new Error('채팅방 생성 실패');
-      const json = await res.json() as { data?: { id: number } };
-      return json.data?.id;
+      const json = await res.json() as { data?: { id: number }; id?: number };
+      return json.data ? json.data.id : json.id;
     },
     onSuccess: (roomId) => {
       if (roomId) router.push(`/chat/${roomId}`);
