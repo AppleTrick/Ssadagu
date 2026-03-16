@@ -33,9 +33,6 @@ const Container = styled.div`
   flex-direction: row;
   align-items: center;
   gap: 12px;
-  background: ${colors.surface};
-  padding: 16px 20px;
-  border-bottom: 1px solid ${colors.border};
 `;
 
 const Avatar = styled.div`

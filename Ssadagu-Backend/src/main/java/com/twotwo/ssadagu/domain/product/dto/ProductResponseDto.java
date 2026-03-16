@@ -48,6 +48,7 @@ public class ProductResponseDto {
                 .status(entity.getStatus())
                 .wishCount(entity.getWishCount())
                 .chatCount(entity.getChatCount())
+                .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .images(entity.getImages().stream()
                         .map(ProductImageResponseDto::from)
