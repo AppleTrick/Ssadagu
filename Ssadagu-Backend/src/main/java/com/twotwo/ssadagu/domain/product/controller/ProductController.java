@@ -35,10 +35,11 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "상품 목록 조회", description = "상품 전체 목록을 조회합니다.")
+    @Operation(summary = "상품 목록 조회", description = "상품 목록을 조회합니다. regionName 파라미터로 동네별 필터링이 가능합니다.")
     @GetMapping
-    public ResponseEntity<List<ProductResponseDto>> getProducts() {
-        List<ProductResponseDto> response = productService.getProducts();
+    public ResponseEntity<List<ProductResponseDto>> getProducts(
+            @RequestParam(required = false) String regionName) {
+        List<ProductResponseDto> response = productService.getProducts(regionName);
         return ResponseEntity.ok(response);
     }
 
