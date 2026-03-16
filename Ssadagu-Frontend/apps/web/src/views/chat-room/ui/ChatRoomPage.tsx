@@ -124,15 +124,15 @@ export function ChatRoomPage() {
   });
 
   const { data: room, isLoading: roomLoading } = useQuery<ChatRoom>({
-    queryKey: ['chatRoom', roomId],
+    queryKey: ['chatRoom', roomId, currentUser?.id],
     queryFn: async () => {
-      const res = await apiClient.get(`${ENDPOINTS.CHATS.ROOMS}/${roomId}`, accessToken ?? undefined);
+      const res = await apiClient.get(`${ENDPOINTS.CHATS.DETAIL(roomId)}?userId=${currentUser?.id}`, accessToken ?? undefined);
       if (!res.ok) throw new Error('채팅방 정보를 불러오지 못했습니다.');
       const json = await res.json() as ChatRoom | ChatRoomResponse;
       if ((json as ChatRoomResponse).data) return (json as ChatRoomResponse).data as ChatRoom;
       return json as ChatRoom;
     },
-    enabled: !isNaN(roomId),
+    enabled: !isNaN(roomId) && !!currentUser?.id,
   });
 
   const { data: historyMessages, isLoading: messagesLoading, isError, refetch } = useQuery<ChatMessage[]>({

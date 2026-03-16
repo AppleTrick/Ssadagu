@@ -119,9 +119,9 @@ export function ChatListPage() {
   });
 
   const { data: rooms, isLoading, isError, refetch } = useQuery<ChatRoom[]>({
-    queryKey: ['chatRooms'],
+    queryKey: ['chatRooms', currentUser?.id],
     queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.CHATS.ROOMS, accessToken ?? undefined);
+      const res = await apiClient.get(`${ENDPOINTS.CHATS.USER_ROOMS}?userId=${currentUser?.id}`, accessToken ?? undefined);
       if (!res.ok) throw new Error('채팅 목록을 불러오지 못했습니다.');
       const json = await res.json() as ChatRoomsResponse | ChatRoom[];
       if (Array.isArray(json)) return json;
@@ -134,6 +134,7 @@ export function ChatListPage() {
       }
       return [];
     },
+    enabled: !!currentUser?.id,
   });
 
   const filteredRooms = rooms ?? [];

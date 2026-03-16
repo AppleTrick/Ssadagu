@@ -266,7 +266,7 @@ export function ProductDetailPage() {
     mutationFn: async () => {
       const res = await apiClient.post(
         ENDPOINTS.CHATS.CREATE,
-        { productId },
+        { productId, buyerId: myProfile?.id },
         accessToken ?? undefined,
       );
       if (!res.ok) throw new Error('채팅방 생성 실패');
