@@ -272,7 +272,7 @@ export function ChatRoomPage() {
     mutationFn: async () => {
       const res = await apiClient.post(
         ENDPOINTS.CHATS.CREATE,
-        { productId: newProductId, buyerId: currentUser?.id },
+        { productId: newProductId },
         accessToken ?? undefined,
       );
       if (!res.ok) throw new Error('채팅방 생성 실패');
