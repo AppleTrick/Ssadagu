@@ -95,4 +95,16 @@ export const apiClient = {
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
     }, token),
+  postMultipart: (url: string, formData: FormData, token?: string) =>
+    handleRequest(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    }, token),
+  patchMultipart: (url: string, formData: FormData, token?: string) =>
+    handleRequest(url, {
+      method: 'PATCH',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    }, token),
 };

@@ -61,7 +61,7 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(authorize -> authorize
                                                 // public API
                                                 .requestMatchers("/api/v1/auth/**", "/api/v1/users/signup", "/swagger-ui/**",
-                                                                "/v3/api-docs/**", "/error", "/api/v1/demand-deposits/**", "/ws/**")
+                                                                "/v3/api-docs/**", "/error", "/api/v1/demand-deposits/**", "/ws/**", "/ws-stomp/**", "/api/v1/chat/test/**")
                                                 .permitAll()
                                                 // 그 외 요청은 모두 인증 필요
                                                 .anyRequest().authenticated())

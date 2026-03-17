@@ -14,9 +14,22 @@ export const updateProduct = async (
   productData: UpdateProductRequest,
   accessToken?: string,
 ): Promise<ProductDetail> => {
-  const res = await apiClient.put(
+  const { images, ...requestDto } = productData;
+  const formData = new FormData();
+  formData.append(
+    'request',
+    new Blob([JSON.stringify(requestDto)], { type: 'application/json' })
+  );
+
+  if (images && images.length > 0) {
+    images.forEach((file) => {
+      formData.append('images', file);
+    });
+  }
+
+  const res = await apiClient.patchMultipart(
     ENDPOINTS.PRODUCTS.DETAIL(productId),
-    productData,
+    formData,
     accessToken,
   );
 

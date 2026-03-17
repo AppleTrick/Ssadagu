@@ -31,7 +31,8 @@ public class VerificationFilter extends OncePerRequestFilter {
             "/api/v1/accounts/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
-            "/error");
+            "/error",
+            "/api/v1/chat/test/**");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

@@ -39,16 +39,18 @@ public class ProductService {
                 .status("ON_SALE")
                 .wishCount(0)
                 .chatCount(0)
+                .images(new java.util.ArrayList<>())
                 .build();
 
-        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            if (request.getImageUrls().size() > 5) {
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            if (imageFiles.size() > 5) {
                 throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INVALID_INPUT_VALUE);
             }
-            for (int i = 0; i < request.getImageUrls().size(); i++) {
+            for (int i = 0; i < imageFiles.size(); i++) {
+                String imageUrl = s3Service.uploadImage(imageFiles.get(i));
                 com.twotwo.ssadagu.domain.product.entity.ProductImage image = com.twotwo.ssadagu.domain.product.entity.ProductImage.builder()
                         .product(product)
-                        .imageUrl(request.getImageUrls().get(i))
+                        .imageUrl(imageUrl)
                         .sortOrder(i)
                         .build();
                 product.getImages().add(image);

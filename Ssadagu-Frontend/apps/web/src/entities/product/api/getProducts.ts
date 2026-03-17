@@ -15,21 +15,29 @@ export const getProducts = async (accessToken?: string): Promise<ProductSummary[
   const json = await res.json();
   const allItems = (Array.isArray(json) ? json : (json.data ?? [])) as any[];
   
-  return allItems.map((item) => ({
-    id: item.id,
-    sellerId: item.sellerId,
-    sellerNickname: item.sellerNickname,
-    title: item.title,
-    description: item.description ?? '',
-    price: item.price,
-    categoryCode: item.categoryCode ?? '',
-    regionName: item.regionName,
-    status: item.status,
-    wishCount: item.wishCount ?? 0,
-    chatCount: item.chatCount ?? 0,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt ?? '',
-    isMine: item.isMine,
-    isLiked: item.isLiked,
-  }));
+  return allItems.map((item) => {
+    // 상품 응답에서 첫 번째 이미지를 찾아 썸네일로 사용
+    const thumbnail = item.images && item.images.length > 0
+      ? item.images[0].imageUrl
+      : null;
+
+    return {
+      id: item.id,
+      sellerId: item.sellerId,
+      sellerNickname: item.sellerNickname,
+      title: item.title,
+      description: item.description ?? '',
+      price: item.price,
+      categoryCode: item.categoryCode ?? '',
+      regionName: item.regionName,
+      status: item.status,
+      wishCount: item.wishCount ?? 0,
+      chatCount: item.chatCount ?? 0,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt ?? '',
+      isMine: item.isMine,
+      isLiked: item.isLiked,
+      thumbnailUrl: thumbnail,
+    };
+  });
 };
