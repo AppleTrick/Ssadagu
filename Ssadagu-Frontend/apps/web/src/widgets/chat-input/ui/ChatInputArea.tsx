@@ -9,10 +9,11 @@ import AttachmentMenu from './AttachmentMenu';
 interface ChatInputAreaProps {
   onSend: (content: string) => void;
   onAttach?: () => void;
+  onSelectTransaction?: () => void;
   bottomOffset?: number;
 }
 
-const ChatInputArea = ({ onSend, bottomOffset = 0 }: ChatInputAreaProps) => {
+const ChatInputArea = ({ onSend, bottomOffset = 0, onSelectTransaction }: ChatInputAreaProps) => {
   const { alert: modalAlert } = useModalStore();
   const [value, setValue] = useState('');
   const [attachOpen, setAttachOpen] = useState(false);
@@ -36,8 +37,14 @@ const ChatInputArea = ({ onSend, bottomOffset = 0 }: ChatInputAreaProps) => {
       <AttachmentMenu
         isOpen={attachOpen}
         onClose={() => setAttachOpen(false)}
+        onSelectLocation={() => modalAlert({ message: '지도 공유 기능은 준비 중입니다.' })}
         onSelectPhoto={() => modalAlert({ message: '사진 첨부 기능은 준비 중입니다.' })}
-        onSelectLocation={() => modalAlert({ message: '위치 공유 기능은 준비 중입니다.' })}
+        onSelectTransaction={() => {
+          setAttachOpen(false);
+          if (onSelectTransaction) onSelectTransaction();
+          else modalAlert({ message: '거래요청 기능은 준비 중입니다.' });
+        }}
+        onSelectCamera={() => modalAlert({ message: '카메라 기능은 준비 중입니다.' })}
       />
     <Bar $bottomOffset={bottomOffset}>
       <AttachButton onClick={() => setAttachOpen((v) => !v)} aria-label="첨부">
