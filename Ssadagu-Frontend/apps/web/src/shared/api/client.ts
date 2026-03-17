@@ -1,7 +1,7 @@
 import { useAuthStore } from '../auth/useAuthStore';
 import { ENDPOINTS } from './endpoints';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1';
 
 const handleRequest = async (url: string, options: RequestInit, originalToken?: string): Promise<Response> => {
   const finalOptions: RequestInit = {
