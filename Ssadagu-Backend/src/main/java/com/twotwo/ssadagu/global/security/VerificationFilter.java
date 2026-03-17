@@ -25,10 +25,10 @@ public class VerificationFilter extends OncePerRequestFilter {
 
     // 1원 인증 없이도 접근 가능한 경로 목록
     private final List<String> whitelist = Arrays.asList(
-            "/api/auth/**",
-            "/api/users/signup",
-            "/api/users/region-verify",
-            "/api/accounts/**",
+            "/api/v1/auth/**",
+            "/api/v1/users/signup",
+            "/api/v1/users/region-verify",
+            "/api/v1/accounts/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/error");
