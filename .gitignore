@@ -1,2 +1,5 @@
 .claude
 .agent
+node_modules
+check_schema.js
+schema_result.txt

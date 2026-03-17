@@ -151,6 +151,7 @@ CREATE TABLE chat_messages (
     longitude     DOUBLE       DEFAULT NULL,
     location_name VARCHAR(255) DEFAULT NULL,
     message_type  ENUM('ENTER','IMAGE','LEAVE','MAP','PAYMENT_FAIL','PAYMENT_REQUEST','PAYMENT_SUCCESS','SYSTEM','TALK') NOT NULL,
+    is_read       BIT(1)       NOT NULL DEFAULT 0,
     created_at    DATETIME(6)  DEFAULT NULL,
 
     PRIMARY KEY (message_id)
