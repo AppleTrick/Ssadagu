@@ -2,8 +2,12 @@ package com.twotwo.ssadagu.domain.chat.service;
 
 import com.twotwo.ssadagu.domain.chat.entity.ChatMessage;
 import com.twotwo.ssadagu.domain.chat.repository.ChatMessageRepository;
+import com.twotwo.ssadagu.domain.chat.repository.ChatRoomRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,7 +17,11 @@ public class ChatMessageService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomService chatRoomService;
+    private final ChatRoomRepository chatRoomRepository;
 
+    private static final int DEFAULT_PAGE_SIZE = 30;
+
+    @Transactional
     public ChatMessage saveMessage(ChatMessage incomingMessage) {
         ChatMessage message = ChatMessage.builder()
                 .roomId(incomingMessage.getRoomId())
@@ -28,23 +36,29 @@ public class ChatMessageService {
                 .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
-        
-        // Update ChatRoom's last message
-        boolean isBuyer = (incomingMessage.getSenderId() != null) && isSenderBuyer(incomingMessage.getRoomId(), incomingMessage.getSenderId());
-        
-        // For image/map messages, we might want to display a different last message text
+
+        // last_message / unread_count 업데이트
+        boolean isBuyer = isSenderBuyer(incomingMessage.getRoomId(), incomingMessage.getSenderId());
+
         String lastMessageContent = incomingMessage.getContent();
         if (incomingMessage.getType() == ChatMessage.MessageType.IMAGE) {
             lastMessageContent = "(사진)";
         } else if (incomingMessage.getType() == ChatMessage.MessageType.MAP) {
             lastMessageContent = "(지도)";
+        } else if (incomingMessage.getType() == ChatMessage.MessageType.PAYMENT_REQUEST) {
+            lastMessageContent = "(결제 요청)";
+        } else if (incomingMessage.getType() == ChatMessage.MessageType.PAYMENT_SUCCESS) {
+            lastMessageContent = "(결제 완료)";
+        } else if (incomingMessage.getType() == ChatMessage.MessageType.PAYMENT_FAIL) {
+            lastMessageContent = "(결제 실패)";
         }
-        
+
         chatRoomService.updateLastMessage(incomingMessage.getRoomId(), lastMessageContent, isBuyer);
-        
+
         return savedMessage;
     }
 
+    @Transactional
     public ChatMessage sendSystemMessage(Long roomId, String content, ChatMessage.MessageType type) {
         ChatMessage sysMsg = ChatMessage.builder()
                 .roomId(roomId)
@@ -54,13 +68,40 @@ public class ChatMessageService {
         return saveMessage(sysMsg);
     }
 
+    /** 최신 메시지 N개 조회 (채팅방 최초 진입 시) */
+    @Transactional(readOnly = true)
+    public List<ChatMessage> getLatestMessages(Long roomId) {
+        List<ChatMessage> messages = chatMessageRepository.findLatestByRoomId(
+                roomId, PageRequest.of(0, DEFAULT_PAGE_SIZE));
+        // DESC로 가져왔으므로 역순 정렬
+        return messages.reversed();
+    }
+
+    /** 커서 기반 이전 메시지 조회 (위로 스크롤 시) */
+    @Transactional(readOnly = true)
+    public List<ChatMessage> getMessagesByCursor(Long roomId, Long cursorId, int size) {
+        List<ChatMessage> messages = chatMessageRepository.findByRoomIdBeforeCursor(
+                roomId, cursorId, PageRequest.of(0, size));
+        return messages.reversed();
+    }
+
+    /** 전체 조회 (하위 호환) */
+    @Transactional(readOnly = true)
     public List<ChatMessage> getChatHistory(Long roomId) {
         return chatMessageRepository.findAllByRoomIdOrderByCreatedAtAsc(roomId);
     }
 
+    /** 읽음 처리 - 해당 방 전체 메시지 읽음으로 변경 */
+    @Transactional
+    public int markAsRead(Long roomId) {
+        return chatMessageRepository.markAllAsRead(roomId);
+    }
+
+    /** 발신자가 구매자인지 판별 (실제 DB 조회) */
     private boolean isSenderBuyer(Long roomId, Long senderId) {
-        // This is a bit inefficient as it hits DB again, but for skeleton it works.
-        // You might want to pass this info from the controller/STOMP header.
-        return true; // Temporary
+        if (senderId == null) return false;
+        return chatRoomRepository.findById(roomId)
+                .map(room -> room.getBuyer().getId().equals(senderId))
+                .orElse(false);
     }
 }

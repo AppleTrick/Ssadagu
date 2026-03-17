@@ -46,6 +46,10 @@ public class ChatMessage {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private boolean isRead = false;
+
     public enum MessageType {
         TALK, ENTER, LEAVE, SYSTEM, PAYMENT_REQUEST, PAYMENT_SUCCESS, PAYMENT_FAIL, IMAGE, MAP
     }
