@@ -9,14 +9,16 @@ import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { ChatInputArea } from '@/widgets/chat-input';
 import { ChatBubbleMine, ChatBubbleOther, ChatRoomItemSummary, SystemMessage, PaymentChatBubble, MapChatBubble } from '@/entities/chat';
-import type { ChatMessage, ChatRoom } from '@/entities/chat';
+import { TransactionBubble } from '@/entities/transaction';
+import { TransactionRequestSheet, TransactionConfirmSheet } from '@/features/transfer-payment';
+import type { ChatMessage, ChatRoom, TransactionContent } from '@/entities/chat/model/types';
 import type { User } from '@/entities/user';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:8080/ws';
+const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:8080/ws-stomp';
 const CHAT_INPUT_HEIGHT = 56;
 const CHAT_INPUT_BOTTOM_OFFSET = 0;
 const MESSAGES_BOTTOM_PAD = CHAT_INPUT_HEIGHT + CHAT_INPUT_BOTTOM_OFFSET + 16;
@@ -25,7 +27,7 @@ const Page = styled.div`
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  background: ${colors.bg};
+  background: ${colors.surface};
   overflow: hidden;
 `;
 
@@ -70,8 +72,12 @@ export function ChatRoomPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pendingMsg = searchParams.get('pendingMsg');
-  
+  const [pendingMsg, setPendingMsg] = useState<string | null>(null);
+
+  const [reqSheetOpen, setReqSheetOpen] = useState(false);
+  const [confirmSheetOpen, setConfirmSheetOpen] = useState(false);
+  const [selectedConfirmMessage, setSelectedConfirmMessage] = useState<ChatMessage | null>(null);
+
   const rawId = Array.isArray(params.roomId) ? params.roomId[0] : params.roomId;
   const isNewRoom = rawId === 'new';
   const roomId = isNewRoom ? -1 : Number(rawId);
@@ -110,6 +116,8 @@ export function ChatRoomPage() {
         productId: prod.id,
         productTitle: prod.title,
         productThumbnailUrl: null,
+        productPrice: prod.price,
+        productStatus: prod.status,
         buyerId: currentUser?.id ?? -1,
         buyerNickname: currentUser?.nickname ?? '',
         sellerId: prod.sellerId,
@@ -128,8 +136,31 @@ export function ChatRoomPage() {
     queryFn: async () => {
       const res = await apiClient.get(`${ENDPOINTS.CHATS.DETAIL(roomId)}?userId=${currentUser?.id}`, accessToken ?? undefined);
       if (!res.ok) throw new Error('채팅방 정보를 불러오지 못했습니다.');
-      const json = await res.json() as ChatRoom | ChatRoomResponse;
-      return (json as ChatRoomResponse).data || (json as ChatRoom);
+      const json: any = await res.json();
+      const d = json.data || json;
+      
+      if (d.product) {
+        return {
+          id: d.roomId,
+          productId: d.product.productId,
+          productTitle: d.product.title,
+          productThumbnailUrl: d.product.imageUrl,
+          productPrice: d.product.price,
+          productStatus: d.product.status,
+          partnerId: d.partner?.userId,
+          partnerNickname: d.partner?.nickname,
+          lastMessage: d.lastMessage,
+          lastSentAt: d.lastSentAt,
+          roomStatus: d.roomStatus,
+          buyerId: -1,
+          buyerNickname: '',
+          sellerId: -1,
+          sellerNickname: '',
+          unreadCount: 0,
+        } as any;
+      }
+      
+      return d as ChatRoom;
     },
     enabled: !isNewRoom && !isNaN(roomId) && !!currentUser?.id,
   });
@@ -218,8 +249,7 @@ export function ChatRoomPage() {
       webSocketFactory: () => new SockJS(SOCKET_URL),
       connectHeaders: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
       onConnect: () => {
-        setIsStompConnected(true);
-        client.subscribe(`/topic/chat/${roomId}`, (frame) => {
+        client.subscribe(`/sub/chat/room/${roomId}`, (frame) => {
           try {
             const msg = JSON.parse(frame.body) as ChatMessage;
             setLocalMessages((prev) => {
@@ -230,6 +260,18 @@ export function ChatRoomPage() {
             // ignore
           }
         });
+        setIsStompConnected(true);
+
+        const pending = sessionStorage.getItem('pendingChatMsg');
+        if (pending && currentUser?.id) {
+          client.publish({
+            destination: `/pub/chat/message`,
+            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+            body: JSON.stringify({ roomId, senderId: currentUser.id, content: pending, type: 'TALK', isRead: false }),
+          });
+          sessionStorage.removeItem('pendingChatMsg');
+          // No need to add local optimistic message, as WebSocket subscribe will catch it immediately.
+        }
       },
       onDisconnect: () => {
         setIsStompConnected(false);
@@ -246,27 +288,7 @@ export function ChatRoomPage() {
 
   const currentUserId = currentUser?.id ?? null;
 
-  useEffect(() => {
-    if (pendingMsg && isStompConnected && !hasSentPending.current && stompRef.current?.connected) {
-      hasSentPending.current = true;
-      stompRef.current.publish({
-        destination: `/app/chat/${roomId}`,
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        body: JSON.stringify({ content: pendingMsg }),
-      });
-      const optimistic: ChatMessage = {
-        id: `local-${Date.now()}`,
-        roomId,
-        senderId: currentUserId ?? -1,
-        senderNickname: currentUser?.nickname ?? '나',
-        content: pendingMsg,
-        sentAt: new Date().toISOString(),
-        isRead: false,
-      };
-      setLocalMessages((prev) => [...prev, optimistic]);
-      router.replace(`/chat/${roomId}`);
-    }
-  }, [pendingMsg, isStompConnected, roomId, accessToken, currentUserId, currentUser, router]);
+
 
   const createChatMutation = useMutation({
     mutationFn: async () => {
@@ -287,7 +309,8 @@ export function ChatRoomPage() {
         try {
           const newRoomId = await createChatMutation.mutateAsync();
           if (newRoomId) {
-            router.replace(`/chat/${newRoomId}?pendingMsg=${encodeURIComponent(content)}`);
+            sessionStorage.setItem('pendingChatMsg', content);
+            router.replace(`/chat/${newRoomId}`);
           }
         } catch (e) {
           console.error(e);
@@ -308,18 +331,40 @@ export function ChatRoomPage() {
         return;
       }
       stompRef.current.publish({
-        destination: `/app/chat/${roomId}`,
+        destination: `/pub/chat/message`,
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        body: JSON.stringify({ content, type: 'TALK' }),
+        body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content, type: 'TALK', isRead: false }),
       });
     },
     [roomId, accessToken, currentUserId, currentUser?.nickname, isNewRoom, createChatMutation, router]
   );
 
+  const handleTransactionRequestSubmit = useCallback((location: string, time: string, price: number) => {
+    if (!stompRef.current?.connected) return;
+    const content = JSON.stringify({ locationName: location, time, price });
+    stompRef.current.publish({
+      destination: `/pub/chat/message`,
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content, type: 'PAYMENT_REQUEST', isRead: false }),
+    });
+    setReqSheetOpen(false);
+  }, [roomId, accessToken, currentUserId]);
+
+  const handleTransactionAction = useCallback((msg: ChatMessage, actionType: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL') => {
+    if (!stompRef.current?.connected) return;
+    stompRef.current.publish({
+      destination: `/pub/chat/message`,
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content: msg.content, type: actionType, isRead: false }),
+    });
+    setConfirmSheetOpen(false);
+    setSelectedConfirmMessage(null);
+  }, [roomId, accessToken, currentUserId]);
+
   const headerTitle = room
-    ? room.buyerId === currentUserId
+    ? (room as any).partnerNickname || (room.buyerId === currentUserId
       ? room.sellerNickname || '채팅'
-      : room.buyerNickname || '채팅'
+      : room.buyerNickname || '채팅')
     : '채팅';
     
   const isLoading = roomLoading || messagesLoading;
@@ -332,9 +377,9 @@ export function ChatRoomPage() {
           <ChatRoomItemSummary
             productId={room.productId}
             productTitle={room.productTitle}
-            productThumbnailUrl={room.productThumbnailUrl}
-            price={0}
-            status={room.roomStatus}
+            productThumbnailUrl={room.productThumbnailUrl || null}
+            price={room.productPrice ?? 0}
+            status={room.productStatus ?? room.roomStatus}
           />
         </ItemSummaryBar>
       )}
@@ -362,7 +407,19 @@ export function ChatRoomPage() {
               return <SystemMessage key={msg.id} message={msg.content} />;
             }
             if (['PAYMENT_REQUEST', 'PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
-              return <PaymentChatBubble key={msg.id} type={msgType as any} message={msg.content} sentAt={msg.sentAt} isMine={isMine} />;
+              return (
+                <TransactionBubble
+                  key={msg.id}
+                  message={msg}
+                  isMyMessage={isMine}
+                  onCancel={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
+                  onReject={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
+                  onAccept={() => {
+                    setSelectedConfirmMessage(msg);
+                    setConfirmSheetOpen(true);
+                  }}
+                />
+              );
             }
             if (msgType === 'MAP') {
               return <MapChatBubble key={msg.id} lat={msg.latitude || 0} lng={msg.longitude || 0} label={msg.locationName} isMine={isMine} sentAt={msg.sentAt} />;
@@ -384,7 +441,28 @@ export function ChatRoomPage() {
           <div ref={bottomRef} />
         </MessagesArea>
       )}
-      <ChatInputArea onSend={handleSend} bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} />
+      <ChatInputArea 
+        onSend={handleSend} 
+        onSelectTransaction={() => setReqSheetOpen(true)}
+        bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} 
+      />
+
+      <TransactionRequestSheet
+        isOpen={reqSheetOpen}
+        onClose={() => setReqSheetOpen(false)}
+        roomInfo={room ? { productTitle: room.productTitle, productPrice: room.productPrice, productThumbnailUrl: room.productThumbnailUrl } : null}
+        onSubmit={handleTransactionRequestSubmit}
+      />
+
+      <TransactionConfirmSheet
+        isOpen={confirmSheetOpen}
+        onClose={() => setConfirmSheetOpen(false)}
+        roomInfo={room ? { productTitle: room.productTitle, productThumbnailUrl: room.productThumbnailUrl } : null}
+        content={selectedConfirmMessage ? JSON.parse(selectedConfirmMessage.content || '{}') : undefined}
+        onConfirm={() => {
+          if (selectedConfirmMessage) handleTransactionAction(selectedConfirmMessage, 'PAYMENT_SUCCESS');
+        }}
+      />
     </Page>
   );
 }

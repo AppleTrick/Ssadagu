@@ -5,6 +5,8 @@ export interface ChatRoom {
   productId: number;
   productTitle: string;
   productThumbnailUrl: string | null;
+  productPrice?: number;
+  productStatus?: string;
   buyerId: number;
   buyerNickname: string;
   sellerId: number;
@@ -16,6 +18,12 @@ export interface ChatRoom {
 }
 
 export type MessageType = 'TALK' | 'ENTER' | 'LEAVE' | 'SYSTEM' | 'PAYMENT_REQUEST' | 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' | 'IMAGE' | 'MAP';
+
+export interface TransactionContent {
+  price?: number;
+  time?: string;
+  locationName?: string;
+}
 
 export interface ChatMessage {
   id: string; // 백엔드 message_id
