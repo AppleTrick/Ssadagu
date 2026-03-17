@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import styled from '@emotion/styled';
@@ -43,6 +43,46 @@ const CATEGORIES = [
   { code: 'HOBB', label: '취미/게임' },
   { code: 'ETC', label: '기타' },
 ];
+
+/* ── Utilities ──────────────────────────────────────────── */
+
+const compressImage = (file: File, maxWidth = 1024, quality = 0.8): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas context is null'));
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return reject(new Error('Canvas to Blob failed'));
+            const newFile = new File([blob], file.name, {
+              type: file.type || 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(newFile);
+          },
+          file.type || 'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = () => reject(new Error('Image loop failed'));
+    };
+    reader.onerror = () => reject(new Error('File read error'));
+  });
+};
 
 /* ── Styled ─────────────────────────────────────────────── */
 
@@ -143,6 +183,39 @@ const PhotoCount = styled.span`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.xs};
   color: ${colors.textSecondary};
+`;
+
+const PhotoPreviewBox = styled.div`
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: ${radius.md};
+  position: relative;
+  background-color: ${colors.bg};
+  overflow: hidden;
+  border: 1px solid ${colors.border};
+`;
+
+const DeleteBtn = styled.button`
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  padding: 0;
+  svg {
+    width: 14px;
+    height: 14px;
+  }
 `;
 
 /* ── Field Components ───────────────────────────────────── */
@@ -356,7 +429,8 @@ const MapPinIcon = () => (
 const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormProps) => {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
-  const [photoCount, setPhotoCount] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imagePreviews, setImagePreviews] = useState<{ id?: number; url: string; file?: File }[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const { data: myProfile } = useQuery<User>({
@@ -404,13 +478,48 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
         regionName: initialData.regionName,
         status: initialData.status,
       });
+      if (initialData.images && initialData.images.length > 0) {
+        setImagePreviews(
+          [...initialData.images]
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .map((img) => ({ id: img.id, url: img.imageUrl }))
+        );
+      }
     }
   }, [initialData, reset]);
 
   const handlePhotoAdd = () => {
-    if (photoCount < 10) {
-      setPhotoCount((c) => c + 1);
+    if (imagePreviews.length >= 5) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const remainingSlots = 5 - imagePreviews.length;
+    const filesToProcess = files.slice(0, remainingSlots);
+
+    try {
+      const compressedFiles = await Promise.all(
+        filesToProcess.map((file) => compressImage(file))
+      );
+
+      const newPreviews = compressedFiles.map((file) => ({
+        url: URL.createObjectURL(file),
+        file,
+      }));
+
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
+    } catch (err) {
+      console.error('이미지 처리 중 오류 발생', err);
     }
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleLocationClick = () => {
@@ -423,6 +532,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
 
   const onSubmit = async (data: FormValues) => {
     setServerError(null);
+    const imagesToUpload = imagePreviews.filter((p) => p.file).map((p) => p.file as File);
     try {
       if (isEdit) {
         await updateMutation.mutateAsync({
@@ -432,6 +542,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           description: data.description,
           regionName: data.regionName || '미설정',
           status: (data.status as any) || 'ON_SALE',
+          images: imagesToUpload,
         });
         router.replace(`/products/${productId}`);
       } else {
@@ -442,6 +553,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           price: Number(data.price.replace(/[^0-9]/g, '')),
           description: data.description,
           regionName: data.regionName || '미설정',
+          images: imagesToUpload,
         });
 
         const newProductId =
@@ -476,9 +588,26 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
         <PhotoRow>
           <PhotoBox onClick={handlePhotoAdd} role="button" aria-label="사진 추가">
             <CameraIcon />
-            <PhotoCount>{photoCount}/10</PhotoCount>
+            <PhotoCount>{imagePreviews.length}/5</PhotoCount>
           </PhotoBox>
+          {imagePreviews.map((preview, i) => (
+            <PhotoPreviewBox key={preview.url}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={preview.url} alt={`preview-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <DeleteBtn type="button" onClick={() => handleRemoveImage(i)}>
+                <CloseIcon />
+              </DeleteBtn>
+            </PhotoPreviewBox>
+          ))}
         </PhotoRow>
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          multiple
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
 
         <Section>
           {isEdit && (

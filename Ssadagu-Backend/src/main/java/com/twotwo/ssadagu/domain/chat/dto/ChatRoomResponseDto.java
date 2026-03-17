@@ -17,11 +17,14 @@ public class ChatRoomResponseDto {
     private Long productId;
     private String productTitle;
     private String productImageUrl;
+    private Long productPrice;
+    private String productStatus;
     private Long partnerId;
     private String partnerNickname;
     private String lastMessage;
     private LocalDateTime lastSentAt;
     private Integer unreadCount;
+    private String myRole;
 
     public static ChatRoomResponseDto from(ChatRoom chatRoom, Long currentUserId) {
         Product product = chatRoom.getProduct();
@@ -39,11 +42,14 @@ public class ChatRoomResponseDto {
                 .productId(product.getId())
                 .productTitle(product.getTitle())
                 .productImageUrl(imageUrl)
+                .productPrice(product.getPrice())
+                .productStatus(product.getStatus())
                 .partnerId(partner.getId())
                 .partnerNickname(partner.getNickname())
                 .lastMessage(chatRoom.getLastMessage())
                 .lastSentAt(chatRoom.getLastSentAt())
                 .unreadCount(unreadCount)
+                .myRole(chatRoom.getBuyer().getId().equals(currentUserId) ? "BUYER" : "SELLER")
                 .build();
     }
 }

@@ -59,6 +59,7 @@ export interface ProductDetail {
   updatedAt: string;
   isMine?: boolean;
   isLiked?: boolean;
+  images?: ProductImage[];
 }
 
 export interface CreateProductRequest {
@@ -68,6 +69,7 @@ export interface CreateProductRequest {
   price: number;
   categoryCode: string;
   regionName: string;
+  images?: File[];
 }
 
 export interface UpdateProductRequest {
@@ -77,4 +79,5 @@ export interface UpdateProductRequest {
   categoryCode: string;
   regionName: string;
   status: ProductStatus;
+  images?: File[];
 }

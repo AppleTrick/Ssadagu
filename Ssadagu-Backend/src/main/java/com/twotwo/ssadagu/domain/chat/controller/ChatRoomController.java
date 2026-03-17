@@ -55,8 +55,13 @@ public class ChatRoomController {
 
     @Operation(summary = "읽음 처리", description = "해당 채팅방의 모든 메시지를 읽음 처리합니다.")
     @PatchMapping("/rooms/{roomId}/read")
-    public ResponseEntity<Map<String, Object>> markAsRead(@PathVariable Long roomId) {
+    public ResponseEntity<Map<String, Object>> markAsRead(
+            @PathVariable Long roomId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.twotwo.ssadagu.global.security.CustomUserDetails userDetails) {
         int count = chatMessageService.markAsRead(roomId);
+        if (userDetails != null && userDetails.getUser() != null) {
+            chatRoomService.resetUnreadCount(roomId, userDetails.getUser().getId());
+        }
         return ResponseEntity.ok(Map.of("updated", count));
     }
 
@@ -78,5 +83,10 @@ public class ChatRoomController {
     @GetMapping("/products/{productId}/rooms/count")
     public ResponseEntity<Integer> getChatRoomCountByProduct(@PathVariable Long productId) {
         return ResponseEntity.ok(chatRoomService.getChatRoomCountByProductId(productId));
+    }
+
+    @GetMapping("/test/{userId}")
+    public ResponseEntity<List<com.twotwo.ssadagu.domain.chat.dto.ChatRoomResponseDto>> testMyChats(@PathVariable Long userId) {
+        return ResponseEntity.ok(chatRoomService.getChatRoomsByUserId(userId));
     }
 }

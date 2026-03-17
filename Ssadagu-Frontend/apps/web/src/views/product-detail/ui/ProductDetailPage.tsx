@@ -321,10 +321,13 @@ export function ProductDetailPage() {
         )}
         {!isLoading && !isError && product && (
           <>
-            {/* API에서 이미지를 제공하지 않으므로 플레이스홀더 처리 */}
-            <div style={{ width: '100%', height: '300px', background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textSecondary }}>
-              이미지가 없습니다
-            </div>
+            {product.images && product.images.length > 0 ? (
+              <ImageCarousel images={product.images.map(img => img.imageUrl)} />
+            ) : (
+              <div style={{ width: '100%', height: '300px', background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textSecondary }}>
+                이미지가 없습니다
+              </div>
+            )}
             <SellerSection>
               <SellerCard sellerId={product.sellerId} sellerNickname={product.sellerNickname || `판매자 ${product.sellerId}`} />
               <StatusBadge $status={product.status}>

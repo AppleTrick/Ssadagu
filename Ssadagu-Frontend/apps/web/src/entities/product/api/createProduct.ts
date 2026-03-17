@@ -12,9 +12,22 @@ export const createProduct = async (
   productData: CreateProductRequest,
   accessToken?: string,
 ) => {
-  const res = await apiClient.post(
+  const { images, ...requestDto } = productData;
+  const formData = new FormData();
+  formData.append(
+    'request',
+    new Blob([JSON.stringify(requestDto)], { type: 'application/json' })
+  );
+
+  if (images && images.length > 0) {
+    images.forEach((file) => {
+      formData.append('images', file);
+    });
+  }
+
+  const res = await apiClient.postMultipart(
     ENDPOINTS.PRODUCTS.BASE,
-    productData,
+    formData,
     accessToken,
   );
 

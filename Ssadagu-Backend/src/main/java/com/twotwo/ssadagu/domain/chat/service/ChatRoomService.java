@@ -90,6 +90,28 @@ public class ChatRoomService {
         
         chatRoomRepository.save(updatedChatRoom);
     }
+    
+    @Transactional
+    public void resetUnreadCount(Long roomId, Long currentUserId) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("ChatRoom not found"));
+        
+        boolean isBuyer = chatRoom.getBuyer().getId().equals(currentUserId);
+        
+        ChatRoom updatedChatRoom = ChatRoom.builder()
+                .id(chatRoom.getId())
+                .product(chatRoom.getProduct())
+                .buyer(chatRoom.getBuyer())
+                .seller(chatRoom.getSeller())
+                .lastMessage(chatRoom.getLastMessage())
+                .lastSentAt(chatRoom.getLastSentAt())
+                .unreadCountBuyer(isBuyer ? 0 : chatRoom.getUnreadCountBuyer())
+                .unreadCountSeller(!isBuyer ? 0 : chatRoom.getUnreadCountSeller())
+                .roomStatus(chatRoom.getRoomStatus())
+                .build();
+                
+        chatRoomRepository.save(updatedChatRoom);
+    }
     @Transactional(readOnly = true)
     public java.util.List<com.twotwo.ssadagu.domain.chat.dto.ChatRoomResponseDto> getChatRoomsByUserId(Long userId) {
         return chatRoomRepository.findByBuyerIdOrSellerId(userId, userId).stream()

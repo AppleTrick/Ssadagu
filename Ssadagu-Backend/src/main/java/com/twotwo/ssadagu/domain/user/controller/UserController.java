@@ -55,6 +55,32 @@ public class UserController {
 
     // ===== 마이페이지 =====
 
+    @Operation(summary = "내 정보 조회", description = "로그인된 사용자의 정보를 반환합니다.")
+    @GetMapping("/me")
+    public ApiResponse<MyPageResponseDto> getMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getUser().getId();
+        MyPageResponseDto responseDto = userService.getMyPage(userId);
+        return ApiResponse.success(responseDto);
+    }
+
+    @Operation(summary = "내 판매 내역 (토큰 기반)")
+    @GetMapping("/me/products")
+    public ApiResponse<List<ProductResponseDto>> getMyProductsByMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return getMyProducts(userDetails.getUser().getId(), userDetails);
+    }
+
+    @Operation(summary = "내 구매 내역 (토큰 기반)")
+    @GetMapping({"/me/purchases", "/me/transactions"})
+    public ApiResponse<List<TransactionResponseDto>> getMyPurchasesByMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return getMyPurchases(userDetails.getUser().getId(), userDetails);
+    }
+
+    @Operation(summary = "내 관심 목록 (토큰 기반)")
+    @GetMapping("/me/wishes")
+    public ApiResponse<List<ProductWishResponseDto>> getMyWishesByMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return getMyWishes(userDetails.getUser().getId(), userDetails);
+    }
+
     @Operation(summary = "내 프로필 조회", description = "특정 사용자의 프로필 정보를 반환합니다. (본인만 가능)")
     @GetMapping("/{userId}")
     public ApiResponse<MyPageResponseDto> getMyPage(
