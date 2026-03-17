@@ -86,4 +86,13 @@ export const apiClient = {
       method: 'DELETE',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     }, token),
+  patch: (url: string, body?: unknown, token?: string) =>
+    handleRequest(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    }, token),
 };

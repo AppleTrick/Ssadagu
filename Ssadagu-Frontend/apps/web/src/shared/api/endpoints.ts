@@ -27,6 +27,7 @@ export const ENDPOINTS = {
     CREATE: '/chat/rooms',
     DETAIL: (roomId: number) => `/chat/rooms/${roomId}`,
     MESSAGES: (roomId: number) => `/chat/rooms/${roomId}/messages`,
+    READ: (roomId: number) => `/chat/rooms/${roomId}/read`,
   },
   TRANSFERS: {
     BASE: '/transfers',
