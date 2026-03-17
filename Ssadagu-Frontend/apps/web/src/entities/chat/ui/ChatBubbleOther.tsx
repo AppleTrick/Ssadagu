@@ -3,13 +3,18 @@
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
 
+import { MessageType } from '../model/types';
+
 interface ChatBubbleOtherProps {
+  type?: MessageType;
   senderNickname: string;
   message: string;
-  sentAt: string;
+  sentAt: string | null;
+  imageUrl?: string | null;
 }
 
-const formatTime = (dateStr: string) => {
+const formatTime = (dateStr: string | null) => {
+  if (!dateStr) return '';
   const date = new Date(dateStr);
   const hours = date.getHours();
   const minutes = date.getMinutes();
@@ -19,7 +24,7 @@ const formatTime = (dateStr: string) => {
   return `${ampm} ${h}:${m}`;
 };
 
-const ChatBubbleOther = ({ senderNickname, message, sentAt }: ChatBubbleOtherProps) => {
+const ChatBubbleOther = ({ type = 'TALK', senderNickname, message, sentAt, imageUrl }: ChatBubbleOtherProps) => {
   return (
     <Row>
       <Avatar>
@@ -30,7 +35,11 @@ const ChatBubbleOther = ({ senderNickname, message, sentAt }: ChatBubbleOtherPro
       <ContentCol>
         <Nickname>{senderNickname}</Nickname>
         <BubbleRow>
-          <Bubble>{message}</Bubble>
+          {type === 'IMAGE' && imageUrl ? (
+            <ImageBubble src={imageUrl} alt="전송받은 이미지" />
+          ) : (
+            <Bubble>{message}</Bubble>
+          )}
           <TimeText>{formatTime(sentAt)}</TimeText>
         </BubbleRow>
       </ContentCol>
@@ -97,4 +106,10 @@ const TimeText = styled.span`
   color: ${colors.textSecondary};
   flex-shrink: 0;
   line-height: 1;
+`;
+
+const ImageBubble = styled.img`
+  max-width: 70%;
+  border-radius: 18px 18px 18px 4px;
+  object-fit: cover;
 `;

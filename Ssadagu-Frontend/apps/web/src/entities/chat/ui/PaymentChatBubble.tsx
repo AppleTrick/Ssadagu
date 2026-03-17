@@ -2,16 +2,16 @@
 
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
+import { MessageType } from '../model/types';
 
-interface MapChatBubbleProps {
-  lat: number;
-  lng: number;
-  label?: string | null;
+interface PaymentChatBubbleProps {
+  type: MessageType;
+  message: string;
+  sentAt: string | null;
   isMine: boolean;
-  sentAt?: string | null;
 }
 
-const formatTime = (dateStr: string | null | undefined) => {
+const formatTime = (dateStr: string | null) => {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   const hours = date.getHours();
@@ -22,9 +22,7 @@ const formatTime = (dateStr: string | null | undefined) => {
   return `${ampm} ${h}:${m}`;
 };
 
-const MapChatBubble = ({ lat, lng, label, isMine, sentAt }: MapChatBubbleProps) => {
-  const mapLink = `https://map.kakao.com/link/map/${label ? encodeURIComponent(label) : '위치'},${lat},${lng}`;
-
+const PaymentChatBubble = ({ type, message, sentAt, isMine }: PaymentChatBubbleProps) => {
   return (
     <Row $isMine={isMine}>
       {!isMine && (
@@ -37,17 +35,14 @@ const MapChatBubble = ({ lat, lng, label, isMine, sentAt }: MapChatBubbleProps) 
       <ContentCol $isMine={isMine}>
         <BubbleRow $isMine={isMine}>
           {isMine && <TimeText>{formatTime(sentAt)}</TimeText>}
-          <CardBubble $isMine={isMine} href={mapLink} target="_blank" rel="noopener noreferrer">
-            <MapIcon>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-            </MapIcon>
-            <MapInfo>
-              <MapLabel>{label || `위치 정보 (${lat.toFixed(4)}, ${lng.toFixed(4)})`}</MapLabel>
-              <MapAction>지도 보기</MapAction>
-            </MapInfo>
+          <CardBubble $isMine={isMine}>
+            <Title>
+              {type === 'PAYMENT_REQUEST' && '싸다구페이 송금요청'}
+              {type === 'PAYMENT_SUCCESS' && '싸다구페이 송금완료'}
+              {type === 'PAYMENT_FAIL' && '싸다구페이 결제실패'}
+            </Title>
+            <Divider />
+            <Message>{message}</Message>
           </CardBubble>
           {!isMine && <TimeText>{formatTime(sentAt)}</TimeText>}
         </BubbleRow>
@@ -56,7 +51,7 @@ const MapChatBubble = ({ lat, lng, label, isMine, sentAt }: MapChatBubbleProps) 
   );
 };
 
-export default MapChatBubble;
+export default PaymentChatBubble;
 
 const Row = styled.div<{ $isMine: boolean }>`
   display: flex;
@@ -93,56 +88,32 @@ const BubbleRow = styled.div<{ $isMine: boolean }>`
   gap: 6px;
 `;
 
-const CardBubble = styled.a<{ $isMine: boolean }>`
+const CardBubble = styled.div<{ $isMine: boolean }>`
   background: ${colors.surface};
   border: 1px solid ${colors.border};
   border-radius: ${({ $isMine }) => ($isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px')};
-  padding: 12px;
+  padding: 12px 16px;
   min-width: 200px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  color: inherit;
-  transition: opacity 0.2s;
-  
-  &:active {
-    opacity: 0.7;
-  }
 `;
 
-const MapIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: ${colors.bg};
+const Title = styled.div`
+  font-size: ${typography.size.sm};
+  font-weight: ${typography.weight.bold};
   color: ${colors.primary};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  margin-bottom: 8px;
 `;
 
-const MapInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow: hidden;
+const Divider = styled.div`
+  height: 1px;
+  background: ${colors.border};
+  margin-bottom: 8px;
 `;
 
-const MapLabel = styled.div`
+const Message = styled.div`
   font-size: ${typography.size.base};
-  font-weight: ${typography.weight.medium};
   color: ${colors.textPrimary};
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
-
-const MapAction = styled.div`
-  font-size: ${typography.size.xs};
-  color: ${colors.textSecondary};
+  word-break: break-all;
+  white-space: pre-wrap;
 `;
 
 const TimeText = styled.span`
