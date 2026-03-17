@@ -78,9 +78,9 @@ public class ProductService {
     public List<ProductResponseDto> getProducts(String regionName, Long currentUserId) {
         List<Product> products;
         if (regionName != null && !regionName.isBlank()) {
-            products = productRepository.findByRegionNameAndStatusNot(regionName, "DELETED");
+            products = productRepository.findByRegionNameAndStatusNotOrderByCreatedAtDesc(regionName, "DELETED");
         } else {
-            products = productRepository.findByStatusNot("DELETED");
+            products = productRepository.findByStatusNotOrderByCreatedAtDesc("DELETED");
         }
         
         return products.stream()
