@@ -35,14 +35,14 @@ const Page = styled.div`
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT}px;
+  margin-top: ${HEADER_HEIGHT}px;
   padding-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
 `;
 
 const TabContainer = styled.div`
   position: sticky;
-  top: ${HEADER_HEIGHT}px;
+  top: 0;
   z-index: 5;
   background: ${colors.surface};
 `;
@@ -110,8 +110,8 @@ export function ChatListPage() {
     queryFn: async () => {
       const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
       if (!res.ok) throw new Error('사용자 정보 오류');
-      const json = await res.json() as User | { data?: User };
-      if ((json as { data?: User }).data) return (json as { data: User }).data;
+      const json = await res.json();
+      if (json?.data) return json.data as User;
       return json as User;
     },
     enabled: !!accessToken,
@@ -123,21 +123,22 @@ export function ChatListPage() {
     queryFn: async () => {
       const res = await apiClient.get(`${ENDPOINTS.CHATS.USER_ROOMS}?userId=${currentUser?.id}`, accessToken ?? undefined);
       if (!res.ok) throw new Error('채팅 목록을 불러오지 못했습니다.');
-      const json = await res.json() as ChatRoomsResponse | ChatRoom[];
-      if (Array.isArray(json)) return json;
-      const body = json as ChatRoomsResponse;
-      if (Array.isArray(body.content)) return body.content as ChatRoom[];
-      const d = body.data;
-      if (Array.isArray(d)) return d as ChatRoom[];
-      if (d && !Array.isArray(d) && Array.isArray((d as { content?: ChatRoom[] }).content)) {
-        return (d as { content: ChatRoom[] }).content;
-      }
+      const json = await res.json();
+      if (Array.isArray(json)) return json as ChatRoom[];
+      if (json?.data && Array.isArray(json.data)) return json.data as ChatRoom[];
       return [];
     },
     enabled: !!currentUser?.id,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
-  const filteredRooms = rooms ?? [];
+  const filteredRooms = (rooms ?? []).filter((room: any) => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'sell') return room.myRole === 'SELLER';
+    if (activeTab === 'buy') return room.myRole === 'BUYER';
+    return true;
+  });
 
   return (
     <Page>
