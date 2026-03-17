@@ -1,7 +1,7 @@
 import { useAuthStore } from '../auth/useAuthStore';
 import { ENDPOINTS } from './endpoints';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1';
 
 const handleRequest = async (url: string, options: RequestInit, originalToken?: string): Promise<Response> => {
   const finalOptions: RequestInit = {
@@ -85,5 +85,14 @@ export const apiClient = {
     handleRequest(url, {
       method: 'DELETE',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }, token),
+  patch: (url: string, body?: unknown, token?: string) =>
+    handleRequest(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
     }, token),
 };

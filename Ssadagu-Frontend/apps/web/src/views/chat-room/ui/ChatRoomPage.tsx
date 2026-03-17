@@ -8,7 +8,7 @@ import SockJS from 'sockjs-client';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { ChatInputArea } from '@/widgets/chat-input';
-import { ChatBubbleMine, ChatBubbleOther, ChatRoomItemSummary } from '@/entities/chat';
+import { ChatBubbleMine, ChatBubbleOther, ChatRoomItemSummary, SystemMessage, PaymentChatBubble, MapChatBubble } from '@/entities/chat';
 import type { ChatMessage, ChatRoom } from '@/entities/chat';
 import type { User } from '@/entities/user';
 import { apiClient } from '@/shared/api/client';
@@ -81,8 +81,11 @@ export function ChatRoomPage() {
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const stompRef = useRef<Client | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const topRef = useRef<HTMLDivElement | null>(null);
   const hasSentPending = useRef(false);
   const [isStompConnected, setIsStompConnected] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const { data: currentUser } = useQuery<User>({
     queryKey: ['myProfile'],
@@ -158,8 +161,56 @@ export function ChatRoomPage() {
   }, [historyMessages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [localMessages]);
+    // Only scroll to bottom on initial load or when a new message is appended at the end
+    // For pagination, we shouldn't scroll to bottom. 
+    // We'll trust that the user was already looking near the top.
+    if (localMessages.length <= 30) {
+      bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+    }
+  }, [localMessages.length]);
+
+  useEffect(() => {
+    if (!historyMessages || isError || !hasMore || localMessages.length === 0 || isFetchingMore) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          const loadMore = async () => {
+             const oldestId = localMessages[0].id;
+             if (typeof oldestId === 'string' && oldestId.startsWith('local-')) return;
+             
+             setIsFetchingMore(true);
+             try {
+                const res = await apiClient.get(`${ENDPOINTS.CHATS.MESSAGES(roomId)}?cursor=${oldestId}&size=30`, accessToken ?? undefined);
+                if (res.ok) {
+                   const qs = await res.json() as any;
+                   const moreMessages = Array.isArray(qs) ? qs : Array.isArray(qs.content) ? qs.content : Array.isArray(qs.data) ? qs.data : qs.data?.content || [];
+                   if (moreMessages.length < 30) setHasMore(false);
+                   if (moreMessages.length > 0) {
+                      setLocalMessages(prev => [...moreMessages, ...prev]);
+                   }
+                }
+             } catch (e) { console.error(e); }
+             finally {
+                 setIsFetchingMore(false);
+             }
+          };
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (topRef.current) observer.observe(topRef.current);
+    
+    return () => observer.disconnect();
+  }, [historyMessages, isError, hasMore, localMessages[0]?.id, roomId, accessToken, isFetchingMore]);
+
+  useEffect(() => {
+    if (roomId > 0 && currentUser?.id && historyMessages && historyMessages.length > 0) {
+      apiClient.patch(ENDPOINTS.CHATS.READ(roomId), null, accessToken ?? undefined).catch(console.error);
+    }
+  }, [roomId, currentUser?.id, accessToken, historyMessages]);
 
   useEffect(() => {
     if (isNewRoom || isNaN(roomId)) return;
@@ -259,7 +310,7 @@ export function ChatRoomPage() {
       stompRef.current.publish({
         destination: `/app/chat/${roomId}`,
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, type: 'TALK' }),
       });
     },
     [roomId, accessToken, currentUserId, currentUser?.nickname, isNewRoom, createChatMutation, router]
@@ -301,18 +352,35 @@ export function ChatRoomPage() {
           {localMessages.length === 0 && (
             <EmptyMessages>아직 메시지가 없습니다. 먼저 인사해보세요!</EmptyMessages>
           )}
-          {localMessages.map((msg) =>
-            currentUserId !== null && msg.senderId === currentUserId ? (
-              <ChatBubbleMine key={msg.id} message={msg.content} sentAt={msg.sentAt} />
+          {localMessages.length > 0 && hasMore && <div ref={topRef} style={{ height: '1px' }} />}
+          {isFetchingMore && <div style={{ textAlign: 'center', fontSize: '12px', color: '#888' }}>이전 메시지 불러오는 중...</div>}
+          {localMessages.map((msg) => {
+            const isMine = currentUserId !== null && msg.senderId === currentUserId;
+            const msgType = msg.type || msg.messageType || 'TALK';
+            
+            if (['ENTER', 'LEAVE', 'SYSTEM'].includes(msgType)) {
+              return <SystemMessage key={msg.id} message={msg.content} />;
+            }
+            if (['PAYMENT_REQUEST', 'PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
+              return <PaymentChatBubble key={msg.id} type={msgType as any} message={msg.content} sentAt={msg.sentAt} isMine={isMine} />;
+            }
+            if (msgType === 'MAP') {
+              return <MapChatBubble key={msg.id} lat={msg.latitude || 0} lng={msg.longitude || 0} label={msg.locationName} isMine={isMine} sentAt={msg.sentAt} />;
+            }
+
+            return isMine ? (
+              <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt} imageUrl={msg.imageUrl} />
             ) : (
               <ChatBubbleOther
                 key={msg.id}
+                type={msgType}
                 senderNickname={msg.senderNickname}
                 message={msg.content}
                 sentAt={msg.sentAt}
+                imageUrl={msg.imageUrl}
               />
-            ),
-          )}
+            );
+          })}
           <div ref={bottomRef} />
         </MessagesArea>
       )}

@@ -15,12 +15,21 @@ export interface ChatRoom {
   roomStatus: RoomStatus;
 }
 
+export type MessageType = 'TALK' | 'ENTER' | 'LEAVE' | 'SYSTEM' | 'PAYMENT_REQUEST' | 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' | 'IMAGE' | 'MAP';
+
 export interface ChatMessage {
-  id: string;
+  id: string; // 백엔드 message_id
   roomId: number;
   senderId: number;
   senderNickname: string;
   content: string;
-  sentAt: string;
+  sentAt: string | null;
+  createdAt?: string; // 백엔드 필드 매핑
+  type?: MessageType; // 백엔드 필드 매핑
   isRead: boolean;
+  messageType?: MessageType;
+  imageUrl?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationName?: string | null;
 }

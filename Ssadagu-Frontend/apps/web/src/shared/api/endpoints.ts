@@ -17,16 +17,17 @@ export const ENDPOINTS = {
     VERIFY_CONFIRM: (id: number) => `/accounts/${id}/verify/confirm`,
   },
   PRODUCTS: {
-    BASE: '/v1/products',
-    DETAIL: (id: number) => `/v1/products/${id}`,
-    STATUS: (id: number) => `/v1/products/${id}/status`,
-    WISH: (id: number) => `/v1/products/${id}/wish`,
+    BASE: '/products',
+    DETAIL: (id: number) => `/products/${id}`,
+    STATUS: (id: number) => `/products/${id}/status`,
+    WISH: (id: number) => `/products/${id}/wish`,
   },
   CHATS: {
     USER_ROOMS: '/chat/rooms/user',
     CREATE: '/chat/rooms',
     DETAIL: (roomId: number) => `/chat/rooms/${roomId}`,
     MESSAGES: (roomId: number) => `/chat/rooms/${roomId}/messages`,
+    READ: (roomId: number) => `/chat/rooms/${roomId}/read`,
   },
   TRANSFERS: {
     BASE: '/transfers',
