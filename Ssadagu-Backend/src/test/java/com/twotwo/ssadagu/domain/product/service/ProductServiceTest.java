@@ -129,7 +129,7 @@ class ProductServiceTest {
         Product p1 = Product.builder().seller(seller).title("p1").status("ON_SALE").regionName("강남구").build();
         ReflectionTestUtils.setField(p1, "id", 10L);
 
-        given(productRepository.findByStatusNot("DELETED")).willReturn(List.of(p1));
+        given(productRepository.findByStatusNotOrderByCreatedAtDesc("DELETED")).willReturn(List.of(p1));
         given(productWishRepository.existsByUserIdAndProductId(1L, 10L)).willReturn(false);
 
         // when
