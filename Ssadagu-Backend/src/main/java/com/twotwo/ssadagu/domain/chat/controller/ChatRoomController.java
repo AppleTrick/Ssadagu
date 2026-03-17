@@ -26,8 +26,10 @@ public class ChatRoomController {
 
     @Operation(summary = "채팅방 생성 또는 조회")
     @PostMapping("/rooms")
-    public ResponseEntity<ChatRoom> createRoom(@RequestBody ChatRoomRequest request) {
-        ChatRoom chatRoom = chatRoomService.createOrGetChatRoom(request.getProductId(), request.getBuyerId());
+    public ResponseEntity<ChatRoom> createRoom(
+            @RequestBody ChatRoomRequest request,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.twotwo.ssadagu.global.security.CustomUserDetails userDetails) {
+        ChatRoom chatRoom = chatRoomService.createOrGetChatRoom(request.getProductId(), userDetails.getUser().getId());
         return ResponseEntity.ok(chatRoom);
     }
 

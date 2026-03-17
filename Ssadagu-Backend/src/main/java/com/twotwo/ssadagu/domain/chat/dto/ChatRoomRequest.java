@@ -14,6 +14,4 @@ import lombok.NoArgsConstructor;
 public class ChatRoomRequest {
     @Schema(description = "상품 ID", example = "1")
     private Long productId;
-    @Schema(description = "구매자(채팅 시작자) ID", example = "2")
-    private Long buyerId;
 }
