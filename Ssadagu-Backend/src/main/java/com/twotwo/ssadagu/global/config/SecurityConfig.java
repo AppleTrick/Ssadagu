@@ -60,7 +60,7 @@ public class SecurityConfig {
                                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(authorize -> authorize
                                                 // public API
-                                                .requestMatchers("/api/auth/**", "/api/users/signup", "/swagger-ui/**",
+                                                .requestMatchers("/api/v1/auth/**", "/api/v1/users/signup", "/swagger-ui/**",
                                                                 "/v3/api-docs/**", "/error", "/api/v1/demand-deposits/**", "/ws/**")
                                                 .permitAll()
                                                 // 그 외 요청은 모두 인증 필요
