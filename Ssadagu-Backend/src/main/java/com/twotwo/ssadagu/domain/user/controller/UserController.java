@@ -25,7 +25,7 @@ import java.util.List;
 @Tag(name = "User", description = "사용자 관리 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 public class UserController {
 
     private final UserService userService;
@@ -55,52 +55,70 @@ public class UserController {
 
     // ===== 마이페이지 =====
 
-    @Operation(summary = "내 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 반환합니다.")
-    @GetMapping("/me")
+    @Operation(summary = "내 프로필 조회", description = "특정 사용자의 프로필 정보를 반환합니다. (본인만 가능)")
+    @GetMapping("/{userId}")
     public ApiResponse<MyPageResponseDto> getMyPage(
+            @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        MyPageResponseDto responseDto = userService.getMyPage(userDetails.getUser().getId());
+        validateUserAuthority(userDetails, userId);
+        MyPageResponseDto responseDto = userService.getMyPage(userId);
         return ApiResponse.success(responseDto);
     }
 
-    @Operation(summary = "프로필 수정", description = "닉네임을 수정합니다.")
-    @PatchMapping("/me")
+    @Operation(summary = "프로필 수정", description = "닉네임을 수정합니다. (본인만 가능)")
+    @PatchMapping("/{userId}")
     public ApiResponse<MyPageResponseDto> updateProfile(
+            @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid ProfileUpdateRequestDto requestDto) {
-        MyPageResponseDto responseDto = userService.updateProfile(userDetails.getUser().getId(), requestDto);
+        validateUserAuthority(userDetails, userId);
+        MyPageResponseDto responseDto = userService.updateProfile(userId, requestDto);
         return ApiResponse.success(responseDto);
     }
 
-    @Operation(summary = "회원 탈퇴", description = "현재 로그인한 사용자를 탈퇴 처리합니다.")
-    @DeleteMapping("/me")
+    @Operation(summary = "회원 탈퇴", description = "사용자를 탈퇴 처리합니다. (본인만 가능)")
+    @DeleteMapping("/{userId}")
     public ApiResponse<Void> deleteUser(
+            @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        userService.deleteUser(userDetails.getUser().getId());
+        validateUserAuthority(userDetails, userId);
+        userService.deleteUser(userId);
         return ApiResponse.success(null);
     }
 
-    @Operation(summary = "내 판매 내역", description = "내가 등록한 상품 목록을 반환합니다.")
-    @GetMapping("/me/products")
+    @Operation(summary = "내 판매 내역", description = "사용자가 등록한 상품 목록을 반환합니다. (본인만 가능)")
+    @GetMapping("/{userId}/products")
     public ApiResponse<List<ProductResponseDto>> getMyProducts(
+            @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<ProductResponseDto> products = userService.getMyProducts(userDetails.getUser().getId());
+        validateUserAuthority(userDetails, userId);
+        List<ProductResponseDto> products = userService.getMyProducts(userId);
         return ApiResponse.success(products);
     }
 
-    @Operation(summary = "내 구매 내역", description = "내가 구매 완료한 거래 목록을 반환합니다.")
-    @GetMapping("/me/purchases")
+    @Operation(summary = "내 구매 내역", description = "사용자가 구매 완료한 거래 목록을 반환합니다. (본인만 가능)")
+    @GetMapping("/{userId}/purchases")
     public ApiResponse<List<TransactionResponseDto>> getMyPurchases(
+            @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<TransactionResponseDto> purchases = userService.getMyPurchases(userDetails.getUser().getId());
+        validateUserAuthority(userDetails, userId);
+        List<TransactionResponseDto> purchases = userService.getMyPurchases(userId);
         return ApiResponse.success(purchases);
     }
 
-    @Operation(summary = "내 관심 목록", description = "관심 등록한 상품 목록을 반환합니다.")
-    @GetMapping("/me/wishes")
+    @Operation(summary = "내 관심 목록", description = "사용자가 관심 등록한 상품 목록을 반환합니다. (본인만 가능)")
+    @GetMapping("/{userId}/wishes")
     public ApiResponse<List<ProductWishResponseDto>> getMyWishes(
+            @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<ProductWishResponseDto> wishes = userService.getMyWishes(userDetails.getUser().getId());
+        validateUserAuthority(userDetails, userId);
+        List<ProductWishResponseDto> wishes = userService.getMyWishes(userId);
         return ApiResponse.success(wishes);
+    }
+
+    private void validateUserAuthority(CustomUserDetails userDetails, Long targetUserId) {
+        if (userDetails == null || !userDetails.getUser().getId().equals(targetUserId)) {
+            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.ACCESS_DENIED);
+        }
     }
 }
