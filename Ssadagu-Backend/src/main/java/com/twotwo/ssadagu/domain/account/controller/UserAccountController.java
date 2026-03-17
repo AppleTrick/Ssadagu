@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Account Auth", description = "계좌 및 1원 인증 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/accounts")
+@RequestMapping("/api/v1/accounts")
 public class UserAccountController {
 
     private final UserAccountService userAccountService;
