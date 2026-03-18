@@ -71,18 +71,15 @@ public class ChatMessageService {
     /** 최신 메시지 N개 조회 (채팅방 최초 진입 시) */
     @Transactional(readOnly = true)
     public List<ChatMessage> getLatestMessages(Long roomId) {
-        List<ChatMessage> messages = chatMessageRepository.findLatestByRoomId(
+        return chatMessageRepository.findLatestByRoomId(
                 roomId, PageRequest.of(0, DEFAULT_PAGE_SIZE));
-        // DESC로 가져왔으므로 역순 정렬
-        return messages.reversed();
     }
 
     /** 커서 기반 이전 메시지 조회 (위로 스크롤 시) */
     @Transactional(readOnly = true)
     public List<ChatMessage> getMessagesByCursor(Long roomId, Long cursorId, int size) {
-        List<ChatMessage> messages = chatMessageRepository.findByRoomIdBeforeCursor(
+        return chatMessageRepository.findByRoomIdBeforeCursor(
                 roomId, cursorId, PageRequest.of(0, size));
-        return messages.reversed();
     }
 
     /** 전체 조회 (하위 호환) */
