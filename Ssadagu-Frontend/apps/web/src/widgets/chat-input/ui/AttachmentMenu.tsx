@@ -9,6 +9,7 @@ interface AttachmentMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectPhoto?: () => void;
+  onPhotosSelected?: (files: File[]) => void;
   onSelectLocation?: () => void;
   onSelectTransaction?: () => void;
   onSelectCamera?: () => void;
@@ -32,10 +33,11 @@ const fadeIn = keyframes`
   }
 `;
 
-const AttachmentMenu = ({ isOpen, onClose, onSelectPhoto, onSelectLocation, onSelectTransaction, onSelectCamera }: AttachmentMenuProps) => {
+const AttachmentMenu = ({ isOpen, onClose, onSelectPhoto, onPhotosSelected, onSelectLocation, onSelectTransaction, onSelectCamera }: AttachmentMenuProps) => {
   const [offsetY, setOffsetY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) {
     if (offsetY !== 0) setOffsetY(0);
@@ -67,6 +69,22 @@ const AttachmentMenu = ({ isOpen, onClose, onSelectPhoto, onSelectLocation, onSe
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    
+    const filesArray = Array.from(e.target.files);
+    
+    if (filesArray.length > 5) {
+      alert('사진은 최대 5장까지만 전송할 수 있습니다.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    onPhotosSelected?.(filesArray);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    onClose();
+  };
+
   return (
     <>
       <Backdrop onClick={onClose} />
@@ -95,7 +113,7 @@ const AttachmentMenu = ({ isOpen, onClose, onSelectPhoto, onSelectLocation, onSe
             <MenuLabel>지도</MenuLabel>
           </MenuItem>
 
-          <MenuItem onClick={() => { onSelectPhoto?.(); onClose(); }}>
+          <MenuItem onClick={() => { fileInputRef.current?.click(); }}>
             <MenuIcon>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -105,6 +123,14 @@ const AttachmentMenu = ({ isOpen, onClose, onSelectPhoto, onSelectLocation, onSe
             </MenuIcon>
             <MenuLabel>사진</MenuLabel>
           </MenuItem>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
 
           <MenuItem onClick={() => { onSelectTransaction?.(); onClose(); }}>
             <MenuIcon>
