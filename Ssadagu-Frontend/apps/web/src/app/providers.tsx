@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { MSWProvider } from '@/shared/mocks/MSWProvider';
 import { GlobalModal } from '@/shared/ui/GlobalModal';
 import { AuthInitializer } from '@/shared/auth/AuthInitializer';
+import { AuthGuard } from '@/shared/auth/AuthGuard';
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   const [queryClient] = useState(() => new QueryClient({
@@ -18,9 +19,12 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
       <QueryClientProvider client={queryClient}>
         <Global styles={globalStyles} />
         <AuthInitializer />
-        {children}
+        <AuthGuard>
+          {children}
+        </AuthGuard>
         <GlobalModal />
       </QueryClientProvider>
     </MSWProvider>
   );
 };
+
