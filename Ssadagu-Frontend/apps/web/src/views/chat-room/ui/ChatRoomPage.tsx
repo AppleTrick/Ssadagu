@@ -84,6 +84,7 @@ export function ChatRoomPage() {
   const newProductId = Number(searchParams?.get('productId'));
 
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const stompRef = useRef<Client | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -96,7 +97,7 @@ export function ChatRoomPage() {
   const { data: currentUser } = useQuery<User>({
     queryKey: ['myProfile'],
     queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
+      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
       if (!res.ok) throw new Error('사용자 정보를 불러오지 못했습니다.');
       const json = await res.json() as User | { data?: User };
       return (json as { data?: User }).data || (json as User);

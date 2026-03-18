@@ -43,7 +43,7 @@ const handleRequest = async (url: string, options: RequestInit, originalToken?: 
             response = await fetch(`${BASE_URL}${url}`, newOptions);
           } else {
             state.clearToken();
-            if (typeof window !== 'undefined' && url !== ENDPOINTS.USERS.ME) window.location.href = '/login';
+            if (typeof window !== 'undefined' && url !== ENDPOINTS.USERS.PROFILE(state.userId || 0)) window.location.href = '/login';
           }
         } else {
           state.clearToken();

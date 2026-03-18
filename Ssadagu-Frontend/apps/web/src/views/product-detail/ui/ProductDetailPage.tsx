@@ -218,6 +218,7 @@ export function ProductDetailPage() {
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const productId = Number(rawId);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
   const { alert: modalAlert, confirm: modalConfirm } = useModalStore();
   const [isWished, setIsWished] = useState(false);
 
@@ -230,7 +231,7 @@ export function ProductDetailPage() {
   const { data: myProfile } = useQuery<User>({
     queryKey: ['myProfile'],
     queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
+      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
       if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
       const json = await res.json() as User | UserResponse;
       if ((json as UserResponse).data) return (json as UserResponse).data as User;

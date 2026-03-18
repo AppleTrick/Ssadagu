@@ -195,6 +195,7 @@ export function RegionSelectPage() {
   const isReauth = searchParams?.get('mode') === 'reauth';
   const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
   const mapRef = useRef<any>(null);
 
   const [regionName, setRegionName] = useState('');
@@ -213,7 +214,7 @@ export function RegionSelectPage() {
     setError('');
     setSubmitting(true);
     try {
-      const res = await apiClient.patch(ENDPOINTS.USERS.REGION, { region: regionName }, accessToken ?? undefined);
+      const res = await apiClient.patch(ENDPOINTS.USERS.REGION(userId!), { region: regionName }, accessToken ?? undefined);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.message || d.error || 'API 응답 에러');

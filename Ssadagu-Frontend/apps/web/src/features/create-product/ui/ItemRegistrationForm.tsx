@@ -429,6 +429,7 @@ const MapPinIcon = () => (
 const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormProps) => {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreviews, setImagePreviews] = useState<{ id?: number; url: string; file?: File }[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -436,7 +437,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   const { data: myProfile } = useQuery<User>({
     queryKey: ['myProfile'],
     queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
+      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
       if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
       const json = await res.json() as any;
       if (json.data) return json.data as User;

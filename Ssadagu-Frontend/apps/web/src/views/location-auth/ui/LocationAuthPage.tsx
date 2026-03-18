@@ -192,6 +192,7 @@ const PinSvg = () => (
 export function LocationAuthPage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
   const mapRef = useRef<any>(null);
 
   const [regionName, setRegionName] = useState('');
@@ -210,7 +211,7 @@ export function LocationAuthPage() {
     setError('');
     setSubmitting(true);
     try {
-      const res = await apiClient.post(ENDPOINTS.USERS.REGION_VERIFY, { region: regionName }, accessToken ?? undefined);
+      const res = await apiClient.post(ENDPOINTS.USERS.REGION_VERIFY(userId!), { region: regionName }, accessToken ?? undefined);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.message || d.error || 'API 응답 에러');
