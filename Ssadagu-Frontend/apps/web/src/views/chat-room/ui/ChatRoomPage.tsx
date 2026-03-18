@@ -11,6 +11,7 @@ import { ChatInputArea } from '@/widgets/chat-input';
 import { ChatBubbleMine, ChatBubbleOther, ChatRoomItemSummary, SystemMessage, PaymentChatBubble, MapChatBubble } from '@/entities/chat';
 import { TransactionBubble } from '@/entities/transaction';
 import { TransactionRequestSheet, TransactionConfirmSheet } from '@/features/transfer-payment';
+import { ChatMapPickerSheet } from '@/features/chat-map-picker';
 import type { ChatMessage, ChatRoom, TransactionContent } from '@/entities/chat/model/types';
 import type { User } from '@/entities/user';
 import { apiClient } from '@/shared/api/client';
@@ -76,6 +77,7 @@ export function ChatRoomPage() {
 
   const [reqSheetOpen, setReqSheetOpen] = useState(false);
   const [confirmSheetOpen, setConfirmSheetOpen] = useState(false);
+  const [mapSheetOpen, setMapSheetOpen] = useState(false);
   const [selectedConfirmMessage, setSelectedConfirmMessage] = useState<ChatMessage | null>(null);
 
   const rawId = params && params.roomId ? (Array.isArray(params.roomId) ? params.roomId[0] : params.roomId) : '';
@@ -408,6 +410,35 @@ export function ChatRoomPage() {
     setSelectedConfirmMessage(null);
   }, [roomId, accessToken, currentUserId]);
 
+  const handleMapSubmit = useCallback((lat: number, lng: number, locationName: string) => {
+    if (!stompRef.current?.connected) {
+      // Optimistic offline map msg
+      const optimistic: ChatMessage = {
+        id: `local-${Date.now()}`,
+        roomId,
+        senderId: currentUserId ?? -1,
+        senderNickname: currentUser?.nickname ?? '나',
+        content: '',
+        latitude: lat,
+        longitude: lng,
+        locationName, // store in msg root based on entity schema
+        sentAt: new Date().toISOString(),
+        isRead: false,
+        type: 'MAP',
+        messageType: 'MAP'
+      };
+      setLocalMessages((prev) => [...prev, optimistic]);
+      setMapSheetOpen(false);
+      return;
+    }
+    stompRef.current.publish({
+      destination: `/pub/chat/message`,
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content: locationName, type: 'MAP', latitude: lat, longitude: lng, locationName, isRead: false }),
+    });
+    setMapSheetOpen(false);
+  }, [roomId, accessToken, currentUserId, currentUser?.nickname]);
+
   const headerTitle = room
     ? (room as any).partnerNickname || (room.buyerId === currentUserId
       ? room.sellerNickname || '채팅'
@@ -493,6 +524,7 @@ export function ChatRoomPage() {
       <ChatInputArea 
         onSend={handleSend} 
         onSelectTransaction={() => setReqSheetOpen(true)}
+        onSelectLocation={() => setMapSheetOpen(true)}
         bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} 
       />
 
@@ -511,6 +543,12 @@ export function ChatRoomPage() {
         onConfirm={() => {
           if (selectedConfirmMessage) handleTransactionAction(selectedConfirmMessage, 'PAYMENT_SUCCESS');
         }}
+      />
+
+      <ChatMapPickerSheet
+        isOpen={mapSheetOpen}
+        onClose={() => setMapSheetOpen(false)}
+        onSubmit={handleMapSubmit}
       />
     </Page>
   );
