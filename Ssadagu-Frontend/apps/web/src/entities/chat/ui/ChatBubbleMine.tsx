@@ -23,12 +23,14 @@ const formatTime = (dateStr: string | null) => {
   return `${ampm} ${h}:${m}`;
 };
 
+import { getProxyImageUrl } from '@/shared/utils';
+
 const ChatBubbleMine = ({ type = 'TALK', message, sentAt, imageUrl }: ChatBubbleMineProps) => {
   return (
     <Row>
       <TimeText>{formatTime(sentAt)}</TimeText>
       {type === 'IMAGE' && imageUrl ? (
-        <ImageBubble src={imageUrl} alt="전송한 이미지" />
+        <ImageBubble src={getProxyImageUrl(imageUrl)} alt="전송한 이미지" />
       ) : (
         <Bubble>{message}</Bubble>
       )}
