@@ -93,6 +93,8 @@ export function MySalesPage() {
     queryKey: ['userProducts', user?.id],
     queryFn: () => getUserProducts(user!.id, accessToken ?? undefined),
     enabled: !!accessToken && !!user?.id,
+    staleTime: 0,
+    gcTime: 0,
   });
 
 

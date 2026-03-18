@@ -145,6 +145,8 @@ export function MyWishlistPage() {
     queryKey: ['userWishes', user?.id],
     queryFn: () => getUserWishes(user!.id, accessToken ?? undefined),
     enabled: !!accessToken && !!user?.id,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   return (

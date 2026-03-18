@@ -75,6 +75,8 @@ export function MyPurchasesPage() {
     queryKey: ['userPurchases', user?.id],
     queryFn: () => getUserPurchases(user!.id, accessToken ?? undefined),
     enabled: !!accessToken && !!user?.id,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   return (
