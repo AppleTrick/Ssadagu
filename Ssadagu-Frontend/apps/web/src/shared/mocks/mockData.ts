@@ -8,6 +8,7 @@ export const mockUser: User = {
   id: 1,
   email: 'dev@test.com',
   nickname: '개발자김싸다',
+  regionName: '서울 강남구',
   status: 'ACTIVE',
   createdAt: '2024-01-01T00:00:00Z',
 };

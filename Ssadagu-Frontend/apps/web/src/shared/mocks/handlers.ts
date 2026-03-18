@@ -55,8 +55,24 @@ export const handlers = [
     await d();
     return HttpResponse.json({ data: { content: mockMyProducts } });
   }),
-  http.post(`${BASE}/users/me/region`, async () => {
+  http.post(`${BASE}/users/region-verify`, async ({ request }) => {
     await d();
+    try {
+      const body = await request.json() as { region: string };
+      if (body.region) {
+        mockUser.regionName = body.region;
+      }
+    } catch (e) {}
+    return HttpResponse.json({ message: 'ok' });
+  }),
+  http.patch(`${BASE}/users/me/region`, async ({ request }) => {
+    await d();
+    try {
+      const body = await request.json() as { region: string };
+      if (body.region) {
+        mockUser.regionName = body.region;
+      }
+    } catch (e) {}
     return HttpResponse.json({ message: 'ok' });
   }),
 

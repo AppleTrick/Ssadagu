@@ -10,6 +10,7 @@ export const ENDPOINTS = {
     MY_WISHES: '/users/me/wishes',
     MY_TRANSACTIONS: '/users/me/transactions',
     REGION: '/users/me/region',
+    REGION_VERIFY: '/users/region-verify',
   },
   ACCOUNTS: {
     BASE: '/accounts',

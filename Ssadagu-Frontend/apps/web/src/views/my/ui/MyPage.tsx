@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import styled from "@emotion/styled";
 import { HeaderMain } from "@/widgets/header";
 import { BottomNav } from "@/widgets/bottom-nav";
-import { ProfileHeader } from "@/entities/user";
+import { ProfileHeader, useMyProfile } from "@/entities/user";
 import type { User } from "@/entities/user";
 import { QuickMenuItem, MenuListItem, ConfirmDialog } from "@/shared/ui";
 import { apiClient } from "@/shared/api/client";
@@ -141,9 +141,6 @@ const WishIcon = () => (
   </svg>
 );
 
-interface UserResponse {
-  data?: User;
-}
 
 export function MyPage() {
   const router = useRouter();
@@ -156,21 +153,7 @@ export function MyPage() {
     isLoading,
     isError,
     refetch,
-  } = useQuery<User>({
-    queryKey: ["myProfile"],
-    queryFn: async () => {
-      const res = await apiClient.get(
-        ENDPOINTS.USERS.ME,
-        accessToken ?? undefined,
-      );
-      if (!res.ok) throw new Error("프로필을 불러오지 못했습니다.");
-      const json = (await res.json()) as User | UserResponse;
-      if ((json as UserResponse).data)
-        return (json as UserResponse).data as User;
-      return json as User;
-    },
-    enabled: !!accessToken,
-  });
+  } = useMyProfile();
 
   const handleLogout = async () => {
     const isConfirmed = await modalConfirm({
@@ -256,7 +239,7 @@ export function MyPage() {
         <MenuGroup>
           <MenuListItem
             label="동네 재인증"
-            onClick={() => router.push(ROUTES.MY_ACCOUNT)}
+            onClick={() => router.push('/region-select?mode=reauth')}
           />
           <MenuListItem label="알림 설정" onClick={() => {}} />
           <MenuListItem label="로그아웃" onClick={handleLogout} />

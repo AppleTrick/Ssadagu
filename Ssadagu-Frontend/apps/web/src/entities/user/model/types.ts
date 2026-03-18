@@ -5,6 +5,7 @@ export interface User {
   id: number;
   email: string;
   nickname: string;
+  regionName?: string;
   status: UserStatus;
   createdAt: string;
 }
