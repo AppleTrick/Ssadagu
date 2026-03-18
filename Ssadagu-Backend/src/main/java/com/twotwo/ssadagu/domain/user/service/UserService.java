@@ -7,10 +7,7 @@ import com.twotwo.ssadagu.domain.product.repository.ProductRepository;
 import com.twotwo.ssadagu.domain.product.repository.ProductWishRepository;
 import com.twotwo.ssadagu.domain.transaction.dto.TransactionResponseDto;
 import com.twotwo.ssadagu.domain.transaction.repository.TransactionRepository;
-import com.twotwo.ssadagu.domain.user.dto.MyPageResponseDto;
-import com.twotwo.ssadagu.domain.user.dto.ProfileUpdateRequestDto;
-import com.twotwo.ssadagu.domain.user.dto.SignUpRequestDto;
-import com.twotwo.ssadagu.domain.user.dto.UserResponseDto;
+import com.twotwo.ssadagu.domain.user.dto.*;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
 import com.twotwo.ssadagu.global.error.BusinessException;
@@ -149,5 +146,40 @@ public class UserService {
                 .stream()
                 .map(ProductWishResponseDto::from)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void updateSecondaryPassword(Long userId, SecondaryPasswordRequestDto requestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        user.updateSecondaryPassword(passwordEncoder.encode(requestDto.getSecondaryPassword()));
+    }
+
+    @Transactional(readOnly = true)
+    public void verifySecondaryPassword(Long userId, SecondaryPasswordRequestDto requestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        
+        if (user.getSecondaryPasswordHash() == null) {
+            throw new BusinessException(ErrorCode.SECONDARY_PASSWORD_NOT_SET);
+        }
+        
+        if (!passwordEncoder.matches(requestDto.getSecondaryPassword(), user.getSecondaryPasswordHash())) {
+            throw new BusinessException(ErrorCode.SECONDARY_PASSWORD_NOT_MATCH);
+        }
+    }
+
+    @Transactional
+    public void registerBiometric(Long userId, BiometricRegistrationRequestDto requestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        user.registerBiometric(requestDto.getPublicKey());
+    }
+
+    @Transactional
+    public void toggleBiometric(Long userId, BiometricToggleRequestDto requestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        user.updateBiometricEnabled(requestDto.getEnabled());
     }
 }

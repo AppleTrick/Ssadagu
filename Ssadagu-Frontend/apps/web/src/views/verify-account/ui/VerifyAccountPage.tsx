@@ -11,7 +11,6 @@ import {
   typography,
   radius,
   HEADER_HEIGHT,
-  STATUS_BAR_HEIGHT,
 } from '@/shared/styles/theme';
 
 /* ── Types ─────────────────────────────────────────────── */
@@ -42,7 +41,7 @@ const Page = styled.div`
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
+  padding-top: ${HEADER_HEIGHT}px;
   padding-bottom: 40px;
   display: flex;
   flex-direction: column;

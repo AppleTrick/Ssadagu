@@ -3,10 +3,7 @@ package com.twotwo.ssadagu.domain.user.controller;
 import com.twotwo.ssadagu.domain.product.dto.ProductResponseDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductWishResponseDto;
 import com.twotwo.ssadagu.domain.transaction.dto.TransactionResponseDto;
-import com.twotwo.ssadagu.domain.user.dto.MyPageResponseDto;
-import com.twotwo.ssadagu.domain.user.dto.ProfileUpdateRequestDto;
-import com.twotwo.ssadagu.domain.user.dto.SignUpRequestDto;
-import com.twotwo.ssadagu.domain.user.dto.UserResponseDto;
+import com.twotwo.ssadagu.domain.user.dto.*;
 import com.twotwo.ssadagu.domain.user.service.UserService;
 import com.twotwo.ssadagu.global.response.ApiResponse;
 import com.twotwo.ssadagu.global.security.CustomUserDetails;
@@ -45,11 +42,13 @@ public class UserController {
     }
 
     @Operation(summary = "동네 인증", description = "1원 인증 완료 후 로그인된 계정에 동네 정보를 인증합니다.")
-    @PostMapping("/region-verify")
+    @PostMapping("/{userId}/region-verify")
     public ApiResponse<Void> verifyRegion(
+            @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid com.twotwo.ssadagu.domain.user.dto.RegionVerifyRequestDto requestDto) {
-        userService.verifyRegion(userDetails.getUser().getId(), requestDto);
+        validateUserAuthority(userDetails, userId);
+        userService.verifyRegion(userId, requestDto);
         return ApiResponse.success(null);
     }
 
@@ -63,32 +62,6 @@ public class UserController {
     }
 
     // ===== 마이페이지 =====
-
-    @Operation(summary = "내 정보 조회", description = "로그인된 사용자의 정보를 반환합니다.")
-    @GetMapping("/me")
-    public ApiResponse<MyPageResponseDto> getMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long userId = userDetails.getUser().getId();
-        MyPageResponseDto responseDto = userService.getMyPage(userId);
-        return ApiResponse.success(responseDto);
-    }
-
-    @Operation(summary = "내 판매 내역 (토큰 기반)")
-    @GetMapping("/me/products")
-    public ApiResponse<List<ProductResponseDto>> getMyProductsByMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return getMyProducts(userDetails.getUser().getId(), userDetails);
-    }
-
-    @Operation(summary = "내 구매 내역 (토큰 기반)")
-    @GetMapping({"/me/purchases", "/me/transactions"})
-    public ApiResponse<List<TransactionResponseDto>> getMyPurchasesByMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return getMyPurchases(userDetails.getUser().getId(), userDetails);
-    }
-
-    @Operation(summary = "내 관심 목록 (토큰 기반)")
-    @GetMapping("/me/wishes")
-    public ApiResponse<List<ProductWishResponseDto>> getMyWishesByMe(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return getMyWishes(userDetails.getUser().getId(), userDetails);
-    }
 
     @Operation(summary = "내 프로필 조회", description = "특정 사용자의 프로필 정보를 반환합니다. (본인만 가능)")
     @GetMapping("/{userId}")
@@ -132,7 +105,7 @@ public class UserController {
     }
 
     @Operation(summary = "내 구매 내역", description = "사용자가 구매 완료한 거래 목록을 반환합니다. (본인만 가능)")
-    @GetMapping("/{userId}/purchases")
+    @GetMapping({"{userId}/purchases", "{userId}/transactions"})
     public ApiResponse<List<TransactionResponseDto>> getMyPurchases(
             @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -149,6 +122,50 @@ public class UserController {
         validateUserAuthority(userDetails, userId);
         List<ProductWishResponseDto> wishes = userService.getMyWishes(userId);
         return ApiResponse.success(wishes);
+    }
+
+    @Operation(summary = "2차 비밀번호 설정/변경")
+    @PostMapping("/{userId}/secondary-password")
+    public ApiResponse<Void> updateSecondaryPassword(
+            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid SecondaryPasswordRequestDto requestDto) {
+        validateUserAuthority(userDetails, userId);
+        userService.updateSecondaryPassword(userId, requestDto);
+        return ApiResponse.success(null);
+    }
+
+    @Operation(summary = "2차 비밀번호 검증")
+    @PostMapping("/{userId}/secondary-password/verify")
+    public ApiResponse<Void> verifySecondaryPassword(
+            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid SecondaryPasswordRequestDto requestDto) {
+        validateUserAuthority(userDetails, userId);
+        userService.verifySecondaryPassword(userId, requestDto);
+        return ApiResponse.success(null);
+    }
+
+    @Operation(summary = "생체 인증 등록")
+    @PostMapping("/{userId}/biometric/register")
+    public ApiResponse<Void> registerBiometric(
+            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid BiometricRegistrationRequestDto requestDto) {
+        validateUserAuthority(userDetails, userId);
+        userService.registerBiometric(userId, requestDto);
+        return ApiResponse.success(null);
+    }
+
+    @Operation(summary = "생체 인증 활성화 여부 변경")
+    @PatchMapping("/{userId}/biometric/toggle")
+    public ApiResponse<Void> toggleBiometric(
+            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid BiometricToggleRequestDto requestDto) {
+        validateUserAuthority(userDetails, userId);
+        userService.toggleBiometric(userId, requestDto);
+        return ApiResponse.success(null);
     }
 
     private void validateUserAuthority(CustomUserDetails userDetails, Long targetUserId) {

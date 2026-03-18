@@ -18,7 +18,6 @@ import {
   colors,
   typography,
   HEADER_HEIGHT,
-  STATUS_BAR_HEIGHT,
   BOTTOM_NAV_HEIGHT,
 } from "@/shared/styles/theme";
 
@@ -31,7 +30,7 @@ const Page = styled.div`
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
+  padding-top: ${HEADER_HEIGHT}px;
   padding-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
 `;

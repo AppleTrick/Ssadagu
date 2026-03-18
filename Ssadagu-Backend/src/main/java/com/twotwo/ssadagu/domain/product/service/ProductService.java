@@ -77,10 +77,21 @@ public class ProductService {
         return ProductResponseDto.from(product, currentUserId, isLiked);
     }
 
-    public List<ProductResponseDto> getProducts(String regionName, Long currentUserId) {
+    public List<ProductResponseDto> getProducts(String regionName, String title, Long currentUserId) {
         List<Product> products;
-        if (regionName != null && !regionName.isBlank()) {
+        if (regionName != null && !regionName.isBlank() && title != null && !title.isBlank()) {
+            // 둘 다 있는 경우 (현재 Repository에는 없으므로 서비스 레벨 필터링 또는 Repository 추가 필요)
+            // 여기서는 단순함을 위해 Repository 메서드를 추가하지 않고 필터링으로 처리하거나, 
+            // 우선 순위에 따라 하나만 처리할 수 있음. 하지만 사용자 요구사항은 "지역 기반 검색 있지 않나?" 였으므로
+            // 둘 다 동작하게 하는 것이 좋음.
             products = productRepository.findByRegionNameAndStatusNotOrderByCreatedAtDesc(regionName, "DELETED");
+            products = products.stream()
+                    .filter(p -> p.getTitle().contains(title))
+                    .collect(Collectors.toList());
+        } else if (regionName != null && !regionName.isBlank()) {
+            products = productRepository.findByRegionNameAndStatusNotOrderByCreatedAtDesc(regionName, "DELETED");
+        } else if (title != null && !title.isBlank()) {
+            products = productRepository.findByTitleContainingAndStatusNotOrderByCreatedAtDesc(title, "DELETED");
         } else {
             products = productRepository.findByStatusNotOrderByCreatedAtDesc("DELETED");
         }

@@ -25,6 +25,12 @@ public class MyPageResponseDto {
     @Schema(description = "계정 상태", example = "ACTIVE")
     private String status;
 
+    @Schema(description = "2차 비밀번호 설정 여부")
+    private boolean isSecondaryPasswordSet;
+
+    @Schema(description = "생체 인증 활성화 여부")
+    private boolean isBiometricEnabled;
+
     public static MyPageResponseDto from(User entity) {
         return MyPageResponseDto.builder()
                 .id(entity.getId())
@@ -32,6 +38,8 @@ public class MyPageResponseDto {
                 .nickname(entity.getNickname())
                 .region(entity.getRegion())
                 .status(entity.getStatus())
+                .isSecondaryPasswordSet(entity.getSecondaryPasswordHash() != null)
+                .isBiometricEnabled(entity.getIsBiometricEnabled())
                 .build();
     }
 }
