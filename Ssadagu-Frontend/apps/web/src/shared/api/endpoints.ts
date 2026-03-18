@@ -12,6 +12,7 @@ export const ENDPOINTS = {
     REGION: '/users/me/region',
     GET_USER_PRODUCTS: (id: number) => `/users/${id}/products`,
     GET_USER_PURCHASES: (id: number) => `/users/${id}/purchases`,
+    GET_USER_WISHES: (id: number) => `/users/${id}/wishes`,
   },
   ACCOUNTS: {
     BASE: '/accounts',

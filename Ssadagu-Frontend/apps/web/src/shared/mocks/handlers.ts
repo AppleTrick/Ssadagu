@@ -47,6 +47,22 @@ export const handlers = [
     await d();
     return HttpResponse.json({ data: { content: mockWishes } });
   }),
+  http.get(`${BASE}/users/:userId/wishes`, async () => {
+    await d();
+    const data = mockWishes.map(p => ({
+      id: p.id,
+      productId: p.id,
+      productTitle: p.title,
+      productPrice: p.price,
+      regionName: p.regionName,
+      thumbnailUrl: p.thumbnailUrl ?? null,
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '관심 목록 조회 성공',
+      data,
+    });
+  }),
   http.get(`${BASE}/users/me/transactions`, async () => {
     await d();
     return HttpResponse.json({ data: { content: mockTransactions } });

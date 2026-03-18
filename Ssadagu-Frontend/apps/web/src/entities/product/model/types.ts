@@ -72,6 +72,16 @@ export interface CreateProductRequest {
   images?: File[];
 }
 
+/** GET /api/v1/users/{userId}/wishes 응답 스펙 */
+export interface WishItem {
+  id: number;
+  productId: number;
+  productTitle: string;
+  productPrice: number;
+  regionName: string;
+  thumbnailUrl: string | null;
+}
+
 export interface UpdateProductRequest {
   title: string;
   description: string;
