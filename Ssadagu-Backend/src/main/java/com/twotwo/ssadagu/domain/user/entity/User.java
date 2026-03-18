@@ -72,6 +72,10 @@ public class User extends BaseEntity {
         this.isBiometricEnabled = enabled;
     }
 
+    public void setAccountVerified() {
+        this.status = "ACCOUNT_VERIFIED";
+    }
+
     public void verifyAccount() {
         this.status = "ACTIVE";
     }
