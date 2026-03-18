@@ -24,20 +24,22 @@ const TABS = [
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
   background: ${colors.bg};
+  overflow: hidden;
 `;
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 `;
 
 const TabContainer = styled.div`
   position: sticky;
-  top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
-  z-index: 5;
+  top: 0;
+  z-index: 10;
   background: ${colors.surface};
   border-bottom: 1px solid ${colors.border};
 `;
