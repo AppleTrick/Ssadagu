@@ -34,15 +34,17 @@ export const useAuthStore = create<AuthState>()(
           accessToken,
           isAuthenticated: true,
         })),
-      clearToken: () =>
-        set({ accessToken: null, userId: null, isAuthenticated: false }),
+      clearToken: () => {
+        set({ accessToken: null, userId: null, isAuthenticated: false });
+        localStorage.removeItem("auth-storage");
+      },
       setInitialized: (initialized) => set({ isInitialized: initialized }),
     }),
     {
       name: "auth-storage",
       storage: {
         getItem: (name) => {
-          const val = sessionStorage.getItem(name);
+          const val = localStorage.getItem(name);
           if (!val) return null;
           try {
             const bytes = CryptoJS.AES.decrypt(val, SECRET_KEY);
@@ -58,9 +60,9 @@ export const useAuthStore = create<AuthState>()(
             JSON.stringify(value),
             SECRET_KEY,
           ).toString();
-          sessionStorage.setItem(name, encrypted);
+          localStorage.setItem(name, encrypted);
         },
-        removeItem: (name) => sessionStorage.removeItem(name),
+        removeItem: (name) => localStorage.removeItem(name),
       },
       partialize: (state) =>
         ({
