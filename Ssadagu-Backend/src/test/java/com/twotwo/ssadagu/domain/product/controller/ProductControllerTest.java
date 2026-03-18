@@ -120,7 +120,7 @@ class ProductControllerTest {
                 ProductResponseDto p1 = ProductResponseDto.builder().id(1L).title("T1").build();
                 ProductResponseDto p2 = ProductResponseDto.builder().id(2L).title("T2").build();
 
-                given(productService.getProducts(eq(null), any())).willReturn(List.of(p1, p2));
+                given(productService.getProducts(eq(null), eq(null), any())).willReturn(List.of(p1, p2));
 
                 // when & then
                 mockMvc.perform(get("/api/v1/products"))
@@ -136,7 +136,7 @@ class ProductControllerTest {
                 // given
                 ProductResponseDto p1 = ProductResponseDto.builder().id(1L).title("강남 상품").regionName("강남구").build();
 
-                given(productService.getProducts(eq("강남구"), any())).willReturn(List.of(p1));
+                given(productService.getProducts(eq("강남구"), eq(null), any())).willReturn(List.of(p1));
 
                 // when & then
                 mockMvc.perform(get("/api/v1/products").param("regionName", "강남구"))

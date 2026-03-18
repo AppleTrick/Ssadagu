@@ -133,7 +133,7 @@ class ProductServiceTest {
         given(productWishRepository.existsByUserIdAndProductId(1L, 10L)).willReturn(false);
 
         // when
-        List<ProductResponseDto> responseDtos = productService.getProducts(null, 1L); // 1번 유저가 조회
+        List<ProductResponseDto> responseDtos = productService.getProducts(null, null, 1L); // 1번 유저가 조회
 
         // then
         assertThat(responseDtos).hasSize(1);
