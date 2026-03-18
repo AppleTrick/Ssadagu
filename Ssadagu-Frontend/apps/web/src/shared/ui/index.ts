@@ -10,3 +10,4 @@ export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as BottomSheetBase } from './BottomSheetBase';
 export { default as MapBase } from './MapBase';
 export { default as ImageCarousel } from './ImageCarousel';
+export { Skeleton } from './Skeleton';
