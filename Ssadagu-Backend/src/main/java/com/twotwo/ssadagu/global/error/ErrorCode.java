@@ -20,6 +20,15 @@ public enum ErrorCode {
     // Product
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "상품을 찾을 수 없습니다."),
     NOT_PRODUCT_SELLER(HttpStatus.FORBIDDEN, "P002", "해당 상품의 판매자가 아닙니다."),
+    PRODUCT_ALREADY_TRADING(HttpStatus.BAD_REQUEST, "P003", "이미 거래 중인 상품입니다."),
+    PRODUCT_ALREADY_SOLD(HttpStatus.BAD_REQUEST, "P004", "이미 판매 완료된 상품입니다."),
+    PRODUCT_NOT_TRADING(HttpStatus.BAD_REQUEST, "P005", "거래 중인 상품이 아닙니다."),
+
+    // Account & Transaction
+    ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "A001", "계좌 정보를 찾을 수 없습니다."),
+    INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "A002", "계좌 잔고가 부족합니다."),
+    TRANSACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "T001", "금융망 이체 처리에 실패했습니다."),
+    TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "T002", "거래 내역을 찾을 수 없습니다."),
 
     // Global
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "G001", "서버 내부 오류가 발생했습니다."),

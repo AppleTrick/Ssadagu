@@ -18,4 +18,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // 제목 검색 (DELETED 상태 상품 제외)
     List<Product> findByTitleContainingAndStatusNotOrderByCreatedAtDesc(String title, String status);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select p from Product p where p.id = :id")
+    java.util.Optional<Product> findByIdWithLock(Long id);
+
+    // 스케줄러: 특정 상태이면서 일정 시간 동안 업데이트가 없는 상품 조회
+    java.util.List<Product> findByStatusAndUpdatedAtBefore(String status, java.time.LocalDateTime dateTime);
 }
