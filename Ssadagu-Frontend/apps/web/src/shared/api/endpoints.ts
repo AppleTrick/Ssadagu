@@ -11,11 +11,11 @@ export const ENDPOINTS = {
     MY_TRANSACTIONS: '/users/me/transactions',
     REGION: '/users/me/region',
 
+    PROFILE: (id: number) => `/users/${id}`,
     REGION_VERIFY: '/users/region-verify',
     GET_USER_PRODUCTS: (id: number) => `/users/${id}/products`,
     GET_USER_PURCHASES: (id: number) => `/users/${id}/purchases`,
     GET_USER_WISHES: (id: number) => `/users/${id}/wishes`,
-
   },
   ACCOUNTS: {
     BASE: '/accounts',

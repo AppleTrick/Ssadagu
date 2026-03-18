@@ -177,7 +177,7 @@ const SignupLink = styled.div`
 /* ── Component ───────────────────────────────────────────── */
 
 const LoginForm = ({ onSuccess }: LoginFormProps) => {
-  const setToken = useAuthStore((s) => s.setToken);
+  const setAuthInfo = useAuthStore((s) => s.setAuthInfo);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -191,7 +191,7 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
   const handleDevLogin = () => {
     if (process.env.NEXT_PUBLIC_MSW_ENABLED !== 'true') return;
-    setToken(MOCK_TOKEN);
+    setAuthInfo(MOCK_TOKEN, 1);
     onSuccess?.();
   };
 
@@ -204,7 +204,10 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+        const body = (await res.json().catch(() => ({}))) as Record<
+          string,
+          unknown
+        >;
         setServerError(
           typeof body?.message === 'string'
             ? body.message
@@ -213,17 +216,30 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
         return;
       }
 
-      const body = await res.json() as Record<string, unknown>;
+      const body = (await res.json()) as Record<string, unknown>;
       const nested = body?.data as Record<string, unknown> | undefined;
       const token =
         typeof body?.accessToken === 'string'
           ? body.accessToken
           : typeof nested?.accessToken === 'string'
-            ? nested.accessToken
+            ? (nested.accessToken as string)
             : '';
 
-      if (token) setToken(token);
-      onSuccess?.();
+      const userId =
+        typeof nested?.id === 'number'
+          ? nested.id
+          : typeof body?.id === 'number'
+            ? body.id
+            : null;
+
+      if (token && userId) {
+        setAuthInfo(token, userId);
+        onSuccess?.();
+      } else if (token) {
+        // userId가 없는 경우 기존 방식으로 토큰만 저장 (하위 호환성)
+        useAuthStore.getState().setToken(token);
+        onSuccess?.();
+      }
     } catch {
       setServerError('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
     }
