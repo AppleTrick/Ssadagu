@@ -56,7 +56,18 @@ pipeline {
             }
         }
         success {
-            echo "Successfully deployed 'dev' branch!"
+            mattermostSend (
+                color: "#00FF00",
+                message: "✅ **Build Success: [${env.JOB_NAME} #${env.BUILD_NUMBER}](${env.BUILD_URL})**\n- Status: `SUCCESS` 🚀",
+                endpoint: "https://meeting.ssafy.com/hooks/1cn86ho66jnu8kcmkrmr7md8ny"
+            )
+        }
+        failure {
+            mattermostSend (
+                color: "#FF0000",
+                message: "❌ **Build Failure: [${env.JOB_NAME} #${env.BUILD_NUMBER}](${env.BUILD_URL})**\n- Status: `FAILURE` 🚨",
+                endpoint: "https://meeting.ssafy.com/hooks/1cn86ho66jnu8kcmkrmr7md8ny"
+            )
         }
     }
 }
