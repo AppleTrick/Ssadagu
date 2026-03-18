@@ -9,6 +9,7 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
 import { ItemCard, type ProductSummary, useInfiniteProducts, ProductListSkeleton } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { typography, colors } from '@/shared/styles/theme';
+import { FadeIn } from '@/shared/ui';
 
 interface ProductListProps {
   searchQuery?: string;
@@ -126,7 +127,7 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   }
 
   return (
-    <>
+    <FadeIn>
       <ListWrapper>
         {allProducts.map((product) => (
           <li key={product.id}>
@@ -140,6 +141,6 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
       </ListWrapper>
       <div ref={sentinelRef} style={{ height: 1 }} />
       {isFetchingNextPage && <FetchMoreIndicator>더 불러오는 중...</FetchMoreIndicator>}
-    </>
+    </FadeIn>
   );
 };

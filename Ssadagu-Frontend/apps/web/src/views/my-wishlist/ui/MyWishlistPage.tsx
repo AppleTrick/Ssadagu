@@ -10,6 +10,7 @@ import type { WishItem } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
 import { ProductListSkeleton } from '@/entities/product';
+import { FadeIn } from '@/shared/ui';
 import { getProxyImageUrl } from '@/shared/utils';
 
 /* ── Styled ─────────────────────────────────────────────── */
@@ -160,7 +161,7 @@ export function MyWishlistPage() {
         )}
 
         {!isLoading && !isError && (
-          <>
+          <FadeIn>
             {data && data.length > 0 ? (
               <ListWrapper>
                 {data.map((wish) => (
@@ -189,7 +190,7 @@ export function MyWishlistPage() {
             ) : (
               <CenterWrapper>관심 목록이 없습니다.</CenterWrapper>
             )}
-          </>
+          </FadeIn>
         )}
       </ContentArea>
     </Page>

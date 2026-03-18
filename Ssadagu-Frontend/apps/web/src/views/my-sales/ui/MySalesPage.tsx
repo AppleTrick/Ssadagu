@@ -12,6 +12,7 @@ import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography } from '@/shared/styles/theme';
 import { getUserMe } from '@/entities/user/api/getUserMe';
 import { ProductListSkeleton, getUserProducts } from '@/entities/product';
+import { FadeIn } from '@/shared/ui';
 
 /* ── Constants ──────────────────────────────────────────── */
 
@@ -114,7 +115,7 @@ export function MySalesPage() {
         )}
 
         {!isLoading && !isError && (
-          <>
+          <FadeIn>
             {filtered.length > 0 ? (
               <ListWrapper>
                 {filtered.map((product) => (
@@ -131,7 +132,7 @@ export function MySalesPage() {
                 {activeTab === 'ON_SALE' ? '판매중인 상품이 없습니다.' : '판매완료된 상품이 없습니다.'}
               </CenterWrapper>
             )}
-          </>
+          </FadeIn>
         )}
       </ContentArea>
     </Page>

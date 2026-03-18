@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
-import { ImageCarousel } from '@/shared/ui';
+import { ImageCarousel, FadeIn } from '@/shared/ui';
 import { SellerCard, ItemDetailBottomBar, getProduct, ProductDetailSkeleton } from '@/entities/product';
 import { useDeleteProduct } from '@/features/create-product';
 import type { ProductDetail } from '@/entities/product';
@@ -321,7 +321,7 @@ export function ProductDetailPage() {
           </ErrorWrapper>
         )}
         {!isLoading && !isError && product && (
-          <>
+          <FadeIn>
             {product.images && product.images.length > 0 ? (
               <ImageCarousel images={product.images.map(img => img.imageUrl)} />
             ) : (
@@ -368,7 +368,7 @@ export function ProductDetailPage() {
               onDelete={handleDelete}
               bottomOffset={0}
             />
-          </>
+          </FadeIn>
         )}
       </ContentArea>
     </Page>
