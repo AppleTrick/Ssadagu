@@ -21,6 +21,7 @@ export function ProductEditPage() {
   const router = useRouter();
   const productId = Number(params.id);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['product', productId],
@@ -31,7 +32,7 @@ export function ProductEditPage() {
   const { data: myProfile, isLoading: isProfileLoading } = useQuery<User>({
     queryKey: ['myProfile'],
     queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
+      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
       if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
       const json = await res.json() as User | UserResponse;
       if ((json as UserResponse).data) return (json as UserResponse).data as User;

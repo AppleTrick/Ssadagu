@@ -2,6 +2,7 @@
 
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
+import SharedLocationViewer from '@/features/shared-location-viewer/ui/SharedLocationViewer';
 
 interface MapChatBubbleProps {
   lat: number;
@@ -25,6 +26,9 @@ const formatTime = (dateStr: string | null | undefined) => {
 const MapChatBubble = ({ lat, lng, label, isMine, sentAt }: MapChatBubbleProps) => {
   const mapLink = `https://map.kakao.com/link/map/${label ? encodeURIComponent(label) : '위치'},${lat},${lng}`;
 
+  const mainLabel = label || '선택한 위치';
+  const subLabel = label ? `위도: ${lat.toFixed(4)}, 경도: ${lng.toFixed(4)}` : '상세 주소를 확인하려면 탭하세요.';
+
   return (
     <Row $isMine={isMine}>
       {!isMine && (
@@ -38,16 +42,13 @@ const MapChatBubble = ({ lat, lng, label, isMine, sentAt }: MapChatBubbleProps) 
         <BubbleRow $isMine={isMine}>
           {isMine && <TimeText>{formatTime(sentAt)}</TimeText>}
           <CardBubble $isMine={isMine} href={mapLink} target="_blank" rel="noopener noreferrer">
-            <MapIcon>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-            </MapIcon>
-            <MapInfo>
-              <MapLabel>{label || `위치 정보 (${lat.toFixed(4)}, ${lng.toFixed(4)})`}</MapLabel>
-              <MapAction>지도 보기</MapAction>
-            </MapInfo>
+            <div style={{ pointerEvents: 'none' }}>
+              <SharedLocationViewer lat={lat} lng={lng} height="120px" zoom={3} panY={-25} />
+            </div>
+            <BottomArea>
+              <MapLabel>{mainLabel}</MapLabel>
+              <MapAction>{subLabel}</MapAction>
+            </BottomArea>
           </CardBubble>
           {!isMine && <TimeText>{formatTime(sentAt)}</TimeText>}
         </BubbleRow>
@@ -65,6 +66,7 @@ const Row = styled.div<{ $isMine: boolean }>`
   align-items: flex-start;
   gap: 8px;
   padding: 4px 16px;
+  width: 100%;
 `;
 
 const Avatar = styled.div`
@@ -83,7 +85,6 @@ const ContentCol = styled.div<{ $isMine: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 75%;
 `;
 
 const BubbleRow = styled.div<{ $isMine: boolean }>`
@@ -94,55 +95,44 @@ const BubbleRow = styled.div<{ $isMine: boolean }>`
 `;
 
 const CardBubble = styled.a<{ $isMine: boolean }>`
-  background: ${colors.surface};
-  border: 1px solid ${colors.border};
-  border-radius: ${({ $isMine }) => ($isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px')};
-  padding: 12px;
-  min-width: 200px;
+  width: 220px;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  background: ${colors.surface};
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: ${({ $isMine }) => ($isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px')};
+  overflow: hidden;
   text-decoration: none;
-  color: inherit;
   transition: opacity 0.2s;
   
   &:active {
-    opacity: 0.7;
+    opacity: 0.8;
   }
 `;
 
-const MapIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: ${colors.bg};
-  color: ${colors.primary};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-`;
-
-const MapInfo = styled.div`
+const BottomArea = styled.div`
+  background: ${colors.primary};
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  overflow: hidden;
 `;
 
 const MapLabel = styled.div`
-  font-size: ${typography.size.base};
-  font-weight: ${typography.weight.medium};
-  color: ${colors.textPrimary};
+  font-size: ${typography.size.sm};
+  font-weight: ${typography.weight.bold};
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
 const MapAction = styled.div`
-  font-size: ${typography.size.xs};
-  color: ${colors.textSecondary};
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const TimeText = styled.span`

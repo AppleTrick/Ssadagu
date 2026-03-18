@@ -6,6 +6,7 @@ import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 import { useAuthStore } from './useAuthStore';
 import { colors, typography } from '@/shared/styles/theme';
+import GlobalLoading from '@/app/loading';
 
 /**
  * 로그인 없이 접근 가능한 공개 경로
@@ -47,17 +48,9 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   // 서버 사이드 렌더링 시에는 아무것도 하지 않음
   if (!mounted) return null;
 
-  // 1. 초기 인증 확인 중일 때: 프리미엄 스플래시 화면 표시 (장치 1)
+  // 1. 초기 인증 확인 중일 때: 프리미엄 로딩 화면 표시
   if (!isInitialized) {
-    return (
-      <SplashContainer>
-        <LogoWrapper>
-          <LogoText>싸다구</LogoText>
-          <Dot />
-        </LogoWrapper>
-        <LoadingText>안전한 거래를 준비하고 있어요</LoadingText>
-      </SplashContainer>
-    );
+    return <GlobalLoading />;
   }
 
   // 2. 인증 대기 중 리다이렉트가 필요한 경우 (깜빡임 방지용으로 빈 화면 혹은 스켈레톤 노출 가능)

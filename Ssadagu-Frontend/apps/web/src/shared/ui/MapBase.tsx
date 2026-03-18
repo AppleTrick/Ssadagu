@@ -10,16 +10,16 @@ declare global {
   }
 }
 
-const Container = styled.div`
+const Container = styled.div<{ $minHeight: string }>`
   width: 100%;
   height: 100%;
-  min-height: 300px;
+  min-height: ${({ $minHeight }) => $minHeight};
 `;
 
-const ErrorBox = styled.div`
+const ErrorBox = styled.div<{ $minHeight: string }>`
   width: 100%;
   height: 100%;
-  min-height: 300px;
+  min-height: ${({ $minHeight }) => $minHeight};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -59,10 +59,11 @@ export interface MapBaseProps {
   lat?: number;
   lng?: number;
   zoom?: number;
+  minHeight?: string;
   onMapReady?: (map: any) => void;
 }
 
-const MapBase = ({ lat = 37.5665, lng = 126.978, zoom = 4, onMapReady }: MapBaseProps) => {
+const MapBase = ({ lat = 37.5665, lng = 126.978, zoom = 4, minHeight = '300px', onMapReady }: MapBaseProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [loadError, setLoadError] = useState(false);
@@ -104,9 +105,9 @@ const MapBase = ({ lat = 37.5665, lng = 126.978, zoom = 4, onMapReady }: MapBase
     mapRef.current.setCenter(new window.kakao.maps.LatLng(lat, lng));
   }, [lat, lng]);
 
-  if (loadError) return <ErrorBox>지도를 불러올 수 없습니다.</ErrorBox>;
+  if (loadError) return <ErrorBox $minHeight={minHeight}>지도를 불러올 수 없습니다.</ErrorBox>;
 
-  return <Container ref={containerRef} />;
+  return <Container ref={containerRef} $minHeight={minHeight} />;
 };
 
 export default MapBase;

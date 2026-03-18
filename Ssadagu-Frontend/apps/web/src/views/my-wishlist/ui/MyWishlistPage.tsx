@@ -9,6 +9,8 @@ import { getUserMe } from '@/entities/user/api/getUserMe';
 import type { WishItem } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
+import { ProductListSkeleton } from '@/entities/product';
+import { FadeIn } from '@/shared/ui';
 import { getProxyImageUrl } from '@/shared/utils';
 
 /* ── Styled ─────────────────────────────────────────────── */
@@ -131,20 +133,16 @@ const formatPrice = (price: number) => price.toLocaleString('ko-KR') + '원';
 
 export function MyWishlistPage() {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { accessToken, userId } = useAuthStore();
 
-  // 1. 현재 사용자 정보 조회 (userId를 알기 위해)
-  const { data: user } = useQuery({
-    queryKey: ['userMe'],
-    queryFn: () => getUserMe(accessToken ?? undefined),
-    enabled: !!accessToken,
-  });
-
-  // 2. 해당 사용자의 관심 목록 조회
+  // 해당 사용자의 관심 목록 조회
   const { data, isLoading, isError, refetch } = useQuery<WishItem[]>({
-    queryKey: ['userWishes', user?.id],
-    queryFn: () => getUserWishes(user!.id, accessToken ?? undefined),
-    enabled: !!accessToken && !!user?.id,
+    queryKey: ['userWishes', userId],
+    queryFn: () => {
+      if (!userId) throw new Error('계정 정보가 없습니다.');
+      return getUserWishes(userId, accessToken ?? undefined);
+    },
+    enabled: !!accessToken && !!userId,
     staleTime: 0,
     gcTime: 0,
   });
@@ -153,7 +151,7 @@ export function MyWishlistPage() {
     <Page>
       <HeaderBack title="나의 관심 목록" onBack={() => router.back()} />
       <ContentArea>
-        {isLoading && <CenterWrapper>불러오는 중...</CenterWrapper>}
+        {isLoading && <ProductListSkeleton count={5} size={80} />}
 
         {isError && (
           <CenterWrapper>
@@ -163,7 +161,7 @@ export function MyWishlistPage() {
         )}
 
         {!isLoading && !isError && (
-          <>
+          <FadeIn>
             {data && data.length > 0 ? (
               <ListWrapper>
                 {data.map((wish) => (
@@ -192,7 +190,7 @@ export function MyWishlistPage() {
             ) : (
               <CenterWrapper>관심 목록이 없습니다.</CenterWrapper>
             )}
-          </>
+          </FadeIn>
         )}
       </ContentArea>
     </Page>

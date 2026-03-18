@@ -28,7 +28,9 @@ export function AuthInitializer() {
         if (res.ok) {
           const body = (await res.json()) as Record<string, any>;
           const tokenData = body.data || body;
-          setToken(tokenData.accessToken);
+          // 백엔드 명세에 따라 id 또는 userId로 올 수 있음
+          const userId = tokenData.userId || tokenData.id || 1; 
+          useAuthStore.getState().setAuthInfo(tokenData.accessToken, userId);
         } else {
           clearToken();
         }

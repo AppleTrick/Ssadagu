@@ -9,13 +9,15 @@ interface UserResponse {
 }
 
 export const useMyProfile = () => {
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { accessToken, userId } = useAuthStore();
 
   return useQuery<User>({
-    queryKey: ['myProfile', accessToken],
+    queryKey: ['myProfile', userId],
     queryFn: async () => {
+      if (!userId) throw new Error('계정 정보가 없습니다. 다시 로그인해주세요.');
+      
       const res = await apiClient.get(
-        ENDPOINTS.USERS.ME,
+        ENDPOINTS.USERS.PROFILE(userId),
         accessToken ?? undefined,
       );
       if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
@@ -31,7 +33,7 @@ export const useMyProfile = () => {
 
       return userObj as User;
     },
-    enabled: !!accessToken,
+    enabled: !!accessToken && !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

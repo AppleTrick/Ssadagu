@@ -10,3 +10,4 @@ export { default as ItemCard } from './ui/ItemCard';
 export { default as ItemDetailBottomBar } from './ui/ItemDetailBottomBar';
 export { default as SellerCard } from './ui/SellerCard';
 export * from './model/useInfiniteProducts';
+export { ProductSkeleton, ProductListSkeleton, ProductDetailSkeleton } from './ui/ProductSkeleton';

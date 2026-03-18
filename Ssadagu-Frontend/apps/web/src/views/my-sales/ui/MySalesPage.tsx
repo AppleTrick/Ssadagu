@@ -11,7 +11,8 @@ import type { ProductSummary, ProductStatus } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography } from '@/shared/styles/theme';
 import { getUserMe } from '@/entities/user/api/getUserMe';
-import { getUserProducts } from '@/entities/product/api/getUserProducts';
+import { ProductListSkeleton, getUserProducts } from '@/entities/product';
+import { FadeIn } from '@/shared/ui';
 
 /* ── Constants ──────────────────────────────────────────── */
 
@@ -78,21 +79,17 @@ const RetryButton = styled.button`
 
 export function MySalesPage() {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { accessToken, userId } = useAuthStore();
   const [activeTab, setActiveTab] = useState('ON_SALE');
 
-  // 1. 현재 사용자 정보 조회 (userId를 알기 위해)
-  const { data: user } = useQuery({
-    queryKey: ['userMe'],
-    queryFn: () => getUserMe(accessToken ?? undefined),
-    enabled: !!accessToken,
-  });
-
-  // 2. 해당 사용자의 판매 상품 조회
+  // 해당 사용자의 판매 상품 조회
   const { data, isLoading, isError, refetch } = useQuery<ProductSummary[]>({
-    queryKey: ['userProducts', user?.id],
-    queryFn: () => getUserProducts(user!.id, accessToken ?? undefined),
-    enabled: !!accessToken && !!user?.id,
+    queryKey: ['userProducts', userId],
+    queryFn: () => {
+      if (!userId) throw new Error('계정 정보가 없습니다.');
+      return getUserProducts(userId, accessToken ?? undefined);
+    },
+    enabled: !!accessToken && !!userId,
     staleTime: 0,
     gcTime: 0,
   });
@@ -108,7 +105,7 @@ export function MySalesPage() {
           <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
         </TabContainer>
 
-        {isLoading && <CenterWrapper>불러오는 중...</CenterWrapper>}
+        {isLoading && <ProductListSkeleton count={5} />}
 
         {isError && (
           <CenterWrapper>
@@ -118,7 +115,7 @@ export function MySalesPage() {
         )}
 
         {!isLoading && !isError && (
-          <>
+          <FadeIn>
             {filtered.length > 0 ? (
               <ListWrapper>
                 {filtered.map((product) => (
@@ -135,7 +132,7 @@ export function MySalesPage() {
                 {activeTab === 'ON_SALE' ? '판매중인 상품이 없습니다.' : '판매완료된 상품이 없습니다.'}
               </CenterWrapper>
             )}
-          </>
+          </FadeIn>
         )}
       </ContentArea>
     </Page>

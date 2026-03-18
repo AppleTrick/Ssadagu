@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
-import { HistoryItemCard } from '@/entities/transaction';
+import { HistoryItemCard, TransactionListSkeleton } from '@/entities/transaction';
+import { FadeIn } from '@/shared/ui';
 import { getUserPurchases } from '@/entities/transaction/api/getUserPurchases';
 import { getUserMe } from '@/entities/user/api/getUserMe';
 import type { Purchase } from '@/entities/transaction';
@@ -61,20 +62,16 @@ const RetryButton = styled.button`
 
 export function MyPurchasesPage() {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { accessToken, userId } = useAuthStore();
 
-  // 1. 현재 사용자 정보 조회 (userId를 알기 위해)
-  const { data: user } = useQuery({
-    queryKey: ['userMe'],
-    queryFn: () => getUserMe(accessToken ?? undefined),
-    enabled: !!accessToken,
-  });
-
-  // 2. 해당 사용자의 구매 내역 조회
+  // 해당 사용자의 구매 내역 조회
   const { data, isLoading, isError, refetch } = useQuery<Purchase[]>({
-    queryKey: ['userPurchases', user?.id],
-    queryFn: () => getUserPurchases(user!.id, accessToken ?? undefined),
-    enabled: !!accessToken && !!user?.id,
+    queryKey: ['userPurchases', userId],
+    queryFn: () => {
+      if (!userId) throw new Error('계정 정보가 없습니다.');
+      return getUserPurchases(userId, accessToken ?? undefined);
+    },
+    enabled: !!accessToken && !!userId,
     staleTime: 0,
     gcTime: 0,
   });
@@ -83,7 +80,7 @@ export function MyPurchasesPage() {
     <Page>
       <HeaderBack title="나의 구매 내역" onBack={() => router.back()} />
       <ContentArea>
-        {isLoading && <CenterWrapper>불러오는 중...</CenterWrapper>}
+        {isLoading && <TransactionListSkeleton count={5} />}
 
         {isError && (
           <CenterWrapper>
@@ -93,23 +90,22 @@ export function MyPurchasesPage() {
         )}
 
         {!isLoading && !isError && (
-          <>
+          <FadeIn>
             {data && data.length > 0 ? (
               <ListWrapper>
-                {data.map((tx) => (
-                  <li key={tx.id}>
-                    <HistoryItemCard
-                      transaction={tx}
-                      role="buyer"
-                      onClick={() => router.push(`/products/${tx.productId}`)}
-                    />
-                  </li>
+                {data.map((purchase) => (
+                  <HistoryItemCard
+                    key={purchase.id}
+                    transaction={purchase}
+                    role="buyer"
+                    onClick={() => router.push(`/products/${purchase.productId}`)}
+                  />
                 ))}
               </ListWrapper>
             ) : (
               <CenterWrapper>구매 내역이 없습니다.</CenterWrapper>
             )}
-          </>
+          </FadeIn>
         )}
       </ContentArea>
     </Page>

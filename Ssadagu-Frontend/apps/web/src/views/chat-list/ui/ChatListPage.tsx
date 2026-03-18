@@ -103,12 +103,13 @@ interface ChatRoomsResponse {
 export function ChatListPage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
   const [activeTab, setActiveTab] = useState('all');
 
   const { data: currentUser } = useQuery<User>({
     queryKey: ['myProfile'],
     queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
+      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
       if (!res.ok) throw new Error('사용자 정보 오류');
       const json = await res.json();
       if (json?.data) return json.data as User;

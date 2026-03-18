@@ -139,7 +139,7 @@ const CameraIcon = () => (
 export function ProfileEditPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { accessToken, userId } = useAuthStore();
 
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
@@ -147,9 +147,12 @@ export function ProfileEditPage() {
 
   // 프로필 조회
   const { data: user } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: () => getUserMe(accessToken ?? undefined),
-    enabled: !!accessToken,
+    queryKey: ['myProfile', userId],
+    queryFn: () => {
+      if (!userId) throw new Error('사용자 정보가 없습니다.');
+      return getUserMe(userId, accessToken ?? undefined);
+    },
+    enabled: !!accessToken && !!userId,
   });
 
   useEffect(() => {
@@ -158,9 +161,12 @@ export function ProfileEditPage() {
 
   // 프로필 수정 Mutation
   const mutation = useMutation({
-    mutationFn: (data: { nickname: string }) => updateUser(data, accessToken ?? undefined),
+    mutationFn: (data: { nickname: string }) => {
+      if (!userId) throw new Error('사용자 정보가 없습니다.');
+      return updateUser(userId, data, accessToken ?? undefined);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['myProfile', userId] });
       setToastVisible(true);
       setTimeout(() => {
         setToastVisible(false);

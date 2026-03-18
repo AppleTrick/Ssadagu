@@ -9,16 +9,17 @@ export interface UpdateUserRequest {
 
 /**
  * 사용자 정보를 수정합니다.
- * PATCH /api/v1/users/me
+ * PATCH /api/v1/users/{userId}
  */
 export const updateUser = async (
+  userId: number,
   data: UpdateUserRequest,
   accessToken?: string,
 ): Promise<User> => {
-  const res = await apiClient.patch(ENDPOINTS.USERS.ME, data, accessToken);
+  const res = await apiClient.patch(ENDPOINTS.USERS.PROFILE(userId), data, accessToken);
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as any;
+    const body = (await res.json().catch(() => ({}))) as any;
     throw new Error(body.message || '사용자 정보 수정에 실패했습니다.');
   }
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import styled from '@emotion/styled';
+import { keyframes } from '@emotion/react';
 import { colors, typography, radius, HEADER_HEIGHT, BOTTOM_NAV_HEIGHT } from '@/shared/styles/theme';
 import Button from '@/shared/ui/Button';
 import { apiClient } from '@/shared/api/client';
@@ -332,6 +333,111 @@ const FieldError = styled.span`
   padding-left: 4px;
 `;
 
+/* ── Custom UI for Category  ────────────────────────────── */
+
+const slideUp = keyframes`
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+`;
+
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const SelectButton = styled.button<{ hasError?: boolean; hasValue?: boolean }>`
+  width: 100%;
+  height: 52px;
+  padding: 0 16px;
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.md};
+  color: ${({ hasValue }) => (hasValue ? colors.textPrimary : colors.textSecondary)};
+  background: ${colors.surface};
+  border: 1px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
+  border-radius: ${radius.sm};
+  outline: none;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:active {
+    background: ${colors.bg};
+  }
+  
+  &::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%238B95A1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+`;
+
+const BottomSheetOverlay = styled.div`
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  animation: ${fadeIn} 0.2s ease-out forwards;
+`;
+
+const BottomSheetContent = styled.div`
+  background: ${colors.surface};
+  border-radius: 24px 24px 0 0;
+  padding: 28px 24px 40px;
+  animation: ${slideUp} 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+`;
+
+const SheetHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+`;
+
+const SheetTitle = styled.h2`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.lg};
+  font-weight: ${typography.weight.bold};
+  color: ${colors.textPrimary};
+  margin: 0;
+`;
+
+const CategoryList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const CategoryItem = styled.button<{ isSelected: boolean }>`
+  width: 100%;
+  padding: 16px;
+  border-radius: ${radius.md};
+  background: ${({ isSelected }) => (isSelected ? '#eef4ff' : colors.surface)};
+  color: ${({ isSelected }) => (isSelected ? colors.primary : colors.textPrimary)};
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.md};
+  font-weight: ${({ isSelected }) => (isSelected ? typography.weight.bold : typography.weight.medium)};
+  text-align: left;
+  border: 1px solid ${({ isSelected }) => (isSelected ? colors.primary : colors.border)};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:active {
+    background: ${({ isSelected }) => (isSelected ? '#e0ecff' : colors.bg)};
+  }
+`;
+
 /* ── Location Picker Row ────────────────────────────────── */
 
 const LocationRow = styled.button`
@@ -429,6 +535,7 @@ const MapPinIcon = () => (
 const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormProps) => {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreviews, setImagePreviews] = useState<{ id?: number; url: string; file?: File }[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -436,7 +543,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   const { data: myProfile } = useQuery<User>({
     queryKey: ['myProfile'],
     queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
+      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
       if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
       const json = await res.json() as any;
       if (json.data) return json.data as User;
@@ -466,7 +573,9 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   });
 
   const selectedRegion = watch('regionName');
+  const selectedCategoryCode = watch('categoryCode');
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -638,20 +747,20 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           {/* Category */}
           <FieldWrapper>
             <Label>카테고리 선택</Label>
-            <StyledSelect
+            <SelectButton
+              type="button"
               hasError={!!errors.categoryCode}
-              defaultValue=""
-              {...register('categoryCode', { required: '카테고리를 선택해주세요' })}
+              hasValue={!!selectedCategoryCode}
+              onClick={() => setIsCategorySheetOpen(true)}
             >
-              <option value="" disabled>
-                카테고리 선택
-              </option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat.code} value={cat.code}>
-                  {cat.label}
-                </option>
-              ))}
-            </StyledSelect>
+              {selectedCategoryCode 
+                ? CATEGORIES.find(c => c.code === selectedCategoryCode)?.label 
+                : '카테고리 선택'}
+            </SelectButton>
+            <input 
+              type="hidden" 
+              {...register('categoryCode', { required: '카테고리를 선택해주세요' })} 
+            />
             {errors.categoryCode && (
               <FieldError role="alert">{errors.categoryCode.message}</FieldError>
             )}
@@ -746,6 +855,39 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
             />
           </div>
         </div>
+      )}
+
+      {/* Category Bottom Sheet */}
+      {isCategorySheetOpen && (
+        <BottomSheetOverlay onClick={() => setIsCategorySheetOpen(false)}>
+          <BottomSheetContent onClick={(e) => e.stopPropagation()}>
+            <SheetHeader>
+              <SheetTitle>카테고리 선택</SheetTitle>
+              <BackButton 
+                type="button" 
+                style={{ position: 'static' }} 
+                onClick={() => setIsCategorySheetOpen(false)}
+              >
+                <CloseIcon />
+              </BackButton>
+            </SheetHeader>
+            <CategoryList>
+              {CATEGORIES.map((cat) => (
+                <CategoryItem
+                  key={cat.code}
+                  type="button"
+                  isSelected={selectedCategoryCode === cat.code}
+                  onClick={() => {
+                    setValue('categoryCode', cat.code, { shouldValidate: true, shouldDirty: true });
+                    setIsCategorySheetOpen(false);
+                  }}
+                >
+                  {cat.label}
+                </CategoryItem>
+              ))}
+            </CategoryList>
+          </BottomSheetContent>
+        </BottomSheetOverlay>
       )}
     </Page>
   );

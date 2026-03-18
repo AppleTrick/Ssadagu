@@ -8,9 +8,9 @@ import { radius, typography } from '@/shared/styles/theme';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const Wrapper = styled.div`
+const Wrapper = styled.div<{ $height: string }>`
   width: 100%;
-  height: 200px;
+  height: ${({ $height }) => $height};
   border-radius: ${radius.md};
   overflow: hidden;
   position: relative;
@@ -37,9 +37,12 @@ interface SharedLocationViewerProps {
   lat: number;
   lng: number;
   label?: string;
+  height?: string;
+  zoom?: number;
+  panY?: number;
 }
 
-const SharedLocationViewer = ({ lat, lng, label }: SharedLocationViewerProps) => {
+const SharedLocationViewer = ({ lat, lng, label, height = '200px', zoom = 4, panY = 0 }: SharedLocationViewerProps) => {
   const handleMapReady = useCallback(
     (map: any) => {
       const position = new window.kakao.maps.LatLng(lat, lng);
@@ -53,13 +56,17 @@ const SharedLocationViewer = ({ lat, lng, label }: SharedLocationViewerProps) =>
       new window.kakao.maps.Marker({ position, map, image: markerImage });
       map.setDraggable(false);
       map.setZoomable(false);
+
+      if (panY !== 0) {
+        setTimeout(() => map.panBy(0, panY), 50);
+      }
     },
-    [lat, lng],
+    [lat, lng, panY],
   );
 
   return (
-    <Wrapper>
-      <MapBase lat={lat} lng={lng} zoom={4} onMapReady={handleMapReady} />
+    <Wrapper $height={height}>
+      <MapBase lat={lat} lng={lng} zoom={zoom} minHeight="0px" onMapReady={handleMapReady} />
       {label && <Label>📍 {label}</Label>}
     </Wrapper>
   );

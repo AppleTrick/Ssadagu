@@ -5,17 +5,16 @@ export const ENDPOINTS = {
     LOGOUT: '/auth/logout',
   },
   USERS: {
-    ME: '/users/me',
     SIGNUP: '/users/signup',
-    MY_WISHES: '/users/me/wishes',
-    MY_TRANSACTIONS: '/users/me/transactions',
-    REGION: '/users/me/region',
+    MY_WISHES: (id: number) => `/users/${id}/wishes`,
+    MY_TRANSACTIONS: (id: number) => `/users/${id}/purchases`,
+    REGION: (id: number) => `/users/${id}/region`,
 
-    REGION_VERIFY: '/users/region-verify',
+    PROFILE: (id: number) => `/users/${id}`,
+    REGION_VERIFY: (id: number) => `/users/${id}/region-verify`,
     GET_USER_PRODUCTS: (id: number) => `/users/${id}/products`,
     GET_USER_PURCHASES: (id: number) => `/users/${id}/purchases`,
     GET_USER_WISHES: (id: number) => `/users/${id}/wishes`,
-
   },
   ACCOUNTS: {
     BASE: '/accounts',

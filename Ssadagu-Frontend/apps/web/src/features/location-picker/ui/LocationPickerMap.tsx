@@ -54,9 +54,29 @@ const LocationPickerMap = ({
         const c = map.getCenter();
         reverseGeocode(c.getLat(), c.getLng());
       });
-      const c = map.getCenter();
-      reverseGeocode(c.getLat(), c.getLng());
-      onMapReady?.(map);
+
+      // HTML5 Geolocation API로 재 위치 불러오기
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const locPosition = new window.kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            map.setCenter(locPosition);
+            reverseGeocode(position.coords.latitude, position.coords.longitude);
+            onMapReady?.(map);
+          },
+          (error) => {
+            console.error('현재 위치를 가져올 수 없습니다.', error);
+            const c = map.getCenter();
+            reverseGeocode(c.getLat(), c.getLng());
+            onMapReady?.(map);
+          },
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      } else {
+        const c = map.getCenter();
+        reverseGeocode(c.getLat(), c.getLng());
+        onMapReady?.(map);
+      }
     },
     [reverseGeocode, onMapReady],
   );
