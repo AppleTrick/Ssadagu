@@ -41,12 +41,35 @@ public class User extends BaseEntity {
     @Column(name = "user_key", length = 100)
     private String userKey;
 
+    @Column(name = "secondary_password_hash")
+    private String secondaryPasswordHash;
+
+    @Column(name = "biometric_public_key", columnDefinition = "TEXT")
+    private String biometricPublicKey;
+
+    @Builder.Default
+    @Column(name = "is_biometric_enabled", nullable = false)
+    private Boolean isBiometricEnabled = false;
+
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }
 
     public void updateRegion(String region) {
         this.region = region;
+    }
+
+    public void updateSecondaryPassword(String hash) {
+        this.secondaryPasswordHash = hash;
+    }
+
+    public void registerBiometric(String publicKey) {
+        this.biometricPublicKey = publicKey;
+        this.isBiometricEnabled = true;
+    }
+
+    public void updateBiometricEnabled(boolean enabled) {
+        this.isBiometricEnabled = enabled;
     }
 
     public void verifyAccount() {
