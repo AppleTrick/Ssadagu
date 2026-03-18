@@ -96,6 +96,6 @@ public class UserAccountService {
         LocalDateTime now = LocalDateTime.now();
         verification.verify(now);                // AccountVerification: status=VERIFIED, verifiedAt 설정
         verification.getAccount().verify();      // UserAccount: verifiedStatus=VERIFIED
-        user.verifyAccount();                    // User: status=ACTIVE
+        user.setAccountVerified();               // User: status=ACCOUNT_VERIFIED
     }
 }
