@@ -1,13 +1,12 @@
 package com.twotwo.ssadagu.domain.demanddeposit.service;
 
+import com.twotwo.ssadagu.global.dto.SsafyApiResponse;
 import com.twotwo.ssadagu.global.util.SsafyHeaderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,7 +30,7 @@ public class DemandDepositService {
     /**
      * SSAFY 금융망: 수시입출금 계좌 생성 (DEMAND_DEPOSIT_03)
      */
-    public Map<String, Object> createAccount(String accountTypeUniqueNo, String userKey) {
+    public SsafyApiResponse<Map<String, Object>> createAccount(String accountTypeUniqueNo, String userKey) {
         String url = baseUrl + "/edu/demandDeposit/createDemandDepositAccount";
         
         if (userKey == null || userKey.isEmpty()) {
@@ -52,14 +51,15 @@ public class DemandDepositService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
 
         log.info("[Demand Deposit] 계좌 생성 요청 - accountTypeUniqueNo: {}", accountTypeUniqueNo);
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+        ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
         return response.getBody();
     }
 
     /**
      * SSAFY 금융망: 수시입출금 계좌 조회 (단건) (DEMAND_DEPOSIT_05)
      */
-    public Map<String, Object> getAccount(String accountNo, String userKey) {
+    public SsafyApiResponse<Map<String, Object>> getAccount(String accountNo, String userKey) {
         String url = baseUrl + "/edu/demandDeposit/inquireDemandDepositAccount";
 
         if (userKey == null || userKey.isEmpty()) {
@@ -78,14 +78,15 @@ public class DemandDepositService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
 
         log.info("[Demand Deposit] 계좌 단건 조회 요청 - accountNo: {}", accountNo);
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+        ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
         return response.getBody();
     }
 
     /**
      * SSAFY 금융망: 수시입출금 계좌 거래내역조회 (DEMAND_DEPOSIT_12)
      */
-    public Map<String, Object> getTransactionHistory(String accountNo, String startDate, String endDate, String transactionType, String orderByType, String userKey) {
+    public SsafyApiResponse<Map<String, Object>> getTransactionHistory(String accountNo, String startDate, String endDate, String transactionType, String orderByType, String userKey) {
         String url = baseUrl + "/edu/demandDeposit/inquireTransactionHistoryList";
 
         if (userKey == null || userKey.isEmpty()) {
@@ -108,7 +109,41 @@ public class DemandDepositService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
 
         log.info("[Demand Deposit] 계좌 거래내역 조회 요청 - accountNo: {}", accountNo);
-        ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+        ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
+        return response.getBody();
+    }
+
+    /**
+     * SSAFY 금융망: 수시입출금 계좌 이체 (DEMAND_DEPOSIT_02)
+     */
+    public SsafyApiResponse<Map<String, Object>> updateTransfer(String depositAccountNo, String depositTransactionMemo, 
+                                                               String withdrawalAccountNo, String withdrawalTransactionMemo, 
+                                                               Long transactionBalance, String userKey) {
+        String url = baseUrl + "/edu/demandDeposit/updateDemandDepositAccountTransfer";
+
+        if (userKey == null || userKey.isEmpty()) {
+            userKey = defaultUserKey;
+        }
+
+        Map<String, String> header = ssafyHeaderUtil.createHeader("updateDemandDepositAccountTransfer", userKey);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("Header", header);
+        payload.put("depositAccountNo", depositAccountNo);
+        payload.put("depositTransactionMemo", depositTransactionMemo);
+        payload.put("withdrawalAccountNo", withdrawalAccountNo);
+        payload.put("withdrawalTransactionMemo", withdrawalTransactionMemo);
+        payload.put("transactionBalance", String.valueOf(transactionBalance));
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
+
+        log.info("[Demand Deposit] 계좌 이체 요청 - From: {}, To: {}, Amount: {}", withdrawalAccountNo, depositAccountNo, transactionBalance);
+        ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
         return response.getBody();
     }
 }

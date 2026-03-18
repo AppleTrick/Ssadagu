@@ -85,4 +85,16 @@ public class Product extends BaseEntity {
             this.wishCount--;
         }
     }
+
+    public void reserve() {
+        this.status = "TRADING";
+    }
+
+    public void soldOut() {
+        this.status = "SOLD";
+    }
+
+    public void cancelReservation() {
+        this.status = "ON_SALE";
+    }
 }

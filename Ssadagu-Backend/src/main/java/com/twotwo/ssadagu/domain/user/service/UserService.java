@@ -11,6 +11,7 @@ import com.twotwo.ssadagu.domain.user.dto.*;
 import com.twotwo.ssadagu.domain.demanddeposit.service.DemandDepositService;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
+import com.twotwo.ssadagu.global.dto.SsafyApiResponse;
 import com.twotwo.ssadagu.global.error.BusinessException;
 import com.twotwo.ssadagu.global.error.ErrorCode;
 import com.twotwo.ssadagu.global.security.CustomUserDetails;
@@ -56,11 +57,11 @@ public class UserService {
         // 유효한 수시입출금 상품 고유번호 (SSAFY DEMAND_DEPOSIT_01 조회 결과)
         String defaultAccountTypeUniqueNo = "001-1-7a336b19062347"; 
         try {
-            java.util.Map<String, Object> accountResponse = demandDepositService.createAccount(defaultAccountTypeUniqueNo, issuedUserKey);
+            SsafyApiResponse<java.util.Map<String, Object>> accountResponse = demandDepositService.createAccount(defaultAccountTypeUniqueNo, issuedUserKey);
             
-            if (accountResponse != null && accountResponse.containsKey("REC")) {
-                java.util.Map<String, Object> rec = (java.util.Map<String, Object>) accountResponse.get("REC");
-                if (rec != null && rec.containsKey("accountNo")) {
+            if (accountResponse != null && accountResponse.getRec() != null) {
+                java.util.Map<String, Object> rec = accountResponse.getRec();
+                if (rec.containsKey("accountNo")) {
                     String accountNo = (String) rec.get("accountNo");
                     log.info("[Signup] 성공적으로 계좌가 생성되었습니다. User Email: {}, AccountNo: {}", requestDto.getEmail(), accountNo);
                 }
@@ -157,9 +158,10 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<TransactionResponseDto> getMyPurchases(Long userId) {
-        return transactionRepository.findByBuyerId(userId)
+        return transactionRepository.findByBuyerId(userId, org.springframework.data.domain.PageRequest.of(0, 100))
+                .getContent() // List로 변환
                 .stream()
-                .map(TransactionResponseDto::from)
+                .map(t -> TransactionResponseDto.from(t, userId))
                 .collect(Collectors.toList());
     }
 

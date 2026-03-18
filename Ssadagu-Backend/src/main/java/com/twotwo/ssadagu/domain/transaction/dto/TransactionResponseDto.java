@@ -30,10 +30,21 @@ public class TransactionResponseDto {
     @Schema(description = "거래 상태", example = "COMPLETED")
     private String status;
 
+    @Schema(description = "상품 썸네일 이미지 URL")
+    private String productImageUrl;
+
+    @Schema(description = "거래 상대방 닉네임")
+    private String counterpartNickname;
+
     @Schema(description = "거래 일시")
     private LocalDateTime createdAt;
 
-    public static TransactionResponseDto from(Transaction entity) {
+    public static TransactionResponseDto from(Transaction entity, Long currentUserId) {
+        // 현재 유저가 구매자면 판매자 닉네임을, 판매자면 구매자 닉네임을 상대방 닉네임으로 설정
+        String counterpart = entity.getBuyer().getId().equals(currentUserId) 
+                ? entity.getSeller().getNickname() 
+                : entity.getBuyer().getNickname();
+
         return TransactionResponseDto.builder()
                 .id(entity.getId())
                 .productId(entity.getProduct().getId())
@@ -41,6 +52,8 @@ public class TransactionResponseDto {
                 .amount(entity.getAmount())
                 .paymentMethod(entity.getPaymentMethod())
                 .status(entity.getStatus())
+                .productImageUrl(entity.getProduct().getImages().isEmpty() ? null : entity.getProduct().getImages().get(0).getImageUrl())
+                .counterpartNickname(counterpart)
                 .createdAt(entity.getCreatedAt())
                 .build();
     }
