@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import styled from '@emotion/styled';
 import { colors, typography, HEADER_HEIGHT, zIndex } from '@/shared/styles/theme';
+import { useMyProfile } from '@/entities/user';
 
 interface HeaderMainProps {
   title?: string;
@@ -10,10 +12,22 @@ interface HeaderMainProps {
   onNotification?: () => void;
 }
 
-const HeaderMain = ({ title = '우리동네', onSearchChange, onNotification }: HeaderMainProps) => {
+const HeaderMain = ({ title, onSearchChange, onNotification }: HeaderMainProps) => {
+  const router = useRouter();
+  const { data: user } = useMyProfile();
+  
+  const isRegionHeader = !title;
+  const displayTitle = title || (user?.regionName?.trim() ? user.regionName : '우리동네');
+
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleTitleClick = () => {
+    if (isRegionHeader) {
+      router.push('/region-select');
+    }
+  };
 
   const openSearch = () => {
     setSearchOpen(true);
@@ -57,7 +71,14 @@ const HeaderMain = ({ title = '우리동네', onSearchChange, onNotification }: 
         </SearchBar>
       ) : (
         <>
-          <Title>{title}</Title>
+          <TitleWrapper onClick={isRegionHeader ? handleTitleClick : undefined} $clickable={isRegionHeader}>
+            <Title>{displayTitle}</Title>
+            {isRegionHeader && (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2 }}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            )}
+          </TitleWrapper>
           <IconGroup>
             <IconButton onClick={openSearch} aria-label="검색">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -86,6 +107,13 @@ const Header = styled.header`
   display: flex; flex-direction: row; align-items: center; justify-content: space-between;
   padding: 0 20px;
   z-index: ${zIndex.header};
+`;
+
+const TitleWrapper = styled.div<{ $clickable?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: ${(props) => (props.$clickable ? 'pointer' : 'default')};
 `;
 
 const Title = styled.h1`

@@ -81,6 +81,14 @@ public class UserService {
         user.verifyAccount();                       // status → ACTIVE
     }
 
+    @Transactional
+    public void updateRegion(Long userId, com.twotwo.ssadagu.domain.user.dto.RegionVerifyRequestDto requestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        user.updateRegion(requestDto.getRegion()); // 더티 체킹으로 자동 UPDATE
+    }
+
     // ===== 마이페이지 =====
 
     @Transactional(readOnly = true)

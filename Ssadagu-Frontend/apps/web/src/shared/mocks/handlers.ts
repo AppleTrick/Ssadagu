@@ -63,6 +63,27 @@ export const handlers = [
       data,
     });
   }),
+  http.get(`${BASE}/users/:userId/products`, async () => {
+    await d();
+    // 사용자 요청 스펙에 맞춘 필드 매핑 (images 포함)
+    const data = mockMyProducts.map(p => ({
+      ...p,
+      images: p.thumbnailUrl ? [{ id: 0, imageUrl: p.thumbnailUrl }] : []
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '조직 조회 성공',
+      data: data
+    });
+  }),
+  http.post(`${BASE}/users/region-verify`, async ({ request }) => {
+    await d();
+    const body = await request.json() as { region: string };
+    if (body.region) {
+      mockUser.regionName = body.region;
+    }
+    return HttpResponse.json({ message: 'ok' });
+  }),
   http.get(`${BASE}/users/me/transactions`, async () => {
     await d();
     return HttpResponse.json({ data: { content: mockTransactions } });
@@ -88,21 +109,14 @@ export const handlers = [
     await d();
     return HttpResponse.json({ data: { content: mockMyProducts } });
   }),
-  http.get(`${BASE}/users/:userId/products`, async () => {
+  http.post(`${BASE}/users/me/region`, async ({ request }) => {
     await d();
-    // 사용자 요청 스펙에 맞춘 필드 매핑 (images 포함)
-    const data = mockMyProducts.map(p => ({
-      ...p,
-      images: p.thumbnailUrl ? [{ id: 0, imageUrl: p.thumbnailUrl }] : []
-    }));
-    return HttpResponse.json({
-      status: 'SUCCESS',
-      message: '조직 조회 성공',
-      data: data
-    });
-  }),
-  http.post(`${BASE}/users/me/region`, async () => {
-    await d();
+    try {
+      const body = await request.json() as { region: string };
+      if (body.region) {
+        mockUser.regionName = body.region;
+      }
+    } catch (e) { }
     return HttpResponse.json({ message: 'ok' });
   }),
 

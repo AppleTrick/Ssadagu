@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { Button } from '@/shared/ui';
@@ -16,6 +17,7 @@ import {
   radius,
   shadows,
   HEADER_HEIGHT,
+  STATUS_BAR_HEIGHT,
 } from '@/shared/styles/theme';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -30,7 +32,7 @@ const Page = styled.div`
 `;
 
 const ContentArea = styled.main`
-  padding-top: ${HEADER_HEIGHT}px;
+  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
   padding-bottom: 32px;
   display: flex;
   flex-direction: column;
@@ -57,7 +59,6 @@ const Desc = styled.p`
   line-height: 1.6;
 `;
 
-/* 지도 + 현재위치 버튼 묶음 */
 const MapBlock = styled.div`
   display: flex;
   flex-direction: column;
@@ -106,7 +107,6 @@ const LocIcon = () => (
   </svg>
 );
 
-/* 선택된 동네 카드 */
 const ResultCard = styled.div`
   margin: 0 20px;
   background: ${colors.surface};
@@ -189,8 +189,11 @@ const PinSvg = () => (
 
 /* ── Component ───────────────────────────────────────────── */
 
-export function LocationAuthPage() {
+export function RegionSelectPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isReauth = searchParams?.get('mode') === 'reauth';
+  const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
   const mapRef = useRef<any>(null);
 
@@ -210,29 +213,33 @@ export function LocationAuthPage() {
     setError('');
     setSubmitting(true);
     try {
-      const res = await apiClient.post(ENDPOINTS.USERS.REGION_VERIFY, { region: regionName }, accessToken ?? undefined);
+      const res = await apiClient.patch(ENDPOINTS.USERS.REGION, { region: regionName }, accessToken ?? undefined);
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.message || d.error || 'API 응답 에러');
       }
+      // Invalidate both myProfile to update header, and products to refetch list based on new region
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['myProfile'] }),
+        queryClient.invalidateQueries({ queryKey: ['products'] })
+      ]);
       router.push('/home');
     } catch (err: any) {
-      setError(err?.message || '저장에 실패했습니다. 다시 시도해주세요.');
+      setError(err?.message || '변경에 실패했습니다. 다시 시도해주세요.');
       setSubmitting(false);
     }
   };
 
   return (
     <Page>
-      <HeaderBack title="동네 인증" onBack={() => router.back()} />
+      <HeaderBack title="동네 변경" onBack={() => router.back()} />
 
       <ContentArea>
         {/* 타이틀 — 헤더 바로 아래 */}
         <TitleSection>
-          <Title>동네를 인증해주세요</Title>
+          <Title>{isReauth ? '동네를 재설정하실껀가요?' : '어디 동네로 가실껀가요?'}</Title>
           <Desc>
-            지도를 움직여 거래할 동네를 선택하세요.{'\n'}
-            정확한 거래를 위해 실제 거주 지역을 선택해주세요.
+            지도를 움직여 {isReauth ? '재설정할' : '이동할'} 동네를 선택하세요.
           </Desc>
         </TitleSection>
 
@@ -251,7 +258,7 @@ export function LocationAuthPage() {
             disabled={geoLoading || !mapRef.current}
           >
             <LocIcon />
-            {geoLoading ? '위치 확인 중...' : '현재 위치로 이동'}
+            {geoLoading ? '위치 확인 중...' : '현재 내 위치로 가기'}
           </CurrentLocBtn>
         </MapBlock>
 
@@ -275,7 +282,7 @@ export function LocationAuthPage() {
 
         {error && <ErrorMsg>{error}</ErrorMsg>}
 
-        {/* 인증 버튼 */}
+        {/* 변경 버튼 */}
         <BottomBar>
           <Button
             variant="primary"
@@ -285,7 +292,7 @@ export function LocationAuthPage() {
             disabled={!regionName || submitting}
             onClick={handleConfirm}
           >
-            이 동네로 인증하기
+            {isReauth ? '이 동네로 재설정하기' : '이 동네로 가기'}
           </Button>
         </BottomBar>
       </ContentArea>

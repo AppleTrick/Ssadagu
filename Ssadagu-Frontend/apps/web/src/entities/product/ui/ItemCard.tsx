@@ -49,7 +49,7 @@ const ItemCard = ({ product, onClick, onWishClick }: ItemCardProps) => {
   return (
     <Card onClick={onClick}>
       <Thumbnail>
-        {product.thumbnailUrl ? (
+        {product.thumbnailUrl && product.thumbnailUrl !== 'string' ? (
           <ThumbnailImg src={getProxyImageUrl(product.thumbnailUrl)} alt={product.title} />
         ) : (
           <ThumbnailPlaceholder />
