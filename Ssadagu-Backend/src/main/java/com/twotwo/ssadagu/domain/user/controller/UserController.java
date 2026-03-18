@@ -53,6 +53,15 @@ public class UserController {
         return ApiResponse.success(null);
     }
 
+    @Operation(summary = "동네 변경", description = "로그인된 계정의 동네 정보를 변경합니다.")
+    @PatchMapping("/me/region")
+    public ApiResponse<Void> updateRegion(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid com.twotwo.ssadagu.domain.user.dto.RegionVerifyRequestDto requestDto) {
+        userService.updateRegion(userDetails.getUser().getId(), requestDto);
+        return ApiResponse.success(null);
+    }
+
     // ===== 마이페이지 =====
 
     @Operation(summary = "내 정보 조회", description = "로그인된 사용자의 정보를 반환합니다.")
