@@ -29,3 +29,6 @@
 
 # turborepo
 **/.turbo
+
+# lockfile
+pnpm-lock.yaml

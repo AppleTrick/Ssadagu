@@ -21,6 +21,8 @@ const statusLabel: Record<string, string> = {
   DELETED: '삭제됨',
 };
 
+import { getProxyImageUrl } from '@/shared/utils';
+
 const ChatRoomItemSummary = ({
   productId: _productId,
   productTitle,
@@ -32,7 +34,7 @@ const ChatRoomItemSummary = ({
     <Container>
       <Thumbnail>
         {productThumbnailUrl ? (
-          <ThumbnailImg src={productThumbnailUrl} alt={productTitle} />
+          <ThumbnailImg src={getProxyImageUrl(productThumbnailUrl)} alt={productTitle} />
         ) : (
           <ThumbnailPlaceholder />
         )}
