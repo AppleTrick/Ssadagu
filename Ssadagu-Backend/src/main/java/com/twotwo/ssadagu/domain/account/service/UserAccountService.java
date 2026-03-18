@@ -8,13 +8,22 @@ import com.twotwo.ssadagu.domain.account.entity.UserAccount;
 import com.twotwo.ssadagu.domain.account.repository.AccountVerificationRepository;
 import com.twotwo.ssadagu.domain.account.repository.UserAccountRepository;
 import com.twotwo.ssadagu.domain.user.entity.User;
+import com.twotwo.ssadagu.global.util.SsafyHeaderUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 @Slf4j
@@ -25,6 +34,13 @@ public class UserAccountService {
     private final UserAccountRepository userAccountRepository;
     private final AccountVerificationRepository verificationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SsafyHeaderUtil ssafyHeaderUtil;
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${ssafy.api.base-url}")
+    private String baseUrl;
+
+    private static final String AUTH_TEXT = "SSADAGU";
 
     @Transactional
     public AccountRegisterResponseDto registerAccountAndStartAuth(User user, AccountRegisterRequestDto requestDto) {
@@ -48,18 +64,35 @@ public class UserAccountService {
             throw new IllegalArgumentException("이미 인증된 계좌입니다.");
         }
 
-        // Mock: 4자리 랜덤 숫자 생성
-        String randomCode = String.format("%04d", new Random().nextInt(10000));
-        log.info("[1원 송금 발생] 계좌번호: {}, 인증코드: {}", requestDto.getAccountNumber(), randomCode);
+        // Real API: 1원 송금 요청 (openAccountAuth)
+        String url = baseUrl + "/edu/accountAuth/openAccountAuth";
+        Map<String, String> ssafyHeader = ssafyHeaderUtil.createHeader("openAccountAuth", user.getUserKey());
+        
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("Header", ssafyHeader);
+        payload.put("accountNo", requestDto.getAccountNumber());
+        payload.put("authText", AUTH_TEXT);
 
-        // AccountVerification 생성
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
+
+        log.info("[1원 송금 요청] 계좌번호: {}, authText: {}", requestDto.getAccountNumber(), AUTH_TEXT);
+        try {
+            restTemplate.postForEntity(url, entity, Map.class);
+        } catch (Exception e) {
+            log.error("1원 송금 API 호출 실패: {}", e.getMessage());
+            throw new RuntimeException("금융망 API 호출에 실패했습니다.");
+        }
+
+        // AccountVerification 생성 (DB 기록용)
         AccountVerification verification = AccountVerification.builder()
                 .account(account)
                 .user(user)
                 .sentAmount(1)
-                .verifyCodeHash(passwordEncoder.encode(randomCode))
+                .verifyCodeHash(AUTH_TEXT) // 실제 연동 시에는 authText를 저장해둠 (또는 그대로 사용)
                 .status("PENDING")
-                .expiresAt(LocalDateTime.now().plusMinutes(5)) // 5분 만료
+                .expiresAt(LocalDateTime.now().plusMinutes(5))
                 .requestedAt(LocalDateTime.now())
                 .build();
 
@@ -88,8 +121,28 @@ public class UserAccountService {
             throw new IllegalArgumentException("인증 시간이 만료되었습니다.");
         }
 
-        if (!passwordEncoder.matches(requestDto.getCode(), verification.getVerifyCodeHash())) {
-            throw new IllegalArgumentException("인증 번호가 일치하지 않습니다.");
+        // Real API: 1원 송금 검증 요청 (checkAuthCode)
+        String url = baseUrl + "/edu/accountAuth/checkAuthCode";
+        Map<String, String> ssafyHeader = ssafyHeaderUtil.createHeader("checkAuthCode", user.getUserKey());
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("Header", ssafyHeader);
+        payload.put("accountNo", verification.getAccount().getAccountNumber());
+        payload.put("authText", verification.getVerifyCodeHash()); // 발송 시 사용했던 AUTH_TEXT
+        payload.put("authCode", requestDto.getCode());
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
+
+        log.info("[1원 인증 검증] 계좌번호: {}, 입력코드: {}", verification.getAccount().getAccountNumber(), requestDto.getCode());
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
+            // SSAFY API는 실패 시 에러 응답이나 특정 에러 코드를 줄 수 있음. 
+            // 상세한 에러 처리는 API 응답 구조에 따라 보완 필요.
+        } catch (Exception e) {
+            log.error("1원 인증 검증 API 호출 실패: {}", e.getMessage());
+            throw new IllegalArgumentException("인증 번호가 일치하지 않거나 API 호출에 실패했습니다.");
         }
 
         // 상태 업데이트 (더티 체킹으로 자동 UPDATE)
