@@ -3,7 +3,7 @@
  * 주어진 URL이 S3로 끝나는 경우에만 프록시 URL로 감싸서 반환합니다.
  */
 export function getProxyImageUrl(url?: string | null): string {
-  if (!url) return '';
+  if (!url || url === 'string') return '';
 
   // base64, blob 혹은 다른 로컬 경로는 그대로 반환
   if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('/')) {

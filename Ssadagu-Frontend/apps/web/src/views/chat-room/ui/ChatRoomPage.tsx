@@ -78,10 +78,10 @@ export function ChatRoomPage() {
   const [confirmSheetOpen, setConfirmSheetOpen] = useState(false);
   const [selectedConfirmMessage, setSelectedConfirmMessage] = useState<ChatMessage | null>(null);
 
-  const rawId = Array.isArray(params.roomId) ? params.roomId[0] : params.roomId;
+  const rawId = params && params.roomId ? (Array.isArray(params.roomId) ? params.roomId[0] : params.roomId) : '';
   const isNewRoom = rawId === 'new';
   const roomId = isNewRoom ? -1 : Number(rawId);
-  const newProductId = Number(searchParams.get('productId'));
+  const newProductId = Number(searchParams?.get('productId'));
 
   const accessToken = useAuthStore((s) => s.accessToken);
   const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
@@ -188,7 +188,26 @@ export function ChatRoomPage() {
   });
 
   useEffect(() => {
-    if (historyMessages) setLocalMessages(historyMessages);
+    if (historyMessages) {
+      setLocalMessages((prev) => {
+        // 백엔드에서 DESC로 오므로 ASC로 뒤집어줌
+        const reversedHistory = [...historyMessages].reverse();
+        
+        // 이미 프론트에 있는 (최근에 소켓으로 받은 or 낙관적) 메시지 중 API 응답에 없는 것만 추림
+        const historyIds = new Set(reversedHistory.map((m) => m.id));
+        const optimisticOrNew = prev.filter((m) => !historyIds.has(m.id));
+        
+        // 합친 후 다시 보낸 시간순 오름차순(ASC) 정렬 보장
+        const merged = [...reversedHistory, ...optimisticOrNew];
+        merged.sort((a, b) => {
+          const timeA = new Date((a.sentAt || (a as any).createdAt) as string).getTime();
+          const timeB = new Date((b.sentAt || (b as any).createdAt) as string).getTime();
+          return timeA - timeB;
+        });
+        
+        return merged;
+      });
+    }
   }, [historyMessages]);
 
   useEffect(() => {
@@ -218,7 +237,12 @@ export function ChatRoomPage() {
                    const moreMessages = Array.isArray(qs) ? qs : Array.isArray(qs.content) ? qs.content : Array.isArray(qs.data) ? qs.data : qs.data?.content || [];
                    if (moreMessages.length < 30) setHasMore(false);
                    if (moreMessages.length > 0) {
-                      setLocalMessages(prev => [...moreMessages, ...prev]);
+                      const reversedMore = [...moreMessages].reverse();
+                      setLocalMessages(prev => {
+                         const newIds = new Set(reversedMore.map(m => m.id));
+                         const filteredPrev = prev.filter(m => !newIds.has(m.id));
+                         return [...reversedMore, ...filteredPrev];
+                      });
                    }
                 }
              } catch (e) { console.error(e); }
@@ -405,18 +429,18 @@ export function ChatRoomPage() {
           />
         </ItemSummaryBar>
       )}
-      {isLoading && (
-        <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
-      )}
       {isError && !isLoading && (
         <ErrorWrapper>
           <span>메시지를 불러오지 못했습니다.</span>
           <RetryButton onClick={() => refetch()}>다시 시도</RetryButton>
         </ErrorWrapper>
       )}
-      {!isLoading && !isError && (
+      {!isError && (
         <MessagesArea>
-          {displayMessages.length === 0 && (
+          {isLoading && localMessages.length === 0 && (
+            <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
+          )}
+          {!isLoading && displayMessages.length === 0 && (
             <EmptyMessages>아직 메시지가 없습니다. 먼저 인사해보세요!</EmptyMessages>
           )}
           {displayMessages.length > 0 && hasMore && <div ref={topRef} style={{ height: '1px' }} />}
@@ -446,18 +470,18 @@ export function ChatRoomPage() {
               );
             }
             if (msgType === 'MAP') {
-              return <MapChatBubble key={msg.id} lat={msg.latitude || 0} lng={msg.longitude || 0} label={msg.locationName} isMine={isMine} sentAt={msg.sentAt} />;
+              return <MapChatBubble key={msg.id} lat={msg.latitude || 0} lng={msg.longitude || 0} label={msg.locationName} isMine={isMine} sentAt={msg.sentAt || (msg as any).createdAt} />;
             }
 
             return isMine ? (
-              <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt} imageUrl={msg.imageUrl} />
+              <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />
             ) : (
               <ChatBubbleOther
                 key={msg.id}
                 type={msgType}
                 senderNickname={msg.senderNickname}
                 message={msg.content}
-                sentAt={msg.sentAt}
+                sentAt={msg.sentAt || (msg as any).createdAt}
                 imageUrl={msg.imageUrl}
               />
             );
