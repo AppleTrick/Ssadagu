@@ -1,0 +1,83 @@
+services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - certs:/etc/letsencrypt
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - webroot:/var/www/certbot
+    depends_on:
+      - backend
+      - frontend
+      - jenkins
+    networks:
+      - ssadagu-network
+    restart: always
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - webroot:/var/www/certbot
+    command: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - ssadagu-network
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JENKINS_OPTS=--prefix=/jenkins
+    networks:
+      - ssadagu-network
+    restart: always
+
+  backend:
+    build:
+      context: ./Ssadagu-Backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./Ssadagu-Backend/.env
+    expose:
+      - "8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    networks:
+      - ssadagu-network
+    restart: always
+
+  frontend:
+    build:
+      context: ./Ssadagu-Frontend
+      dockerfile: Dockerfile
+    env_file:
+      - ./Ssadagu-Frontend/.env.local
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    networks:
+      - ssadagu-network
+    restart: always
+
+networks:
+  ssadagu-network:
+    driver: bridge
+
+volumes:
+  certs:
+  certbot-etc:
+  certbot-var:
+  webroot:
+  jenkins_home:

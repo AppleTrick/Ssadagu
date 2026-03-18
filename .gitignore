@@ -3,3 +3,9 @@
 node_modules
 check_schema.js
 schema_result.txt
+.env
+.env.local
+*.crt
+*.key
+nginx/certs/
+nginx/proxy_temp/
