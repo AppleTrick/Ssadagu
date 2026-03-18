@@ -22,4 +22,7 @@ public class TokenDto {
     @JsonIgnore
     @Schema(description = "리프레시 토큰 (액세스 토큰 만료 시 재발급을 위해 사용)")
     private String refreshToken;
+
+    @Schema(description = "사용자 고유 ID", example = "1")
+    private Long userId;
 }
