@@ -11,7 +11,7 @@ import type { ProductSummary, ProductStatus } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography } from '@/shared/styles/theme';
 import { getUserMe } from '@/entities/user/api/getUserMe';
-import { getUserProducts } from '@/entities/product/api/getUserProducts';
+import { ProductListSkeleton, getUserProducts } from '@/entities/product';
 
 /* ── Constants ──────────────────────────────────────────── */
 
@@ -104,7 +104,7 @@ export function MySalesPage() {
           <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
         </TabContainer>
 
-        {isLoading && <CenterWrapper>불러오는 중...</CenterWrapper>}
+        {isLoading && <ProductListSkeleton count={5} />}
 
         {isError && (
           <CenterWrapper>

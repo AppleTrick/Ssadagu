@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { ImageCarousel } from '@/shared/ui';
-import { SellerCard, ItemDetailBottomBar, getProduct } from '@/entities/product';
+import { SellerCard, ItemDetailBottomBar, getProduct, ProductDetailSkeleton } from '@/entities/product';
 import { useDeleteProduct } from '@/features/create-product';
 import type { ProductDetail } from '@/entities/product';
 import { apiClient } from '@/shared/api/client';
@@ -312,7 +312,7 @@ export function ProductDetailPage() {
     <Page>
       <HeaderBack title="상품 상세" onBack={() => router.back()} rightElement={shareButton} />
       <ContentArea>
-        {isLoading && <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>}
+        {isLoading && <ProductDetailSkeleton />}
         {isError && (
           <ErrorWrapper>
             <span>상품 정보를 불러오지 못했습니다.</span>

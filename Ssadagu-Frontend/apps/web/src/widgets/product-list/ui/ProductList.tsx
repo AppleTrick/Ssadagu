@@ -6,7 +6,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
-import { ItemCard, type ProductSummary, useInfiniteProducts } from '@/entities/product';
+import { ItemCard, type ProductSummary, useInfiniteProducts, ProductListSkeleton } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { typography, colors } from '@/shared/styles/theme';
 
@@ -108,7 +108,7 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
-    return <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>;
+    return <ProductListSkeleton count={8} />;
   }
 
   if (isError) {
