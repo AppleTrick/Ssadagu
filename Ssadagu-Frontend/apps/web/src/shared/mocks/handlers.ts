@@ -47,13 +47,59 @@ export const handlers = [
     await d();
     return HttpResponse.json({ data: { content: mockWishes } });
   }),
+  http.get(`${BASE}/users/:userId/wishes`, async () => {
+    await d();
+    const data = mockWishes.map(p => ({
+      id: p.id,
+      productId: p.id,
+      productTitle: p.title,
+      productPrice: p.price,
+      regionName: p.regionName,
+      thumbnailUrl: p.thumbnailUrl ?? null,
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '관심 목록 조회 성공',
+      data,
+    });
+  }),
   http.get(`${BASE}/users/me/transactions`, async () => {
     await d();
     return HttpResponse.json({ data: { content: mockTransactions } });
   }),
+  http.get(`${BASE}/users/:userId/purchases`, async () => {
+    await d();
+    const data = mockTransactions.map(t => ({
+      id: t.id,
+      productId: t.productId,
+      productTitle: t.productTitle,
+      amount: t.price,
+      paymentMethod: 'TRANSFER',
+      status: 'COMPLETED',
+      createdAt: t.createdAt,
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '구매 내역 조회 성공',
+      data,
+    });
+  }),
   http.get(`${BASE}/users/me/products`, async () => {
     await d();
     return HttpResponse.json({ data: { content: mockMyProducts } });
+  }),
+  http.get(`${BASE}/users/:userId/products`, async () => {
+    await d();
+    // 사용자 요청 스펙에 맞춘 필드 매핑 (images 포함)
+    const data = mockMyProducts.map(p => ({
+      ...p,
+      images: p.thumbnailUrl ? [{ id: 0, imageUrl: p.thumbnailUrl }] : []
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '조직 조회 성공',
+      data: data
+    });
   }),
   http.post(`${BASE}/users/me/region`, async () => {
     await d();

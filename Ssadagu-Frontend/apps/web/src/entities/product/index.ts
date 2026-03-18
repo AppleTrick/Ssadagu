@@ -4,6 +4,8 @@ export * from './api/getProduct';
 export * from './api/createProduct';
 export * from './api/updateProduct';
 export * from './api/deleteProduct';
+export * from './api/getUserProducts';
+export * from './api/getUserWishes';
 export { default as ItemCard } from './ui/ItemCard';
 export { default as ItemDetailBottomBar } from './ui/ItemDetailBottomBar';
 export { default as SellerCard } from './ui/SellerCard';

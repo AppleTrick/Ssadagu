@@ -2,20 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { Button, Input } from '@/shared/ui';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { getUserMe, updateUser } from '@/entities/user';
 import type { User } from '@/entities/user';
 import {
   colors,
   typography,
   radius,
   HEADER_HEIGHT,
-  STATUS_BAR_HEIGHT,
 } from '@/shared/styles/theme';
 
 /* ── Styled ─────────────────────────────────────────────── */
@@ -29,7 +27,7 @@ const Page = styled.div`
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
+  padding-top: ${HEADER_HEIGHT}px;
   padding-bottom: 40px;
   display: flex;
   flex-direction: column;
@@ -96,7 +94,7 @@ const FieldLabel = styled.label`
 
 const ToastWrapper = styled.div<{ visible: boolean }>`
   position: fixed;
-  top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT + 12}px;
+  top: ${HEADER_HEIGHT + 12}px;
   left: 50%;
   transform: translateX(-50%);
   background: ${colors.textPrimary};
@@ -136,30 +134,21 @@ const CameraIcon = () => (
   </svg>
 );
 
-interface UserResponse {
-  data?: User;
-}
-
 /* ── Component ───────────────────────────────────────────── */
 
 export function ProfileEditPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const [nickname, setNickname] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
 
+  // 프로필 조회
   const { data: user } = useQuery<User>({
     queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
-      if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
-      const json = await res.json() as User | UserResponse;
-      if ((json as UserResponse).data) return (json as UserResponse).data as User;
-      return json as User;
-    },
+    queryFn: () => getUserMe(accessToken ?? undefined),
     enabled: !!accessToken,
   });
 
@@ -167,44 +156,34 @@ export function ProfileEditPage() {
     if (user?.nickname) setNickname(user.nickname);
   }, [user]);
 
-  const showToast = () => {
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2000);
-  };
+  // 프로필 수정 Mutation
+  const mutation = useMutation({
+    mutationFn: (data: { nickname: string }) => updateUser(data, accessToken ?? undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myProfile'] });
+      setToastVisible(true);
+      setTimeout(() => {
+        setToastVisible(false);
+        router.push('/my');
+      }, 1500);
+    },
+    onError: (err: Error) => {
+      setError(err.message || '저장에 실패했습니다.');
+    },
+  });
 
-  const handleSave = async () => {
-    if (!nickname.trim()) { setError('닉네임을 입력해주세요.'); return; }
+  const handleSave = () => {
+    if (!nickname.trim()) {
+      setError('닉네임을 입력해주세요.');
+      return;
+    }
     if (nickname.length < 2 || nickname.length > 20) {
       setError('닉네임은 2~20자 사이여야 합니다.');
       return;
     }
 
     setError('');
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api'}${ENDPOINTS.USERS.ME}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-          body: JSON.stringify({ nickname }),
-        },
-      );
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as Record<string, unknown>;
-        setError(typeof body.message === 'string' ? body.message : '저장에 실패했습니다.');
-        return;
-      }
-      showToast();
-      setTimeout(() => router.push('/my'), 1500);
-    } catch {
-      setError('네트워크 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
+    mutation.mutate({ nickname });
   };
 
   return (
@@ -229,7 +208,10 @@ export function ProfileEditPage() {
                 id="edit-nickname"
                 placeholder="닉네임을 입력하세요 (2~20자)"
                 value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  setError('');
+                }}
                 maxLength={20}
               />
             </FieldGroup>
@@ -246,7 +228,13 @@ export function ProfileEditPage() {
         </Section>
 
         <BottomBar>
-          <Button variant="primary" size="lg" fullWidth loading={loading} onClick={handleSave}>
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={mutation.isPending}
+            onClick={handleSave}
+          >
             저장하기
           </Button>
         </BottomBar>

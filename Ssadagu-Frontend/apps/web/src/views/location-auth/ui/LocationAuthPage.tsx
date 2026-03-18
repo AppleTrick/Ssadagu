@@ -16,7 +16,6 @@ import {
   radius,
   shadows,
   HEADER_HEIGHT,
-  STATUS_BAR_HEIGHT,
 } from '@/shared/styles/theme';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -31,7 +30,7 @@ const Page = styled.div`
 `;
 
 const ContentArea = styled.main`
-  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
+  padding-top: ${HEADER_HEIGHT}px;
   padding-bottom: 32px;
   display: flex;
   flex-direction: column;
