@@ -55,6 +55,19 @@ export const handlers = [
     await d();
     return HttpResponse.json({ data: { content: mockMyProducts } });
   }),
+  http.get(`${BASE}/users/:userId/products`, async () => {
+    await d();
+    // 사용자 요청 스펙에 맞춘 필드 매핑 (images 포함)
+    const data = mockMyProducts.map(p => ({
+      ...p,
+      images: p.thumbnailUrl ? [{ id: 0, imageUrl: p.thumbnailUrl }] : []
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '조직 조회 성공',
+      data: data
+    });
+  }),
   http.post(`${BASE}/users/me/region`, async () => {
     await d();
     return HttpResponse.json({ message: 'ok' });

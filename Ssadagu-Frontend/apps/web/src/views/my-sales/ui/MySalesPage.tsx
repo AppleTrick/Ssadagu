@@ -8,9 +8,10 @@ import { HeaderBack } from '@/widgets/header';
 import { TabBar } from '@/widgets/tab-bar';
 import { ItemCard } from '@/entities/product';
 import type { ProductSummary, ProductStatus } from '@/entities/product';
-import { apiClient } from '@/shared/api/client';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
-import { colors, typography, HEADER_HEIGHT, STATUS_BAR_HEIGHT } from '@/shared/styles/theme';
+import { colors, typography } from '@/shared/styles/theme';
+import { getUserMe } from '@/entities/user/api/getUserMe';
+import { getUserProducts } from '@/entities/product/api/getUserProducts';
 
 /* ── Constants ──────────────────────────────────────────── */
 
@@ -73,13 +74,6 @@ const RetryButton = styled.button`
   text-decoration: underline;
 `;
 
-/* ── Types ─────────────────────────────────────────────── */
-
-interface ProductsResponse {
-  content?: ProductSummary[];
-  data?: ProductSummary[] | { content?: ProductSummary[] };
-}
-
 /* ── Component ───────────────────────────────────────────── */
 
 export function MySalesPage() {
@@ -87,23 +81,20 @@ export function MySalesPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const [activeTab, setActiveTab] = useState('ON_SALE');
 
-  const { data, isLoading, isError, refetch } = useQuery<ProductSummary[]>({
-    queryKey: ['mySales'],
-    queryFn: async () => {
-      const res = await apiClient.get('/users/me/products', accessToken ?? undefined);
-      if (!res.ok) throw new Error('판매 내역을 불러오지 못했습니다.');
-      const json = await res.json() as ProductsResponse | ProductSummary[];
-      if (Array.isArray(json)) return json;
-      if (Array.isArray((json as ProductsResponse).content)) return (json as ProductsResponse).content as ProductSummary[];
-      const d = (json as ProductsResponse).data;
-      if (Array.isArray(d)) return d as ProductSummary[];
-      if (d && !Array.isArray(d) && Array.isArray((d as { content?: ProductSummary[] }).content)) {
-        return (d as { content: ProductSummary[] }).content;
-      }
-      return [];
-    },
+  // 1. 현재 사용자 정보 조회 (userId를 알기 위해)
+  const { data: user } = useQuery({
+    queryKey: ['userMe'],
+    queryFn: () => getUserMe(accessToken ?? undefined),
     enabled: !!accessToken,
   });
+
+  // 2. 해당 사용자의 판매 상품 조회
+  const { data, isLoading, isError, refetch } = useQuery<ProductSummary[]>({
+    queryKey: ['userProducts', user?.id],
+    queryFn: () => getUserProducts(user!.id, accessToken ?? undefined),
+    enabled: !!accessToken && !!user?.id,
+  });
+
 
   const filtered = (data ?? []).filter((p) => p.status === (activeTab as ProductStatus));
 
