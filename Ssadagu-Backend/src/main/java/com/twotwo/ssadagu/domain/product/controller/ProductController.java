@@ -45,13 +45,14 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "상품 목록 조회", description = "상품 목록을 조회합니다. regionName 파라미터로 동네별 필터링이 가능합니다.")
+    @Operation(summary = "상품 목록 조회", description = "상품 목록을 조회합니다. regionName 또는 keyword(제목) 파라미터로 필터링이 가능합니다.")
     @GetMapping
     public ResponseEntity<List<ProductResponseDto>> getProducts(
             @RequestParam(required = false) String regionName,
+            @RequestParam(required = false) String keyword,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long currentUserId = (userDetails != null) ? userDetails.getUser().getId() : null;
-        List<ProductResponseDto> response = productService.getProducts(regionName, currentUserId);
+        List<ProductResponseDto> response = productService.getProducts(regionName, keyword, currentUserId);
         return ResponseEntity.ok(response);
     }
 
