@@ -94,8 +94,8 @@ public class UserAccountService {
 
         // 상태 업데이트 (더티 체킹으로 자동 UPDATE)
         LocalDateTime now = LocalDateTime.now();
-        verification.verify(now);                // AccountVerification: status=VERIFIED, verifiedAt 설정
-        verification.getAccount().verify();      // UserAccount: verifiedStatus=VERIFIED
-        user.setAccountVerified();               // User: status=ACCOUNT_VERIFIED
+        verification.verify(now); // AccountVerification: status=VERIFIED, verifiedAt 설정
+        verification.getAccount().verify(); // UserAccount: verifiedStatus=VERIFIED
+        user.setAccountVerified(); // User: status=ACCOUNT_VERIFIED
     }
 }

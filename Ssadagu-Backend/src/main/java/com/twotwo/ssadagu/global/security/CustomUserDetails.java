@@ -52,6 +52,6 @@ public class CustomUserDetails implements UserDetails {
     public boolean isEnabled() {
         return "ACTIVE".equals(user.getStatus()) || 
                "UNVERIFIED".equals(user.getStatus()) ||
-               "ACCOUNT_VERIFIED".equals(user.getStatus());
+               "VERIFIED".equals(user.getStatus());
     }
 }

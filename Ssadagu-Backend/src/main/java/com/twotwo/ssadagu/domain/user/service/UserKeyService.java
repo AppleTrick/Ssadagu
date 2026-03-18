@@ -36,7 +36,8 @@ public class UserKeyService {
         String url = baseUrl + "/member/";
 
         // MEMBER_01 예외: userKey가 없는 상태이므로 빈 문자열이나 임의의 값을 넘김
-        // (SsafyHeaderUtil에서는 파라미터로 받은 값이 Header의 userKey로 들어감. MEMBER_01은 그 자체가 발급 로직이므로 공란 처리)
+        // (SsafyHeaderUtil에서는 파라미터로 받은 값이 Header의 userKey로 들어감. MEMBER_01은 그 자체가 발급
+        // 로직이므로 공란 처리)
         Map<String, String> header = ssafyHeaderUtil.createHeader("createUserKey", "");
 
         Map<String, Object> payload = new HashMap<>();
@@ -58,7 +59,7 @@ public class UserKeyService {
         } catch (Exception e) {
             log.error("[UserKey] 금융망 회원가입 연동 실패: {}", e.getMessage());
         }
-        
+
         // 연동 실패 시 기본 테스트 키 반환 (Fallback)
         return defaultUserKey;
     }

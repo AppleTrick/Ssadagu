@@ -8,6 +8,7 @@ import com.twotwo.ssadagu.domain.product.repository.ProductWishRepository;
 import com.twotwo.ssadagu.domain.transaction.dto.TransactionResponseDto;
 import com.twotwo.ssadagu.domain.transaction.repository.TransactionRepository;
 import com.twotwo.ssadagu.domain.user.dto.*;
+import com.twotwo.ssadagu.domain.demanddeposit.service.DemandDepositService;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
 import com.twotwo.ssadagu.global.error.BusinessException;
@@ -15,6 +16,7 @@ import com.twotwo.ssadagu.global.error.ErrorCode;
 import com.twotwo.ssadagu.global.security.CustomUserDetails;
 import com.twotwo.ssadagu.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -35,6 +38,7 @@ public class UserService {
     private final ProductRepository productRepository;
     private final ProductWishRepository productWishRepository;
     private final TransactionRepository transactionRepository;
+    private final DemandDepositService demandDepositService; // 수시입출금 계좌 서비스 주입
 
     @Transactional
     public UserResponseDto signup(SignUpRequestDto requestDto) {
@@ -47,6 +51,25 @@ public class UserService {
 
         // 금융망 MEMBER_01 연동하여 userKey 발급
         String issuedUserKey = userKeyService.createUserKey(requestDto.getEmail());
+
+        // 즉시 금융망 수시입출금 계좌 생성 (DEMAND_DEPOSIT_03)
+        // 유효한 수시입출금 상품 고유번호 (SSAFY DEMAND_DEPOSIT_01 조회 결과)
+        String defaultAccountTypeUniqueNo = "001-1-7a336b19062347"; 
+        try {
+            java.util.Map<String, Object> accountResponse = demandDepositService.createAccount(defaultAccountTypeUniqueNo, issuedUserKey);
+            
+            if (accountResponse != null && accountResponse.containsKey("REC")) {
+                java.util.Map<String, Object> rec = (java.util.Map<String, Object>) accountResponse.get("REC");
+                if (rec != null && rec.containsKey("accountNo")) {
+                    String accountNo = (String) rec.get("accountNo");
+                    log.info("[Signup] 성공적으로 계좌가 생성되었습니다. User Email: {}, AccountNo: {}", requestDto.getEmail(), accountNo);
+                }
+            } else {
+                log.warn("[Signup] 계좌 생성 응답 형식이 예상과 다릅니다. Response: {}", accountResponse);
+            }
+        } catch (Exception e) {
+            log.error("[Signup] 회원가입 중 계좌 자동 생성 실패 (에러무시): {}", e.getMessage());
+        }
 
         User user = User.builder()
                 .email(requestDto.getEmail())
@@ -73,12 +96,12 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (!"ACCOUNT_VERIFIED".equals(user.getStatus())) {
+        if (!"VERIFIED".equals(user.getStatus())) {
             throw new IllegalArgumentException("계좌 인증이 먼저 완료되어야 동네 인증이 가능합니다.");
         }
 
         user.updateRegion(requestDto.getRegion()); // 더티 체킹으로 자동 UPDATE
-        user.verifyAccount();                       // status → ACTIVE
+        user.verifyAccount(); // status → ACTIVE
     }
 
     @Transactional
@@ -159,11 +182,11 @@ public class UserService {
     public void verifySecondaryPassword(Long userId, SecondaryPasswordRequestDto requestDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        
+
         if (user.getSecondaryPasswordHash() == null) {
             throw new BusinessException(ErrorCode.SECONDARY_PASSWORD_NOT_SET);
         }
-        
+
         if (!passwordEncoder.matches(requestDto.getSecondaryPassword(), user.getSecondaryPasswordHash())) {
             throw new BusinessException(ErrorCode.SECONDARY_PASSWORD_NOT_MATCH);
         }
