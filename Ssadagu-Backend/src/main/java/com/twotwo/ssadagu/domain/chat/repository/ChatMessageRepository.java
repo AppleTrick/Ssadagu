@@ -22,7 +22,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             Pageable pageable
     );
 
-    // 최초 입장 시 최신 N개 (DESC로 가져온 뒤 프론트에서 reverse)
+    // 최초 입장 시 최신 N개 (DESC로 가져와서 상위에서 직접 전달)
     @Query("SELECT m FROM ChatMessage m WHERE m.roomId = :roomId ORDER BY m.id DESC")
     List<ChatMessage> findLatestByRoomId(@Param("roomId") Long roomId, Pageable pageable);
 
