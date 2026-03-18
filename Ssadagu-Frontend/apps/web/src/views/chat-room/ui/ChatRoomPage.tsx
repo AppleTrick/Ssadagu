@@ -18,6 +18,7 @@ import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
+import { compressImage } from '@/shared/utils/image';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:8080/ws-stomp';
 const CHAT_INPUT_HEIGHT = 56;
@@ -95,6 +96,7 @@ export function ChatRoomPage() {
   const [isStompConnected, setIsStompConnected] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: currentUser } = useQuery<User>({
     queryKey: ['myProfile'],
@@ -439,6 +441,58 @@ export function ChatRoomPage() {
     setMapSheetOpen(false);
   }, [roomId, accessToken, currentUserId, currentUser?.nickname]);
 
+  const handlePhotosSelected = useCallback(async (files: File[]) => {
+    if (!stompRef.current?.connected) {
+      alert('채팅 서버에 연결되어 있지 않습니다.');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      
+      const compressedFiles = await Promise.all(
+        files.map((file) => compressImage(file, 1920, 1920, 2))
+      );
+
+      const formData = new FormData();
+      compressedFiles.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/files/upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      });
+
+      if (!uploadRes.ok) throw new Error('파일 업로드 실패');
+
+      const imageUrls: string[] = await uploadRes.json();
+
+      imageUrls.forEach((url) => {
+        stompRef.current?.publish({
+          destination: `/pub/chat/message`,
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+          body: JSON.stringify({
+            roomId,
+            senderId: currentUserId ?? -1,
+            content: '사진',
+            type: 'IMAGE',
+            imageUrl: url,
+            isRead: false,
+          }),
+        });
+      });
+    } catch (error) {
+      console.error('사진 전송 에러:', error);
+      alert('사진을 전송하는 동안 오류가 발생했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
+  }, [roomId, accessToken, currentUserId]);
+
   const headerTitle = room
     ? (room as any).partnerNickname || (room.buyerId === currentUserId
       ? room.sellerNickname || '채팅'
@@ -467,7 +521,6 @@ export function ChatRoomPage() {
           <RetryButton onClick={() => refetch()}>다시 시도</RetryButton>
         </ErrorWrapper>
       )}
-      {!isError && (
         <MessagesArea>
           {isLoading && localMessages.length === 0 && (
             <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
@@ -518,13 +571,18 @@ export function ChatRoomPage() {
               />
             );
           })}
+          {isUploading && (
+            <div style={{ padding: '8px 16px', textAlign: 'right', fontSize: '13px', color: colors.textSecondary }}>
+              사진 전송 중...
+            </div>
+          )}
           <div ref={bottomRef} />
         </MessagesArea>
-      )}
       <ChatInputArea 
         onSend={handleSend} 
         onSelectTransaction={() => setReqSheetOpen(true)}
         onSelectLocation={() => setMapSheetOpen(true)}
+        onPhotosSelected={handlePhotosSelected}
         bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} 
       />
 

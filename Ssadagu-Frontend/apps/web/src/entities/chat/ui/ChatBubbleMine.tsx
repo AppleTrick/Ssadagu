@@ -70,7 +70,8 @@ const TimeText = styled.span`
 `;
 
 const ImageBubble = styled.img`
-  max-width: 70%;
+  max-width: 200px;
+  max-height: 260px;
   border-radius: 18px 18px 4px 18px;
   object-fit: cover;
 `;

@@ -11,10 +11,11 @@ interface ChatInputAreaProps {
   onAttach?: () => void;
   onSelectTransaction?: () => void;
   onSelectLocation?: () => void;
+  onPhotosSelected?: (files: File[]) => void;
   bottomOffset?: number;
 }
 
-const ChatInputArea = ({ onSend, bottomOffset = 0, onSelectTransaction, onSelectLocation }: ChatInputAreaProps) => {
+const ChatInputArea = ({ onSend, bottomOffset = 0, onSelectTransaction, onSelectLocation, onPhotosSelected }: ChatInputAreaProps) => {
   const { alert: modalAlert } = useModalStore();
   const [value, setValue] = useState('');
   const [attachOpen, setAttachOpen] = useState(false);
@@ -43,7 +44,10 @@ const ChatInputArea = ({ onSend, bottomOffset = 0, onSelectTransaction, onSelect
           if (onSelectLocation) onSelectLocation();
           else modalAlert({ message: '지도 공유 기능은 준비 중입니다.' });
         }}
-        onSelectPhoto={() => modalAlert({ message: '사진 첨부 기능은 준비 중입니다.' })}
+        onPhotosSelected={(files) => {
+          setAttachOpen(false);
+          if (onPhotosSelected) onPhotosSelected(files);
+        }}
         onSelectTransaction={() => {
           setAttachOpen(false);
           if (onSelectTransaction) onSelectTransaction();
