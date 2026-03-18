@@ -15,6 +15,7 @@ const formatPrice = (price: number) =>
 
 const statusConfig: Record<TransactionStatus, { label: string; color: string; bg: string }> = {
   SUCCESS: { label: '거래완료', color: colors.success, bg: colors.successBg },
+  COMPLETED: { label: '거래완료', color: colors.success, bg: colors.successBg },
   PENDING: { label: '진행중', color: colors.warning, bg: colors.warningBg },
   FAILED: { label: '실패', color: colors.red, bg: '#FFF1F2' },
   CANCELLED: { label: '취소됨', color: colors.textSecondary, bg: colors.bg },
