@@ -43,12 +43,14 @@ const formatTimeAgo = (dateInput: string | number[] | null | undefined) => {
   return `${days}일 전`;
 };
 
+import { getProxyImageUrl } from '@/shared/utils';
+
 const ItemCard = ({ product, onClick, onWishClick }: ItemCardProps) => {
   return (
     <Card onClick={onClick}>
       <Thumbnail>
         {product.thumbnailUrl ? (
-          <ThumbnailImg src={product.thumbnailUrl} alt={product.title} />
+          <ThumbnailImg src={getProxyImageUrl(product.thumbnailUrl)} alt={product.title} />
         ) : (
           <ThumbnailPlaceholder />
         )}
