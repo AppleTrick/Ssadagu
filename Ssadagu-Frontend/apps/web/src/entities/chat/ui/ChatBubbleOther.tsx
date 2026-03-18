@@ -24,6 +24,8 @@ const formatTime = (dateStr: string | null) => {
   return `${ampm} ${h}:${m}`;
 };
 
+import { getProxyImageUrl } from '@/shared/utils';
+
 const ChatBubbleOther = ({ type = 'TALK', senderNickname, message, sentAt, imageUrl }: ChatBubbleOtherProps) => {
   return (
     <Row>
@@ -36,7 +38,7 @@ const ChatBubbleOther = ({ type = 'TALK', senderNickname, message, sentAt, image
         <Nickname>{senderNickname}</Nickname>
         <BubbleRow>
           {type === 'IMAGE' && imageUrl ? (
-            <ImageBubble src={imageUrl} alt="전송받은 이미지" />
+            <ImageBubble src={getProxyImageUrl(imageUrl)} alt="전송받은 이미지" />
           ) : (
             <Bubble>{message}</Bubble>
           )}

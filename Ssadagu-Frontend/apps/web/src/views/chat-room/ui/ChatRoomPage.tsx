@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Client } from '@stomp/stompjs';
@@ -288,8 +288,30 @@ export function ChatRoomPage() {
 
   const currentUserId = currentUser?.id ?? null;
 
-
-
+  const displayMessages = useMemo(() => {
+    const result: (ChatMessage & { resolvedType?: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' })[] = [];
+    
+    for (const msg of localMessages) {
+      const msgType = msg.type || msg.messageType || 'TALK';
+      
+      if (msgType === 'PAYMENT_SUCCESS' || msgType === 'PAYMENT_FAIL') {
+        for (let i = result.length - 1; i >= 0; i--) {
+          const prevMsg = result[i];
+          const prevType = prevMsg.type || prevMsg.messageType;
+          if (prevType === 'PAYMENT_REQUEST' && prevMsg.content === msg.content && !prevMsg.resolvedType) {
+             prevMsg.resolvedType = msgType;
+             prevMsg.type = msgType; 
+             prevMsg.messageType = msgType; 
+             break;
+          }
+        }
+      } else {
+        result.push({ ...msg });
+      }
+    }
+    
+    return result;
+  }, [localMessages]);
   const createChatMutation = useMutation({
     mutationFn: async () => {
       const res = await apiClient.post(
@@ -394,12 +416,12 @@ export function ChatRoomPage() {
       )}
       {!isLoading && !isError && (
         <MessagesArea>
-          {localMessages.length === 0 && (
+          {displayMessages.length === 0 && (
             <EmptyMessages>아직 메시지가 없습니다. 먼저 인사해보세요!</EmptyMessages>
           )}
-          {localMessages.length > 0 && hasMore && <div ref={topRef} style={{ height: '1px' }} />}
+          {displayMessages.length > 0 && hasMore && <div ref={topRef} style={{ height: '1px' }} />}
           {isFetchingMore && <div style={{ textAlign: 'center', fontSize: '12px', color: '#888' }}>이전 메시지 불러오는 중...</div>}
-          {localMessages.map((msg) => {
+          {displayMessages.map((msg) => {
             const isMine = currentUserId !== null && msg.senderId === currentUserId;
             const msgType = msg.type || msg.messageType || 'TALK';
             
@@ -408,17 +430,19 @@ export function ChatRoomPage() {
             }
             if (['PAYMENT_REQUEST', 'PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
               return (
-                <TransactionBubble
-                  key={msg.id}
-                  message={msg}
-                  isMyMessage={isMine}
-                  onCancel={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
-                  onReject={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
-                  onAccept={() => {
-                    setSelectedConfirmMessage(msg);
-                    setConfirmSheetOpen(true);
-                  }}
-                />
+                <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', width: '100%' }}>
+                  <TransactionBubble
+                    message={msg}
+                    isMyMessage={isMine}
+                    productThumbnailUrl={room?.productThumbnailUrl}
+                    onCancel={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
+                    onReject={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
+                    onAccept={() => {
+                      setSelectedConfirmMessage(msg);
+                      setConfirmSheetOpen(true);
+                    }}
+                  />
+                </div>
               );
             }
             if (msgType === 'MAP') {

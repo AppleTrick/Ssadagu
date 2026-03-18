@@ -90,6 +90,8 @@ const EmptyPlaceholder = styled.div`
   font-size: 14px;
 `;
 
+import { getProxyImageUrl } from '@/shared/utils';
+
 const ImageCarousel = ({ images, height = '300px' }: ImageCarouselProps) => {
   const [current, setCurrent] = useState(0);
 
@@ -113,7 +115,7 @@ const ImageCarousel = ({ images, height = '300px' }: ImageCarouselProps) => {
     <Container height={height}>
       {images.map((src, idx) => (
         <ImageWrapper key={src + idx} index={idx} current={current} total={images.length}>
-          <Img src={src} alt={`이미지 ${idx + 1}`} draggable={false} />
+          <Img src={getProxyImageUrl(src)} alt={`이미지 ${idx + 1}`} draggable={false} />
         </ImageWrapper>
       ))}
 
