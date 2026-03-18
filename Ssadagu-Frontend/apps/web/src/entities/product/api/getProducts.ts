@@ -2,9 +2,15 @@ import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import type { ProductSummary } from '../model/types';
 
-export const getProducts = async (accessToken?: string): Promise<ProductSummary[]> => {
+export const getProducts = async (accessToken?: string, regionName?: string): Promise<ProductSummary[]> => {
+  const params = new URLSearchParams();
+  if (regionName) {
+    params.append('regionName', regionName);
+  }
+  const endpoint = regionName ? `${ENDPOINTS.PRODUCTS.BASE}?${params.toString()}` : ENDPOINTS.PRODUCTS.BASE;
+  
   const res = await apiClient.get(
-    ENDPOINTS.PRODUCTS.BASE,
+    endpoint,
     accessToken,
   );
 
