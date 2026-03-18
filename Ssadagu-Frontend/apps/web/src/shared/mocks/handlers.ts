@@ -51,6 +51,23 @@ export const handlers = [
     await d();
     return HttpResponse.json({ data: { content: mockTransactions } });
   }),
+  http.get(`${BASE}/users/:userId/purchases`, async () => {
+    await d();
+    const data = mockTransactions.map(t => ({
+      id: t.id,
+      productId: t.productId,
+      productTitle: t.productTitle,
+      amount: t.price,
+      paymentMethod: 'TRANSFER',
+      status: 'COMPLETED',
+      createdAt: t.createdAt,
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '구매 내역 조회 성공',
+      data,
+    });
+  }),
   http.get(`${BASE}/users/me/products`, async () => {
     await d();
     return HttpResponse.json({ data: { content: mockMyProducts } });

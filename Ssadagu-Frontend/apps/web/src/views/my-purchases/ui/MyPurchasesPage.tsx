@@ -5,25 +5,27 @@ import { useQuery } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { HistoryItemCard } from '@/entities/transaction';
-import type { Transaction } from '@/entities/transaction';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
+import { getUserPurchases } from '@/entities/transaction/api/getUserPurchases';
+import { getUserMe } from '@/entities/user/api/getUserMe';
+import type { Purchase } from '@/entities/transaction';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
-import { colors, typography, HEADER_HEIGHT, STATUS_BAR_HEIGHT } from '@/shared/styles/theme';
+import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
 
 /* ── Styled ─────────────────────────────────────────────── */
 
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
   background: ${colors.bg};
+  overflow: hidden;
 `;
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 `;
 
 const ListWrapper = styled.ul`
@@ -55,35 +57,24 @@ const RetryButton = styled.button`
   text-decoration: underline;
 `;
 
-/* ── Types ─────────────────────────────────────────────── */
-
-interface TransactionsResponse {
-  content?: Transaction[];
-  data?: Transaction[] | { content?: Transaction[] };
-}
-
 /* ── Component ───────────────────────────────────────────── */
 
 export function MyPurchasesPage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
 
-  const { data, isLoading, isError, refetch } = useQuery<Transaction[]>({
-    queryKey: ['myTransactions'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.MY_TRANSACTIONS, accessToken ?? undefined);
-      if (!res.ok) throw new Error('구매 내역을 불러오지 못했습니다.');
-      const json = await res.json() as TransactionsResponse | Transaction[];
-      if (Array.isArray(json)) return json;
-      if (Array.isArray((json as TransactionsResponse).content)) return (json as TransactionsResponse).content as Transaction[];
-      const d = (json as TransactionsResponse).data;
-      if (Array.isArray(d)) return d as Transaction[];
-      if (d && !Array.isArray(d) && Array.isArray((d as { content?: Transaction[] }).content)) {
-        return (d as { content: Transaction[] }).content;
-      }
-      return [];
-    },
+  // 1. 현재 사용자 정보 조회 (userId를 알기 위해)
+  const { data: user } = useQuery({
+    queryKey: ['userMe'],
+    queryFn: () => getUserMe(accessToken ?? undefined),
     enabled: !!accessToken,
+  });
+
+  // 2. 해당 사용자의 구매 내역 조회
+  const { data, isLoading, isError, refetch } = useQuery<Purchase[]>({
+    queryKey: ['userPurchases', user?.id],
+    queryFn: () => getUserPurchases(user!.id, accessToken ?? undefined),
+    enabled: !!accessToken && !!user?.id,
   });
 
   return (
