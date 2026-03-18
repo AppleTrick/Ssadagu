@@ -8,6 +8,7 @@ import com.twotwo.ssadagu.domain.account.entity.UserAccount;
 import com.twotwo.ssadagu.domain.account.repository.AccountVerificationRepository;
 import com.twotwo.ssadagu.domain.account.repository.UserAccountRepository;
 import com.twotwo.ssadagu.domain.user.entity.User;
+import com.twotwo.ssadagu.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +26,7 @@ public class UserAccountService {
     private final UserAccountRepository userAccountRepository;
     private final AccountVerificationRepository verificationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
     @Transactional
     public AccountRegisterResponseDto registerAccountAndStartAuth(User user, AccountRegisterRequestDto requestDto) {
@@ -96,6 +98,16 @@ public class UserAccountService {
         LocalDateTime now = LocalDateTime.now();
         verification.verify(now); // AccountVerification: status=VERIFIED, verifiedAt 설정
         verification.getAccount().verify(); // UserAccount: verifiedStatus=VERIFIED
-        user.setAccountVerified(); // User: status=ACCOUNT_VERIFIED
+        
+        // 컨트롤러에서 넘어온 user 객체는 준영속 상태이므로 다시 조회하여 더티 체킹 유도
+        User attachedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        attachedUser.setAccountVerified(); // User: status=VERIFIED
+
+        // 명시적 저장 호출 (더티 체킹 실패 방지 및 즉각적인 DB 반영)
+        verificationRepository.save(verification);
+        userAccountRepository.save(verification.getAccount());
+        userRepository.save(attachedUser);
     }
+
 }

@@ -73,7 +73,7 @@ public class User extends BaseEntity {
     }
 
     public void setAccountVerified() {
-        this.status = "ACCOUNT_VERIFIED";
+        this.status = "VERIFIED";
     }
 
     public void verifyAccount() {

@@ -96,7 +96,7 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (!"ACCOUNT_VERIFIED".equals(user.getStatus())) {
+        if (!"VERIFIED".equals(user.getStatus())) {
             throw new IllegalArgumentException("계좌 인증이 먼저 완료되어야 동네 인증이 가능합니다.");
         }
 
