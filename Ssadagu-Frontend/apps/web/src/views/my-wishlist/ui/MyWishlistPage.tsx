@@ -9,6 +9,8 @@ import { getUserMe } from '@/entities/user/api/getUserMe';
 import type { WishItem } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
+import { ProductListSkeleton } from '@/entities/product';
+import { FadeIn } from '@/shared/ui';
 import { getProxyImageUrl } from '@/shared/utils';
 
 /* ── Styled ─────────────────────────────────────────────── */
@@ -149,7 +151,7 @@ export function MyWishlistPage() {
     <Page>
       <HeaderBack title="나의 관심 목록" onBack={() => router.back()} />
       <ContentArea>
-        {isLoading && <CenterWrapper>불러오는 중...</CenterWrapper>}
+        {isLoading && <ProductListSkeleton count={5} size={80} />}
 
         {isError && (
           <CenterWrapper>
@@ -159,7 +161,7 @@ export function MyWishlistPage() {
         )}
 
         {!isLoading && !isError && (
-          <>
+          <FadeIn>
             {data && data.length > 0 ? (
               <ListWrapper>
                 {data.map((wish) => (
@@ -188,7 +190,7 @@ export function MyWishlistPage() {
             ) : (
               <CenterWrapper>관심 목록이 없습니다.</CenterWrapper>
             )}
-          </>
+          </FadeIn>
         )}
       </ContentArea>
     </Page>

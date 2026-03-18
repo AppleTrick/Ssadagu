@@ -6,9 +6,10 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
-import { ItemCard, type ProductSummary, useInfiniteProducts } from '@/entities/product';
+import { ItemCard, type ProductSummary, useInfiniteProducts, ProductListSkeleton } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { typography, colors } from '@/shared/styles/theme';
+import { FadeIn } from '@/shared/ui';
 
 interface ProductListProps {
   searchQuery?: string;
@@ -108,7 +109,7 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
-    return <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>;
+    return <ProductListSkeleton count={8} />;
   }
 
   if (isError) {
@@ -126,7 +127,7 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   }
 
   return (
-    <>
+    <FadeIn>
       <ListWrapper>
         {allProducts.map((product) => (
           <li key={product.id}>
@@ -140,6 +141,6 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
       </ListWrapper>
       <div ref={sentinelRef} style={{ height: 1 }} />
       {isFetchingNextPage && <FetchMoreIndicator>더 불러오는 중...</FetchMoreIndicator>}
-    </>
+    </FadeIn>
   );
 };

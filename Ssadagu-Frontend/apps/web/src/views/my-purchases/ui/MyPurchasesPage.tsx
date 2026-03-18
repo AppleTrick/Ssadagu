@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
-import { HistoryItemCard } from '@/entities/transaction';
+import { HistoryItemCard, TransactionListSkeleton } from '@/entities/transaction';
+import { FadeIn } from '@/shared/ui';
 import { getUserPurchases } from '@/entities/transaction/api/getUserPurchases';
 import { getUserMe } from '@/entities/user/api/getUserMe';
 import type { Purchase } from '@/entities/transaction';
@@ -79,7 +80,7 @@ export function MyPurchasesPage() {
     <Page>
       <HeaderBack title="나의 구매 내역" onBack={() => router.back()} />
       <ContentArea>
-        {isLoading && <CenterWrapper>불러오는 중...</CenterWrapper>}
+        {isLoading && <TransactionListSkeleton count={5} />}
 
         {isError && (
           <CenterWrapper>
@@ -89,23 +90,22 @@ export function MyPurchasesPage() {
         )}
 
         {!isLoading && !isError && (
-          <>
+          <FadeIn>
             {data && data.length > 0 ? (
               <ListWrapper>
-                {data.map((tx) => (
-                  <li key={tx.id}>
-                    <HistoryItemCard
-                      transaction={tx}
-                      role="buyer"
-                      onClick={() => router.push(`/products/${tx.productId}`)}
-                    />
-                  </li>
+                {data.map((purchase) => (
+                  <HistoryItemCard
+                    key={purchase.id}
+                    transaction={purchase}
+                    role="buyer"
+                    onClick={() => router.push(`/products/${purchase.productId}`)}
+                  />
                 ))}
               </ListWrapper>
             ) : (
               <CenterWrapper>구매 내역이 없습니다.</CenterWrapper>
             )}
-          </>
+          </FadeIn>
         )}
       </ContentArea>
     </Page>
