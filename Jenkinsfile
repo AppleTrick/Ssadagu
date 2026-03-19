@@ -41,30 +41,19 @@ pipeline {
             }
             
             stages {
-                stage('Build Backend') {
+                stage('Build Services') {
                     steps {
-                        dir('Ssadagu-Backend') {
-                            echo "Back-end 빌드 시작: ${BACKEND_IMAGE}"
-                            sh "docker build -t ${BACKEND_IMAGE}:latest ."
-                        }
+                        echo "Docker Compose를 이용한 서비스 빌드 시작 (이전 빌드 이미지와 비교하여 변경사항 반영)"
+                        // --pull을 사용하여 베이스 이미지를 항상 최신으로 유지하고, 변경된 코드만 빌드합니다.
+                        sh 'docker-compose build --pull backend frontend'
                     }
                 }
 
-                stage('Build Frontend') {
+                stage('Deploy Services') {
                     steps {
-                        dir('Ssadagu-Frontend') {
-                            echo "Front-end 빌드 시작: ${FRONTEND_IMAGE}"
-                            sh "docker build -t ${FRONTEND_IMAGE}:latest ."
-                        }
-                    }
-                }
-
-                stage('Deploy') {
-                    steps {
-                        echo "도커 컴포즈 재시작 및 배포 진행"
+                        echo "수정된 서비스 선택적 배포"
                         script {
                             // Jenkins Credentials (Secret Text)를 사용하여 .env 파일 생성
-                            // 'BACKEND_ENV', 'FRONTEND_ENV'라는 ID로 Secret Text Credentials가 등록되어야 합니다.
                             try {
                                 withCredentials([string(credentialsId: 'BACKEND_ENV', variable: 'BACK_ENV'),
                                                 string(credentialsId: 'FRONTEND_ENV', variable: 'FRONT_ENV')]) {
@@ -73,15 +62,14 @@ pipeline {
                                     echo ".env 파일이 Credentials를 통해 생성되었습니다."
                                 }
                             } catch (Exception e) {
-                                echo "Credentials를 찾을 수 없어 빈 파일로 생성합니다 (배포 후 수동 확인 필요): ${e.message}"
+                                echo "Credentials를 찾을 수 없어 기존 환경 유지 혹은 빈 파일로 대체합니다: ${e.message}"
                                 sh 'touch ./Ssadagu-Backend/.env'
                                 sh 'touch ./Ssadagu-Frontend/.env.local'
                             }
                         }
                         
-                        // 사용자 제안에 따라 이번 빌드에서 수정된 백엔드/프론트엔드 서비스만 선택적으로 업데이트합니다.
-                        // nginx는 설정 변경이 잦지 않으므로 필요 시에만 수동으로 재시작하시기 바랍니다.
-                        sh 'docker-compose up -d --build backend frontend'
+                        // 이미 빌드된 이미지를 사용하여 컨테이너를 실행/재시작합니다.
+                        sh 'docker-compose up -d backend frontend'
                     }
                 }
             }
