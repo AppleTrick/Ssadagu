@@ -53,11 +53,13 @@ public class UserController {
     }
 
     @Operation(summary = "동네 변경", description = "로그인된 계정의 동네 정보를 변경합니다.")
-    @PatchMapping("/me/region")
+    @PatchMapping("/{userId}/region")
     public ApiResponse<Void> updateRegion(
+            @PathVariable("userId") Long userId,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid com.twotwo.ssadagu.domain.user.dto.RegionVerifyRequestDto requestDto) {
-        userService.updateRegion(userDetails.getUser().getId(), requestDto);
+        validateUserAuthority(userDetails, userId);
+        userService.updateRegion(userId, requestDto);
         return ApiResponse.success(null);
     }
 
@@ -81,6 +83,27 @@ public class UserController {
             @RequestBody @Valid ProfileUpdateRequestDto requestDto) {
         validateUserAuthority(userDetails, userId);
         MyPageResponseDto responseDto = userService.updateProfile(userId, requestDto);
+        return ApiResponse.success(responseDto);
+    }
+
+    @Operation(summary = "프로필 이미지 등록/수정", description = "사용자의 프로필 이미지를 등록하거나 수정합니다. (본인만 가능)")
+    @PostMapping(value = "/{userId}/profile-image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<MyPageResponseDto> uploadProfileImage(
+            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
+        validateUserAuthority(userDetails, userId);
+        MyPageResponseDto responseDto = userService.uploadProfileImage(userId, file);
+        return ApiResponse.success(responseDto);
+    }
+
+    @Operation(summary = "프로필 이미지 삭제", description = "사용자의 프로필 이미지를 삭제하여 기본 이미지로 돌립니다. (본인만 가능)")
+    @DeleteMapping("/{userId}/profile-image")
+    public ApiResponse<MyPageResponseDto> deleteProfileImage(
+            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        validateUserAuthority(userDetails, userId);
+        MyPageResponseDto responseDto = userService.deleteProfileImage(userId);
         return ApiResponse.success(responseDto);
     }
 

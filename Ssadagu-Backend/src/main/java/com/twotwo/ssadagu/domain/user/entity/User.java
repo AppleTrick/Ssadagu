@@ -51,6 +51,9 @@ public class User extends BaseEntity {
     @Column(name = "is_biometric_enabled", nullable = false)
     private Boolean isBiometricEnabled = false;
 
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }
@@ -70,6 +73,14 @@ public class User extends BaseEntity {
 
     public void updateBiometricEnabled(boolean enabled) {
         this.isBiometricEnabled = enabled;
+    }
+
+    public void updateProfileImage(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public void deleteProfileImage() {
+        this.profileImageUrl = null;
     }
 
     public void setAccountVerified() {

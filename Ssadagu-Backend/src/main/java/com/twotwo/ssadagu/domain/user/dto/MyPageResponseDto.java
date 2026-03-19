@@ -31,6 +31,9 @@ public class MyPageResponseDto {
     @Schema(description = "생체 인증 활성화 여부")
     private boolean isBiometricEnabled;
 
+    @Schema(description = "프로필 이미지 URL")
+    private String profileImageUrl;
+
     public static MyPageResponseDto from(User entity) {
         return MyPageResponseDto.builder()
                 .id(entity.getId())
@@ -40,6 +43,7 @@ public class MyPageResponseDto {
                 .status(entity.getStatus())
                 .isSecondaryPasswordSet(entity.getSecondaryPasswordHash() != null)
                 .isBiometricEnabled(entity.getIsBiometricEnabled())
+                .profileImageUrl(entity.getProfileImageUrl())
                 .build();
     }
 }
