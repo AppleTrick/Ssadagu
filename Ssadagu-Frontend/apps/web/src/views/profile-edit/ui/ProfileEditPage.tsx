@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { Button, Input } from '@/shared/ui';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { apiClient } from '@/shared/api/client';
 import { getUserMe, updateUser } from '@/entities/user';
+import { getProxyImageUrl, compressImage } from '@/shared/utils/image';
 import type { User } from '@/entities/user';
 import {
   colors,
@@ -55,6 +57,7 @@ const Avatar = styled.div`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 `;
 
 const AvatarEditButton = styled.button`
@@ -70,6 +73,25 @@ const AvatarEditButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  z-index: 10;
+`;
+
+const RemoveImageButton = styled.button`
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 10;
 `;
 
 const FormSection = styled.div`
@@ -145,6 +167,12 @@ export function ProfileEditPage() {
   const [error, setError] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isImageDeleted, setIsImageDeleted] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
   // 프로필 조회
   const { data: user } = useQuery<User>({
     queryKey: ['myProfile', userId],
@@ -156,16 +184,32 @@ export function ProfileEditPage() {
   });
 
   useEffect(() => {
-    if (user?.nickname) setNickname(user.nickname);
-  }, [user]);
+    if (user) {
+      if (user.nickname) setNickname(user.nickname);
+      // 로컬에서 선택한 이미지가 없을 때만 서버 이미지를 반영
+      if (!selectedImageFile && !isImageDeleted) {
+        setPreviewUrl(user.profileImageUrl || null);
+      }
+    }
+  }, [user, selectedImageFile, isImageDeleted]);
+
+  // Preview URL Cleanup
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   // 프로필 수정 Mutation
   const mutation = useMutation({
-    mutationFn: (data: { nickname: string }) => {
+    mutationFn: (data: { nickname?: string }) => {
       if (!userId) throw new Error('사용자 정보가 없습니다.');
       return updateUser(userId, data, accessToken ?? undefined);
     },
     onSuccess: () => {
+      setIsUploading(false);
       queryClient.invalidateQueries({ queryKey: ['myProfile', userId] });
       setToastVisible(true);
       setTimeout(() => {
@@ -174,22 +218,87 @@ export function ProfileEditPage() {
       }, 1500);
     },
     onError: (err: Error) => {
+      setIsUploading(false);
       setError(err.message || '저장에 실패했습니다.');
     },
   });
 
-  const handleSave = () => {
+
+  const handleSave = async () => {
     if (!nickname.trim()) {
-      setError('닉네임을 입력해주세요.');
+      setError("닉네임을 입력해주세요.");
       return;
     }
     if (nickname.length < 2 || nickname.length > 20) {
-      setError('닉네임은 2~20자 사이여야 합니다.');
+      setError("닉네임은 2~20자 사이여야 합니다.");
       return;
     }
 
-    setError('');
-    mutation.mutate({ nickname });
+    setError("");
+    setIsUploading(true);
+
+    try {
+      let updatedUser: User | null = null;
+
+      // 1) 이미지 처리: 새 이미지 업로드
+      if (selectedImageFile) {
+        // 이미지 압축 (2MB 제한)
+        const compressed = await compressImage(selectedImageFile);
+        const formData = new FormData();
+        formData.append("file", compressed);
+
+        const uploadRes = await apiClient.postMultipart(
+          `/users/${userId}/profile-image`,
+          formData,
+          accessToken ?? undefined
+        );
+
+        if (!uploadRes.ok)
+          throw new Error("프로필 이미지 업로드에 실패했습니다.");
+        
+        const resBody = await uploadRes.json();
+        updatedUser = resBody.data || resBody;
+      }
+
+      // 2) 이미지 처리: 삭제 요청
+      if (isImageDeleted && !selectedImageFile) {
+        const deleteRes = await apiClient.delete(
+          `/users/${userId}/profile-image`,
+          accessToken ?? undefined
+        );
+        if (!deleteRes.ok)
+          throw new Error("프로필 이미지 삭제에 실패했습니다.");
+        
+        const resBody = await deleteRes.json();
+        updatedUser = resBody.data || resBody;
+      }
+
+      // 수동 캐시 갱신 (이미지 변경사항이 있을 경우 즉시 반영)
+      if (updatedUser) {
+        queryClient.setQueryData(["myProfile", userId], updatedUser);
+      }
+
+      // 3) 닉네임 변경 (변경된 경우에만)
+      if (user?.nickname !== nickname) {
+        const patchRes = await mutation.mutateAsync({ nickname });
+        // PATCH 결과로도 캐시 한 번 더 갱신 (이미지 정보 포함되어 있음)
+        if (patchRes) {
+          queryClient.setQueryData(["myProfile", userId], patchRes);
+        }
+      } else {
+        // 닉네임 변경 없으면 캐시 무효화 후 바로 완료 처리
+        setIsUploading(false);
+        queryClient.invalidateQueries({ queryKey: ["myProfile", userId] });
+        setToastVisible(true);
+        setTimeout(() => {
+          setToastVisible(false);
+          router.push("/my");
+        }, 1500);
+      }
+    } catch (err: any) {
+      setIsUploading(false);
+      setError(err.message || "저장에 실패했습니다.");
+    }
   };
 
   return (
@@ -201,10 +310,53 @@ export function ProfileEditPage() {
       <ContentArea>
         <Section>
           <AvatarWrapper>
-            <Avatar><UserIcon /></Avatar>
-            <AvatarEditButton type="button" aria-label="프로필 사진 변경">
+            <Avatar>
+              {previewUrl && previewUrl.trim() !== "" ? (
+                <img
+                  src={getProxyImageUrl(previewUrl)}
+                  alt="프로필 이미지 미리보기"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <UserIcon />
+              )}
+            </Avatar>
+
+            <AvatarEditButton type="button" aria-label="프로필 사진 변경" onClick={() => fileInputRef.current?.click()}>
               <CameraIcon />
             </AvatarEditButton>
+            {previewUrl && (
+              <RemoveImageButton
+                type="button"
+                aria-label="프로필 사진 삭제"
+                onClick={() => {
+                  setPreviewUrl(null);
+                  setSelectedImageFile(null);
+                  setIsImageDeleted(true);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+              >
+                ✕
+              </RemoveImageButton>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              ref={fileInputRef}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setSelectedImageFile(file);
+                  setPreviewUrl(URL.createObjectURL(file));
+                  setIsImageDeleted(false);
+                }
+              }}
+            />
           </AvatarWrapper>
 
           <FormSection>
@@ -238,8 +390,9 @@ export function ProfileEditPage() {
             variant="primary"
             size="lg"
             fullWidth
-            loading={mutation.isPending}
+            loading={mutation.isPending || isUploading}
             onClick={handleSave}
+            disabled={mutation.isPending || isUploading}
           >
             저장하기
           </Button>

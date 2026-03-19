@@ -128,11 +128,14 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (userRepository.existsByNickname(requestDto.getNickname())) {
-            throw new BusinessException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+        // 닉네임이 변경된 경우에만 중복 체크
+        if (!user.getNickname().equals(requestDto.getNickname())) {
+            if (userRepository.existsByNickname(requestDto.getNickname())) {
+                throw new BusinessException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+            }
+            user.updateNickname(requestDto.getNickname());
         }
 
-        user.updateNickname(requestDto.getNickname());
         return MyPageResponseDto.from(user);
     }
 

@@ -6,6 +6,7 @@ export interface User {
   email: string;
   nickname: string;
   regionName?: string;
+  profileImageUrl?: string;
   status: UserStatus;
   createdAt: string;
 }

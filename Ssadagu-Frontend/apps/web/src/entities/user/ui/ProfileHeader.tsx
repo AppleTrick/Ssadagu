@@ -2,6 +2,7 @@
 
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
+import { getProxyImageUrl } from '@/shared/utils/image';
 import type { User } from '../model/types';
 
 interface ProfileHeaderProps {
@@ -13,9 +14,17 @@ const ProfileHeader = ({ user, onEditClick }: ProfileHeaderProps) => {
   return (
     <Container>
       <Avatar>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill={colors.textSecondary}>
-          <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-        </svg>
+        {user.profileImageUrl && user.profileImageUrl.trim() !== '' ? (
+          <img
+            src={getProxyImageUrl(user.profileImageUrl)}
+            alt={`${user.nickname} 프로필 이미지`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill={colors.textSecondary}>
+            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+          </svg>
+        )}
       </Avatar>
       <InfoCol>
         <Nickname>{user.nickname}</Nickname>
@@ -46,6 +55,7 @@ const Avatar = styled.div`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 `;
 
 const InfoCol = styled.div`
