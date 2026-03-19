@@ -90,14 +90,29 @@ export function ChatRoomPage() {
     const filteredSession = sessionMessages.filter(m => !historyIds.has(m.id));
     
     const rawList = [...history, ...filteredSession].sort((a, b) => {
-      const timeA = new Date((a.sentAt || (a as any).createdAt) as string).getTime();
-      const timeB = new Date((b.sentAt || (b as any).createdAt) as string).getTime();
-      return timeA - timeB;
+      const timeA = new Date((a.sentAt || (a as any).createdAt || 0) as string).getTime();
+      const timeB = new Date((b.sentAt || (b as any).createdAt || 0) as string).getTime();
+      return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
     });
 
     const result: (ChatMessage & { resolvedType?: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' })[] = [];
     for (const msg of rawList) {
       const msgType = msg.type || msg.messageType || 'TALK';
+      
+      // 버그 방지: 결제 요청 메시지의 경우 내용(JSON)이 올바르지 않거나 정보가 없으면 제외
+      if (msgType === 'PAYMENT_REQUEST') {
+        try {
+          const content = JSON.parse(msg.content || '{}');
+          if (!content.price || content.price <= 0) {
+            // 가격이 없거나 0원인 거래 요청은 비정상 데이터로 간주하고 무시
+            continue;
+          }
+        } catch (e) {
+          // JSON 파싱 실패 시에도 비정상 데이터로 간주
+          continue;
+        }
+      }
+
       if (['PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
         for (let i = result.length - 1; i >= 0; i--) {
           if ((result[i].type || result[i].messageType) === 'PAYMENT_REQUEST' && result[i].content === msg.content && !result[i].resolvedType) {
