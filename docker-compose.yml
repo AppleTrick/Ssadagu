@@ -73,6 +73,55 @@ services:
       - ssadagu-network
     restart: always
 
+  elasticsearch:
+    image: elasticsearch:8.12.0
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms4g -Xmx4g"
+      - xpack.security.enabled=false
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - ssadagu-network
+    restart: always
+
+  logstash:
+    image: logstash:8.12.0
+    container_name: logstash
+    volumes:
+      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    ports:
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    environment:
+      - LS_JAVA_OPTS=-Xms1g -Xmx1g
+    networks:
+      - ssadagu-network
+    depends_on:
+      - elasticsearch
+    restart: always
+
+  kibana:
+    image: kibana:8.12.0
+    container_name: kibana
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - ssadagu-network
+    depends_on:
+      - elasticsearch
+    restart: always
+
 networks:
   ssadagu-network:
     driver: bridge
@@ -83,3 +132,4 @@ volumes:
   certbot-var:
   webroot:
   jenkins_home:
+  es_data:
