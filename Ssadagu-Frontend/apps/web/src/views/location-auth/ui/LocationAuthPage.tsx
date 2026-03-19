@@ -193,7 +193,7 @@ export function LocationAuthPage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);
-  const mapRef = useRef<any>(null);
+  const [mapInstance, setMapInstance] = useState<any>(null);
 
   const [regionName, setRegionName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -201,7 +201,7 @@ export function LocationAuthPage() {
 
   const { getLocation, loading: geoLoading } = useCurrentLocation({
     onSuccess: (lat, lng) => {
-      mapRef.current?.setCenter(new window.kakao.maps.LatLng(lat, lng));
+      mapInstance?.setCenter(new window.kakao.maps.LatLng(lat, lng));
     },
     onError: (msg) => setError(msg),
   });
@@ -243,13 +243,13 @@ export function LocationAuthPage() {
             <LocationPickerMap
               height="240px"
               onLocationChange={setRegionName}
-              onMapReady={(map) => { mapRef.current = map; }}
+              onMapReady={(map) => setMapInstance(map)}
             />
           </MapCard>
 
           <CurrentLocBtn
             onClick={getLocation}
-            disabled={geoLoading || !mapRef.current}
+            disabled={geoLoading || !mapInstance}
           >
             <LocIcon />
             {geoLoading ? '위치 확인 중...' : '현재 위치로 이동'}

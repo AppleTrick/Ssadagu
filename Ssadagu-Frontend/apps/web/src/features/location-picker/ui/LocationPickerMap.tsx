@@ -50,17 +50,20 @@ const LocationPickerMap = ({
 
   const handleMapReady = useCallback(
     (map: any) => {
-      // 1. 즉시 현재 지도의 중앙(기본값) 주소부터 가져와서 '미설정' 방지
+      // 1. 지도가 생성되자마자 즉시 부모에게 알림 (버튼 즉시 활성화)
+      onMapReady?.(map);
+
+      // 2. 즉시 현재 지도의 중앙(기본값) 주소부터 가져와서 '미설정' 방지
       const initialC = map.getCenter();
       reverseGeocode(initialC.getLat(), initialC.getLng());
 
-      // 2. 지도 이동이 끝날 때마다 주소 갱신하는 리스너 등록
+      // 3. 지도 이동이 끝날 때마다 주소 갱신하는 리스너 등록
       window.kakao.maps.event.addListener(map, 'idle', () => {
         const c = map.getCenter();
         reverseGeocode(c.getLat(), c.getLng());
       });
 
-      // 3. HTML5 Geolocation API로 실제 사용자 위치 시도
+      // 4. HTML5 Geolocation API로 실제 사용자 위치 시도 (백그라운드)
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -69,17 +72,13 @@ const LocationPickerMap = ({
             const locPosition = new window.kakao.maps.LatLng(lat, lng);
             
             map.setCenter(locPosition);
-            reverseGeocode(lat, lng); // 위치 잡히면 즉시 주소 업데이트
-            onMapReady?.(map);
+            reverseGeocode(lat, lng);
           },
           () => {
-            // 실패하더라도 이미 1번에서 기본값 주소를 가져왔으므로 '미설정'은 아님
-            onMapReady?.(map);
+            // 실패하더라도 이미 위에 설정한 기본값 유지
           },
           { enableHighAccuracy: true, timeout: 5000 }
         );
-      } else {
-        onMapReady?.(map);
       }
     },
     [reverseGeocode, onMapReady],
