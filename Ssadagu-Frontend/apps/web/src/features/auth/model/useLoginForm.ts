@@ -6,7 +6,6 @@ import { useAuthStore } from '@/shared/auth/useAuthStore';
 export const useLoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const setToken = useAuthStore((s) => s.setToken);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setError(null);
@@ -19,16 +18,14 @@ export const useLoginForm = () => {
         return false;
       }
 
-      const body = await res.json() as Record<string, unknown>;
-      const nested = body?.data as Record<string, unknown> | undefined;
-      const token =
-        typeof body?.accessToken === 'string'
-          ? body.accessToken
-          : typeof nested?.accessToken === 'string'
-            ? nested.accessToken
-            : '';
+      const body = await res.json() as any;
+      const data = body.data || body;
+      const token = data.accessToken;
+      const userId = data.userId;
 
-      if (token) setToken(token as string);
+      if (token && userId) {
+        useAuthStore.getState().setAuthInfo(token, userId);
+      }
       return true;
     } catch {
       setError('네트워크 오류가 발생했습니다.');

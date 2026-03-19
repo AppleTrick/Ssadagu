@@ -2,52 +2,21 @@
 
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "./useAuthStore";
-import { ENDPOINTS } from "../api/endpoints";
 
 export function AuthInitializer() {
   const initialized = useRef(false);
-  const { setInitialized, setToken, clearToken } = useAuthStore();
+  const { setInitialized } = useAuthStore();
 
   useEffect(() => {
-    // Ensure we only run this once on mount
+    // 마운트 시 최초 1회만 실행됨을 보장합니다.
     if (initialized.current) return;
     initialized.current = true;
 
-    const attemptReissue = async () => {
-      try {
-        const baseUrl =
-          process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api";
-        const res = await fetch(`${baseUrl}${ENDPOINTS.AUTH.REISSUE}`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (res.ok) {
-          const body = (await res.json()) as Record<string, any>;
-          const tokenData = body.data || body;
-          // 백엔드 명세에 따라 id 또는 userId로 올 수 있음
-          const userId = tokenData.userId || tokenData.id || 1; 
-          useAuthStore.getState().setAuthInfo(tokenData.accessToken, userId);
-        } else {
-          clearToken();
-        }
-      } catch (err) {
-        console.error(
-          "[Auth] failed to reissue token on navigation/reload:",
-          err,
-        );
-        clearToken();
-      } finally {
-        setInitialized(true);
-      }
-    };
-
-    // To ensure Zustand's persist has rehydrated from localStorage
-    setTimeout(attemptReissue, 10);
-  }, [setInitialized, setToken, clearToken]);
+    // Zustand persist 로직이 클라이언트 렌더링에 맞춰 동기화되었음을 알립니다.
+    // 기존에 있던 무조건적인 `/reissue` 요청은 비로그인 유저 진입 시 500 에러를 유발하므로 삭제했습니다.
+    // 세션 만료 시 백엔드로의 `reissue` 요청은 apiClient.ts의 401 인터셉터가 자동으로 담당합니다.
+    setInitialized(true);
+  }, [setInitialized]);
 
   return null;
 }

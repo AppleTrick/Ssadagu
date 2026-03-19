@@ -13,8 +13,7 @@ interface AuthState {
   setInitialized: (initialized: boolean) => void;
 }
 
-const SECRET_KEY =
-  process.env.NEXT_PUBLIC_AUTH_SECRET_KEY || "ssadagu-default-secret-key";
+const SECRET_KEY = process.env.NEXT_PUBLIC_AUTH_SECRET_KEY || "ssadagu-default-secret-key";
 
 export const useAuthStore = create<AuthState>()(
   persist(
