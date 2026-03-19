@@ -8,6 +8,7 @@ import com.twotwo.ssadagu.domain.account.entity.UserAccount;
 import com.twotwo.ssadagu.domain.account.repository.AccountVerificationRepository;
 import com.twotwo.ssadagu.domain.account.repository.UserAccountRepository;
 import com.twotwo.ssadagu.domain.user.entity.User;
+import com.twotwo.ssadagu.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +25,7 @@ public class UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
     private final AccountVerificationRepository verificationRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -92,10 +94,12 @@ public class UserAccountService {
             throw new IllegalArgumentException("인증 번호가 일치하지 않습니다.");
         }
 
-        // 상태 업데이트 (더티 체킹으로 자동 UPDATE)
+        // 1. 인증 기록 및 계좌 상태 업데이트
         LocalDateTime now = LocalDateTime.now();
-        verification.verify(now); // AccountVerification: status=VERIFIED, verifiedAt 설정
-        verification.getAccount().verify(); // UserAccount: verifiedStatus=VERIFIED
-        user.setAccountVerified(); // User: status=ACCOUNT_VERIFIED
+        verification.verify(now);
+        verification.getAccount().verify();
+        
+        // 2. 중요: 로그인에 쓰이는 고유값인 '이메일'을 기반으로 DB 상태를 강제 업데이트 (가장 확실한 방법)
+        userRepository.updateStatusToVerifiedByEmail(user.getEmail());
     }
 }
