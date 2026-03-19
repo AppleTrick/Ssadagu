@@ -99,14 +99,14 @@ export function ChatRoomPage() {
   const [isUploading, setIsUploading] = useState(false);
 
   const { data: currentUser } = useQuery<User>({
-    queryKey: ['myProfile'],
+    queryKey: ['myProfile', userId],
     queryFn: async () => {
       const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
       if (!res.ok) throw new Error('사용자 정보를 불러오지 못했습니다.');
       const json = await res.json() as User | { data?: User };
       return (json as { data?: User }).data || (json as User);
     },
-    enabled: !!accessToken,
+    enabled: !!accessToken && !!userId,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -137,44 +137,50 @@ export function ChatRoomPage() {
   });
 
   const { data: fetchedRoom, isLoading: fetchedRoomLoading } = useQuery<ChatRoom>({
-    queryKey: ['chatRoom', roomId, currentUser?.id],
+    queryKey: ['chatRoom', roomId, userId],
     queryFn: async () => {
-      const res = await apiClient.get(`${ENDPOINTS.CHATS.DETAIL(roomId)}?userId=${currentUser?.id}`, accessToken ?? undefined);
+      const res = await apiClient.get(`${ENDPOINTS.CHATS.DETAIL(roomId)}?userId=${userId}`, accessToken ?? undefined);
       if (!res.ok) throw new Error('채팅방 정보를 불러오지 못했습니다.');
       const json: any = await res.json();
-      const d = json.data || json;
+      const d = json.data || json.response || json.result || json;
       
-      if (d.product) {
-        return {
-          id: d.roomId,
-          productId: d.product.productId,
-          productTitle: d.product.title,
-          productThumbnailUrl: d.product.imageUrl,
-          productPrice: d.product.price,
-          productStatus: d.product.status,
-          partnerId: d.partner?.userId,
-          partnerNickname: d.partner?.nickname,
-          lastMessage: d.lastMessage,
-          lastSentAt: d.lastSentAt,
-          roomStatus: d.roomStatus,
-          buyerId: -1,
-          buyerNickname: '',
-          sellerId: -1,
-          sellerNickname: '',
-          unreadCount: 0,
-        } as any;
-      }
-      
-      return d as ChatRoom;
+      const product = d.product || {};
+      const partner = d.partner || {};
+
+      const productTitle = product.title || d.productTitle || d.title || '상품 정보 없음';
+      const productPrice = product.price || d.productPrice || d.price || 0;
+      const productThumbnailUrl = product.imageUrl || product.thumbnailUrl || d.productImageUrl || d.thumbnailUrl || null;
+      const productStatus = product.status || d.productStatus || d.status || 'ACTIVE';
+
+      // 제공된 구조 기반 매핑
+      return {
+        id: d.roomId || d.id,
+        productId: product.productId || d.productId || d.id,
+        productTitle,
+        productThumbnailUrl,
+        productPrice,
+        productStatus,
+        partnerId: partner.userId || d.partnerId,
+        partnerNickname: partner.nickname || d.partnerNickname,
+        lastMessage: d.lastMessage,
+        lastSentAt: d.lastSentAt,
+        roomStatus: d.roomStatus || 'ACTIVE',
+        // 백엔드에서 buyerId/sellerId를 주지 않는 경우를 대비한 최소한의 폴백
+        buyerId: d.buyerId ?? -1,
+        buyerNickname: d.buyerNickname ?? '',
+        sellerId: d.sellerId ?? -1,
+        sellerNickname: d.sellerNickname ?? '',
+        unreadCount: d.unreadCount ?? 0,
+      } as ChatRoom;
     },
-    enabled: !isNewRoom && !isNaN(roomId) && !!currentUser?.id,
+    enabled: !isNewRoom && !isNaN(roomId) && !!userId && !!accessToken,
   });
 
   const room = isNewRoom ? newRoomData : fetchedRoom;
   const roomLoading = isNewRoom ? newRoomLoading : fetchedRoomLoading;
 
   const { data: historyMessages, isLoading: messagesLoading, isError, refetch } = useQuery<ChatMessage[]>({
-    queryKey: ['chatMessages', roomId],
+    queryKey: ['chatMessages', roomId, userId],
     queryFn: async () => {
       const res = await apiClient.get(ENDPOINTS.CHATS.MESSAGES(roomId), accessToken ?? undefined);
       if (!res.ok) throw new Error('메시지를 불러오지 못했습니다.');
@@ -189,7 +195,7 @@ export function ChatRoomPage() {
       }
       return [];
     },
-    enabled: !isNewRoom && !isNaN(roomId),
+    enabled: !isNewRoom && !isNaN(roomId) && !!userId && !!accessToken,
   });
 
   useEffect(() => {
@@ -217,8 +223,6 @@ export function ChatRoomPage() {
 
   useEffect(() => {
     // Only scroll to bottom on initial load or when a new message is appended at the end
-    // For pagination, we shouldn't scroll to bottom. 
-    // We'll trust that the user was already looking near the top.
     if (localMessages.length <= 30) {
       bottomRef.current?.scrollIntoView({ behavior: 'auto' });
     }
@@ -267,16 +271,26 @@ export function ChatRoomPage() {
   }, [historyMessages, isError, hasMore, localMessages[0]?.id, roomId, accessToken, isFetchingMore]);
 
   useEffect(() => {
-    if (roomId > 0 && currentUser?.id && historyMessages && historyMessages.length > 0) {
+    if (roomId > 0 && userId && historyMessages && historyMessages.length > 0) {
       apiClient.patch(ENDPOINTS.CHATS.READ(roomId), null, accessToken ?? undefined).catch(console.error);
     }
-  }, [roomId, currentUser?.id, accessToken, historyMessages]);
+  }, [roomId, userId, accessToken, historyMessages]);
 
   useEffect(() => {
     if (isNewRoom || isNaN(roomId)) return;
     const client = new Client({
       webSocketFactory: () => new SockJS(SOCKET_URL),
       connectHeaders: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      debug: (str) => {
+        console.log('[STOMP DEBUG]', str);
+      },
+      onStompError: (frame) => {
+        console.error('[STOMP ERROR]', frame.headers['message']);
+        console.error('Additional details:', frame.body);
+      },
+      onWebSocketError: (evt) => {
+        console.error('[STOMP WS ERROR]', evt);
+      },
       onConnect: () => {
         client.subscribe(`/sub/chat/room/${roomId}`, (frame) => {
           try {
@@ -292,11 +306,11 @@ export function ChatRoomPage() {
         setIsStompConnected(true);
 
         const pending = sessionStorage.getItem('pendingChatMsg');
-        if (pending && currentUser?.id) {
+        if (pending && userId) {
           client.publish({
             destination: `/pub/chat/message`,
             headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-            body: JSON.stringify({ roomId, senderId: currentUser.id, content: pending, type: 'TALK', isRead: false }),
+            body: JSON.stringify({ roomId, senderId: userId, content: pending, type: 'TALK', isRead: false }),
           });
           sessionStorage.removeItem('pendingChatMsg');
           // No need to add local optimistic message, as WebSocket subscribe will catch it immediately.
@@ -313,7 +327,7 @@ export function ChatRoomPage() {
       client.deactivate();
       stompRef.current = null;
     };
-  }, [roomId, accessToken, isNewRoom]);
+  }, [roomId, accessToken, isNewRoom, userId]);
 
   const currentUserId = currentUser?.id ?? null;
 
@@ -373,7 +387,7 @@ export function ChatRoomPage() {
           id: `local-${Date.now()}`,
           roomId,
           senderId: currentUserId ?? -1,
-          senderNickname: currentUser?.nickname ?? '나',
+          senderNickname: currentUser?.nickname || '나',
           content,
           sentAt: new Date().toISOString(),
           isRead: false,
@@ -384,36 +398,97 @@ export function ChatRoomPage() {
       stompRef.current.publish({
         destination: `/pub/chat/message`,
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content, type: 'TALK', isRead: false }),
+        body: JSON.stringify({ roomId, senderId: userId || -1, content, type: 'TALK', isRead: false }),
       });
     },
-    [roomId, accessToken, currentUserId, currentUser?.nickname, isNewRoom, createChatMutation, router]
+    [roomId, accessToken, userId, currentUser?.nickname, isNewRoom, createChatMutation, router]
   );
 
-  const handleTransactionRequestSubmit = useCallback((location: string, time: string, price: number) => {
-    if (!stompRef.current?.connected) return;
-    const content = JSON.stringify({ locationName: location, time, price });
-    stompRef.current.publish({
-      destination: `/pub/chat/message`,
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content, type: 'PAYMENT_REQUEST', isRead: false }),
-    });
-    setReqSheetOpen(false);
-  }, [roomId, accessToken, currentUserId]);
+  const handleTransactionRequestSubmit = useCallback(async (location: string, time: string, price: number) => {
+    if (isNewRoom) {
+      alert("새로운 채팅방입니다! 먼저 인삿말을 한 번 보내서 대화를 시작한 후 거래를 요청해주세요.");
+      return;
+    }
+    if (!isStompConnected) {
+      alert("채팅 서버 연결이 원활하지 않습니다. 잠시 후 시도해주세요.");
+      return;
+    }
+    if (!room) {
+      alert("채팅방 정보를 불러오지 못했습니다.");
+      return;
+    }
+    try {
+      const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.REQUEST, {
+        productId: room.productId,
+        buyerId: room.buyerId,
+        roomId: roomId
+      }, accessToken ?? undefined);
 
-  const handleTransactionAction = useCallback((msg: ChatMessage, actionType: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL') => {
-    if (!stompRef.current?.connected) return;
-    stompRef.current.publish({
-      destination: `/pub/chat/message`,
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content: msg.content, type: actionType, isRead: false }),
-    });
-    setConfirmSheetOpen(false);
-    setSelectedConfirmMessage(null);
-  }, [roomId, accessToken, currentUserId]);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        alert(body.message || '결제 요청에 실패했습니다.');
+        return;
+      }
+      
+      const content = JSON.stringify({ locationName: location, time, price });
+      stompRef.current?.publish({
+        destination: `/pub/chat/message`,
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        body: JSON.stringify({ roomId, senderId: userId || -1, content, type: 'PAYMENT_REQUEST', isRead: false }),
+      });
+      setReqSheetOpen(false);
+    } catch (error) {
+       alert('결제 요청 중 오류가 발생했습니다.');
+       console.error(error);
+    }
+  }, [roomId, accessToken, userId, room, isStompConnected]);
+
+  const handleTransactionAction = useCallback(async (msg: ChatMessage, actionType: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL') => {
+    if (!isStompConnected || !room) return;
+    try {
+      if (actionType === 'PAYMENT_SUCCESS') {
+        const msgContent = JSON.parse(msg.content || '{}');
+        const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.APPROVE, {
+          productId: room.productId,
+          buyerId: room.buyerId,
+          amount: msgContent.price || room.productPrice
+        }, accessToken ?? undefined);
+        
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          alert(body.message || '결제 승인에 실패했습니다. 잔액을 확인해주세요.');
+          return;
+        }
+      } else {
+        // PAYMENT_FAIL (취소/거절 등)
+        const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.CANCEL, {
+          productId: room.productId,
+          buyerId: room.buyerId,
+          roomId: roomId
+        }, accessToken ?? undefined);
+        
+        if (!res.ok) {
+           const body = await res.json().catch(() => ({}));
+           // 거절 실패 시에도 그냥 에러를 무시할지 결정. 일단 alert
+           console.warn('결제 취소 API 응답 에러:', body);
+        }
+      }
+
+      stompRef.current?.publish({
+        destination: `/pub/chat/message`,
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        body: JSON.stringify({ roomId, senderId: userId || -1, content: msg.content, type: actionType, isRead: false }),
+      });
+      setConfirmSheetOpen(false);
+      setSelectedConfirmMessage(null);
+    } catch (error) {
+      alert('결제 처리 중 오류가 발생했습니다.');
+      console.error(error);
+    }
+  }, [roomId, accessToken, userId, room, isStompConnected]);
 
   const handleMapSubmit = useCallback((lat: number, lng: number, locationName: string) => {
-    if (!stompRef.current?.connected) {
+    if (!isStompConnected) {
       // Optimistic offline map msg
       const optimistic: ChatMessage = {
         id: `local-${Date.now()}`,
@@ -433,16 +508,16 @@ export function ChatRoomPage() {
       setMapSheetOpen(false);
       return;
     }
-    stompRef.current.publish({
+    stompRef.current?.publish({
       destination: `/pub/chat/message`,
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content: locationName, type: 'MAP', latitude: lat, longitude: lng, locationName, isRead: false }),
+      body: JSON.stringify({ roomId, senderId: userId || -1, content: locationName, type: 'MAP', latitude: lat, longitude: lng, locationName, isRead: false }),
     });
     setMapSheetOpen(false);
-  }, [roomId, accessToken, currentUserId, currentUser?.nickname]);
+  }, [roomId, accessToken, userId, currentUser?.nickname, isStompConnected]);
 
   const handlePhotosSelected = useCallback(async (files: File[]) => {
-    if (!stompRef.current?.connected) {
+    if (!isStompConnected) {
       alert('채팅 서버에 연결되어 있지 않습니다.');
       return;
     }
@@ -477,7 +552,7 @@ export function ChatRoomPage() {
           headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
           body: JSON.stringify({
             roomId,
-            senderId: currentUserId ?? -1,
+            senderId: userId || -1,
             content: '사진',
             type: 'IMAGE',
             imageUrl: url,
@@ -491,10 +566,10 @@ export function ChatRoomPage() {
     } finally {
       setIsUploading(false);
     }
-  }, [roomId, accessToken, currentUserId]);
+  }, [roomId, accessToken, userId]);
 
   const headerTitle = room
-    ? (room as any).partnerNickname || (room.buyerId === currentUserId
+    ? (room as any).partnerNickname || (room.buyerId === userId
       ? room.sellerNickname || '채팅'
       : room.buyerNickname || '채팅')
     : '채팅';
@@ -521,7 +596,7 @@ export function ChatRoomPage() {
           <RetryButton onClick={() => refetch()}>다시 시도</RetryButton>
         </ErrorWrapper>
       )}
-        <MessagesArea>
+      <MessagesArea>
           {isLoading && localMessages.length === 0 && (
             <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
           )}
@@ -531,7 +606,7 @@ export function ChatRoomPage() {
           {displayMessages.length > 0 && hasMore && <div ref={topRef} style={{ height: '1px' }} />}
           {isFetchingMore && <div style={{ textAlign: 'center', fontSize: '12px', color: '#888' }}>이전 메시지 불러오는 중...</div>}
           {displayMessages.map((msg) => {
-            const isMine = currentUserId !== null && msg.senderId === currentUserId;
+            const isMine = userId !== null && msg.senderId === userId;
             const msgType = msg.type || msg.messageType || 'TALK';
             
             if (['ENTER', 'LEAVE', 'SYSTEM'].includes(msgType)) {
