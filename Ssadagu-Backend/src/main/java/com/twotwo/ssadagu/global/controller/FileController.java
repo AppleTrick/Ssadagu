@@ -13,7 +13,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @Slf4j
+@Tag(name = "File", description = "파일 업로드 관리 API")
 @RestController
 @RequestMapping("/api/v1/files")
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ public class FileController {
 
     private final S3Service s3Service;
 
+    @Operation(summary = "파일 업로드", description = "다중 MultipartFile을 S3에 업로드하고 이미지 URL 목록을 반환합니다.")
     @PostMapping("/upload")
     public ResponseEntity<List<String>> uploadFiles(@RequestPart("files") List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {

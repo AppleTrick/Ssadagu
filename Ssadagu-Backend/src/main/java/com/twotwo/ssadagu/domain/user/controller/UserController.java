@@ -124,7 +124,7 @@ public class UserController {
         return ApiResponse.success(wishes);
     }
 
-    @Operation(summary = "2차 비밀번호 설정/변경")
+    @Operation(summary = "2차 비밀번호 설정/변경", description = "결제 및 민감한 기능에 사용될 2차 비밀번호를 설정하거나 변경합니다.")
     @PostMapping("/{userId}/secondary-password")
     public ApiResponse<Void> updateSecondaryPassword(
             @PathVariable("userId") Long userId,
@@ -135,7 +135,7 @@ public class UserController {
         return ApiResponse.success(null);
     }
 
-    @Operation(summary = "2차 비밀번호 검증")
+    @Operation(summary = "2차 비밀번호 검증", description = "입력한 2차 비밀번호가 맞는지 검증합니다.")
     @PostMapping("/{userId}/secondary-password/verify")
     public ApiResponse<Void> verifySecondaryPassword(
             @PathVariable("userId") Long userId,
@@ -146,7 +146,7 @@ public class UserController {
         return ApiResponse.success(null);
     }
 
-    @Operation(summary = "생체 인증 등록")
+    @Operation(summary = "생체 인증 등록", description = "디바이스의 생체 인증 정보(FIDO 등)를 사용자 계정과 연동하여 등록합니다.")
     @PostMapping("/{userId}/biometric/register")
     public ApiResponse<Void> registerBiometric(
             @PathVariable("userId") Long userId,
@@ -157,7 +157,7 @@ public class UserController {
         return ApiResponse.success(null);
     }
 
-    @Operation(summary = "생체 인증 활성화 여부 변경")
+    @Operation(summary = "생체 인증 활성화 여부 변경", description = "생체 인증 사용 여부(활성화/비활성화)를 변경합니다.")
     @PatchMapping("/{userId}/biometric/toggle")
     public ApiResponse<Void> toggleBiometric(
             @PathVariable("userId") Long userId,

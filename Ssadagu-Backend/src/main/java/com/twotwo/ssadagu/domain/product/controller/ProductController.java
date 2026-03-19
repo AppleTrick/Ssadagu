@@ -9,6 +9,7 @@ import com.twotwo.ssadagu.global.security.CustomUserDetails;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import lombok.RequiredArgsConstructor;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,8 +49,8 @@ public class ProductController {
     @Operation(summary = "상품 목록 조회", description = "상품 목록을 조회합니다. regionName 또는 keyword(제목) 파라미터로 필터링이 가능합니다.")
     @GetMapping
     public ResponseEntity<List<ProductResponseDto>> getProducts(
-            @RequestParam(required = false) String regionName,
-            @RequestParam(required = false) String keyword,
+            @Parameter(description = "동네 필터링 (선택)") @RequestParam(required = false) String regionName,
+            @Parameter(description = "제목 검색어 (선택)") @RequestParam(required = false) String keyword,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long currentUserId = (userDetails != null) ? userDetails.getUser().getId() : null;
         List<ProductResponseDto> response = productService.getProducts(regionName, keyword, currentUserId);
