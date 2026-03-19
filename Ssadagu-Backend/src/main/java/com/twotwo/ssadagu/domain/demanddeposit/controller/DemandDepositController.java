@@ -6,6 +6,7 @@ import com.twotwo.ssadagu.global.dto.SsafyApiResponse;
 import com.twotwo.ssadagu.global.response.ApiResponse;
 import com.twotwo.ssadagu.global.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -50,11 +51,11 @@ public class DemandDepositController {
     @Operation(summary = "수시입출금 계좌 거래내역 조회", description = "금융망 API를 통해 계좌의 입/출금 거래 내역을 조회합니다.")
     @GetMapping("/accounts/{accountNo}/transactions")
     public ApiResponse<SsafyApiResponse<Map<String, Object>>> getTransactionHistory(
-            @PathVariable("accountNo") String accountNo,
-            @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate,
-            @RequestParam(value = "transactionType", required = false) String transactionType,
-            @RequestParam(value = "orderByType", required = false) String orderByType,
+            @Parameter(description = "계좌번호") @PathVariable("accountNo") String accountNo,
+            @Parameter(description = "조회 시작일자 (YYYYMMDD)", example = "20230101") @RequestParam(value = "startDate", required = false) String startDate,
+            @Parameter(description = "조회 종료일자 (YYYYMMDD)", example = "20231231") @RequestParam(value = "endDate", required = false) String endDate,
+            @Parameter(description = "거래구분 (A: 전체, 1: 입금, 2: 출금)", example = "A") @RequestParam(value = "transactionType", required = false) String transactionType,
+            @Parameter(description = "정렬순서 (ASC: 오름차순, DESC: 내림차순)", example = "DESC") @RequestParam(value = "orderByType", required = false) String orderByType,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
         String userKey = (userDetails != null) ? userDetails.getUser().getUserKey() : null;
