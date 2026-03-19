@@ -111,30 +111,62 @@ export function ChatRoomPage() {
   });
 
   const { data: newRoomData, isLoading: newRoomLoading } = useQuery<ChatRoom>({
-    queryKey: ['newChatRoomInit', newProductId],
+    queryKey: ['newChatRoomInit', newProductId, userId],
     queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(newProductId), accessToken ?? undefined);
-      if (!res.ok) throw new Error('상품 정보를 불러오지 못했습니다.');
-      const prod = await res.json() as any;
+      // 1. 먼저 상품 정보 가져오기
+      const prodRes = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(newProductId), accessToken ?? undefined);
+      if (!prodRes.ok) throw new Error('상품 정보를 불러오지 못했습니다.');
+      const prodJson = await prodRes.json() as any;
+      const prod = prodJson.data || prodJson;
+
+      // 2. 채팅방 생성 또는 조회 시도 (기존 방이 있는지 확인)
+      try {
+        const chatRes = await apiClient.post(ENDPOINTS.CHATS.CREATE, { productId: newProductId }, accessToken ?? undefined);
+        if (chatRes.ok) {
+           const chatJson = await chatRes.json() as any;
+           const chatData = chatJson.data || chatJson;
+           if (chatData.roomId || chatData.id) {
+              // 기존 방 정보가 있다면 반환
+              return {
+                 ...chatData,
+                 id: chatData.roomId || chatData.id,
+                 productTitle: prod.title,
+                 productPrice: prod.price,
+                 productThumbnailUrl: prod.imageUrl || prod.thumbnailUrl,
+              } as ChatRoom;
+           }
+        }
+      } catch (e) {
+        console.warn('기존 채팅방 조회 실패, 신규 생성이 필요할 수 있음', e);
+      }
+
+      // 3. 기존 방이 없거나 조회 실패 시 임시 객체 반환
       return {
         id: -1,
         productId: prod.id,
         productTitle: prod.title,
-        productThumbnailUrl: null,
+        productThumbnailUrl: prod.imageUrl || prod.thumbnailUrl,
         productPrice: prod.price,
         productStatus: prod.status,
-        buyerId: currentUser?.id ?? -1,
+        buyerId: userId ?? -1,
         buyerNickname: currentUser?.nickname ?? '',
-        sellerId: prod.sellerId,
-        sellerNickname: prod.sellerNickname,
+        sellerId: prod.sellerId || -1,
+        sellerNickname: prod.sellerNickname || '',
         lastMessage: null,
         lastSentAt: null,
         unreadCount: 0,
         roomStatus: 'ACTIVE',
       } as ChatRoom;
     },
-    enabled: isNewRoom && !isNaN(newProductId) && !!currentUser,
+    enabled: isNewRoom && !isNaN(newProductId) && !!userId && !!accessToken,
   });
+
+  // 신규 진입 시 기존 방 번호가 확인되면 리다이렉트
+  useEffect(() => {
+    if (isNewRoom && newRoomData && newRoomData.id > 0) {
+      router.replace(`/chat/${newRoomData.id}`);
+    }
+  }, [isNewRoom, newRoomData, router]);
 
   const { data: fetchedRoom, isLoading: fetchedRoomLoading } = useQuery<ChatRoom>({
     queryKey: ['chatRoom', roomId, userId],
@@ -600,7 +632,7 @@ export function ChatRoomPage() {
           {isLoading && localMessages.length === 0 && (
             <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
           )}
-          {!isLoading && displayMessages.length === 0 && (
+          {!isLoading && !messagesLoading && displayMessages.length === 0 && (
             <EmptyMessages>아직 메시지가 없습니다. 먼저 인사해보세요!</EmptyMessages>
           )}
           {displayMessages.length > 0 && hasMore && <div ref={topRef} style={{ height: '1px' }} />}
