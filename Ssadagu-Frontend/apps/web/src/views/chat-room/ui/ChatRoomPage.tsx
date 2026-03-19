@@ -142,6 +142,12 @@ export function ChatRoomPage() {
     },
   });
 
+  const extractCleanErrorMsg = (msg: string) => {
+    if (!msg) return '';
+    const match = msg.match(/"responseMessage"\s*:\s*"([^"]+)"/);
+    return match ? match[1] : msg;
+  };
+
   const handleSend = async (content: string) => {
     if (isNewRoom) {
       const id = await createChatMutation.mutateAsync();
@@ -162,7 +168,7 @@ export function ChatRoomPage() {
       const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.REQUEST, { productId: room.productId, buyerId: targetBuyerId, roomId }, accessToken ?? undefined);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        showAlert({ message: body.message || '결제 요청 실패' });
+        showAlert({ message: extractCleanErrorMsg(body.message || '결제 요청 실패') });
         return;
       }
       sendMessage('/pub/chat/message', { senderId: userId || -1, content: JSON.stringify({ locationName: location, time, price }), type: 'PAYMENT_REQUEST' });
@@ -187,7 +193,7 @@ export function ChatRoomPage() {
       const res = await apiClient.post(endpoint, body, accessToken ?? undefined);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        showAlert({ message: errJson.message || '처리 실패' });
+        showAlert({ message: extractCleanErrorMsg(errJson.message || '처리 실패') });
         return;
       }
       sendMessage('/pub/chat/message', { senderId: userId || -1, content: msg.content, type: actionType });
