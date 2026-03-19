@@ -50,31 +50,35 @@ const LocationPickerMap = ({
 
   const handleMapReady = useCallback(
     (map: any) => {
+      // 1. 즉시 현재 지도의 중앙(기본값) 주소부터 가져와서 '미설정' 방지
+      const initialC = map.getCenter();
+      reverseGeocode(initialC.getLat(), initialC.getLng());
+
+      // 2. 지도 이동이 끝날 때마다 주소 갱신하는 리스너 등록
       window.kakao.maps.event.addListener(map, 'idle', () => {
         const c = map.getCenter();
         reverseGeocode(c.getLat(), c.getLng());
       });
 
-      // HTML5 Geolocation API로 재 위치 불러오기
+      // 3. HTML5 Geolocation API로 실제 사용자 위치 시도
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const locPosition = new window.kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const locPosition = new window.kakao.maps.LatLng(lat, lng);
+            
             map.setCenter(locPosition);
-            reverseGeocode(position.coords.latitude, position.coords.longitude);
+            reverseGeocode(lat, lng); // 위치 잡히면 즉시 주소 업데이트
             onMapReady?.(map);
           },
-          (error) => {
-            console.error('현재 위치를 가져올 수 없습니다.', error);
-            const c = map.getCenter();
-            reverseGeocode(c.getLat(), c.getLng());
+          () => {
+            // 실패하더라도 이미 1번에서 기본값 주소를 가져왔으므로 '미설정'은 아님
             onMapReady?.(map);
           },
           { enableHighAccuracy: true, timeout: 5000 }
         );
       } else {
-        const c = map.getCenter();
-        reverseGeocode(c.getLat(), c.getLng());
         onMapReady?.(map);
       }
     },
