@@ -25,5 +25,8 @@ COPY --from=build /app/build/libs/*.jar app.jar
 # Expose the internal port
 EXPOSE 8080
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Copy environment variables if they exist
+COPY .env* .env
+
+# Run the application (Natively import .env as a property source)
+ENTRYPOINT ["java", "-Dspring.config.import=optional:file:.env", "-jar", "app.jar"]

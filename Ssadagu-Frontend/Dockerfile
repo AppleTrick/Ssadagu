@@ -5,9 +5,9 @@ RUN corepack enable
 
 FROM base AS builder
 WORKDIR /app
+COPY .env.local* .env
+RUN [ -s .env ] || (echo "ERROR: .env file is missing or empty! Please check Jenkins Credentials." && exit 1)
 COPY . .
-# Ensure .env.local is used for the build if no .env.production exists
-RUN if [ -f apps/web/.env.local ]; then cp apps/web/.env.local apps/web/.env.production; fi
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build
 
@@ -21,6 +21,7 @@ ENV NODE_ENV=production
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder /app/apps/web/public ./apps/web/public
+COPY --from=builder /app/.env ./.env
 
 EXPOSE 3000
 

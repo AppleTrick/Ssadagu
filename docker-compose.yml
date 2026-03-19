@@ -49,8 +49,6 @@ services:
     build:
       context: ./Ssadagu-Backend
       dockerfile: Dockerfile
-    env_file:
-      - ./Ssadagu-Backend/.env
     expose:
       - "8080"
     environment:
@@ -63,8 +61,6 @@ services:
     build:
       context: ./Ssadagu-Frontend
       dockerfile: Dockerfile
-    env_file:
-      - ./Ssadagu-Frontend/.env.local
     expose:
       - "3000"
     depends_on:
@@ -74,15 +70,14 @@ services:
     restart: always
 
   elasticsearch:
-    image: elasticsearch:8.12.0
-    container_name: elasticsearch
+    build:
+      context: ./elasticsearch
     environment:
       - node.name=elasticsearch
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms4g -Xmx4g"
       - xpack.security.enabled=false
     volumes:
-      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
       - es_data:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
@@ -91,10 +86,8 @@ services:
     restart: always
 
   logstash:
-    image: logstash:8.12.0
-    container_name: logstash
-    volumes:
-      - ./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    build:
+      context: ./logstash
     ports:
       - "5000:5000/tcp"
       - "5000:5000/udp"
@@ -108,10 +101,8 @@ services:
     restart: always
 
   kibana:
-    image: kibana:8.12.0
-    container_name: kibana
-    volumes:
-      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    build:
+      context: ./kibana
     ports:
       - "5601:5601"
     environment:
@@ -123,11 +114,11 @@ services:
     restart: always
 
   filebeat:
-    image: docker.elastic.co/beats/filebeat:8.12.0
-    container_name: filebeat
+    build:
+      context: ./filebeat
     user: root
+    command: ["--strict.perms=false"]
     volumes:
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:

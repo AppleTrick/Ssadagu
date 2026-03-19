@@ -41,35 +41,29 @@ pipeline {
             }
             
             stages {
-                stage('Build Services') {
+                stage('Prepare & Deploy') {
                     steps {
-                        echo "Docker Compose를 이용한 서비스 빌드 시작 (이전 빌드 이미지와 비교하여 변경사항 반영)"
-                        // --pull을 사용하여 베이스 이미지를 항상 최신으로 유지하고, 변경된 코드만 빌드합니다.
-                        sh 'docker-compose build --pull backend frontend'
-                    }
-                }
-
-                stage('Deploy Services') {
-                    steps {
-                        echo "수정된 서비스 선택적 배포"
                         script {
-                            // Jenkins Credentials (Secret Text)를 사용하여 .env 파일 생성
+                            // Jenkins 'Secret File'형태의 Credentials를 사용하여 파일을 복사합니다.
                             try {
-                                withCredentials([string(credentialsId: 'BACKEND_ENV', variable: 'BACK_ENV'),
-                                                string(credentialsId: 'FRONTEND_ENV', variable: 'FRONT_ENV')]) {
-                                    sh 'echo "$BACK_ENV" > ./Ssadagu-Backend/.env'
-                                    sh 'echo "$FRONT_ENV" > ./Ssadagu-Frontend/.env.local'
-                                    echo ".env 파일이 Credentials를 통해 생성되었습니다."
+                                withCredentials([file(credentialsId: 'BACKEND_ENV_FILE', variable: 'BACK_FILE'),
+                                                file(credentialsId: 'FRONTEND_ENV_FILE', variable: 'FRONT_FILE')]) {
+                                    sh "cp ${BACK_FILE} ./Ssadagu-Backend/.env"
+                                    sh "cp ${FRONT_FILE} ./Ssadagu-Frontend/.env.local"
+                                    echo ".env 파일이 Secret File을 통해 복제되었습니다."
+                                    sh 'ls -al ./Ssadagu-Backend/ ./Ssadagu-Frontend/'
                                 }
                             } catch (Exception e) {
-                                echo "Credentials를 찾을 수 없어 기존 환경 유지 혹은 빈 파일로 대체합니다: ${e.message}"
-                                sh 'touch ./Ssadagu-Backend/.env'
-                                sh 'touch ./Ssadagu-Frontend/.env.local'
+                                echo "Secret File을 찾을 수 없어 빌드를 중단합니다: ${e.message}"
+                                error "Required Secret Files (BACKEND_ENV_FILE, FRONTEND_ENV_FILE) not found!"
                             }
                         }
                         
-                        // 이미 빌드된 이미지를 사용하여 컨테이너를 실행/재시작합니다.
-                        sh 'docker-compose up -d backend frontend'
+                        echo "Docker Compose를 이용한 서비스 빌드 (환경 변수 포함)"
+                        sh 'docker-compose -p s14p21a202 build --pull backend frontend elasticsearch logstash kibana filebeat'
+                        
+                        echo "서비스 배포"
+                        sh 'docker-compose -p s14p21a202 up -d backend frontend elasticsearch logstash kibana filebeat'
                     }
                 }
             }
