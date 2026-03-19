@@ -7,6 +7,8 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+import com.twotwo.ssadagu.global.util.AesEncryptConverter;
+
 @Entity
 @Table(name = "user_accounts")
 @Getter
@@ -31,6 +33,7 @@ public class UserAccount extends BaseEntity {
     private String bankName;
 
     @Column(name = "account_number", nullable = false)
+    @Convert(converter = AesEncryptConverter.class)
     private String accountNumber;
 
     @Column(name = "account_hash", nullable = false, length = 64, unique = true)

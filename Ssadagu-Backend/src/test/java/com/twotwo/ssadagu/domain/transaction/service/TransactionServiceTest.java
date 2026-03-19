@@ -58,7 +58,7 @@ class TransactionServiceTest {
         User seller = User.builder().id(1L).build();
         Product product = Product.builder().id(100L).seller(seller).status("ON_SALE").build();
         
-        given(productRepository.findById(100L)).willReturn(Optional.of(product));
+        given(productRepository.findByIdWithLock(100L)).willReturn(Optional.of(product));
 
         // when
         transactionService.requestPayment(100L, 1L, 2L, 5L);
@@ -75,7 +75,7 @@ class TransactionServiceTest {
         User seller = User.builder().id(1L).build();
         Product product = Product.builder().id(100L).seller(seller).status("ON_SALE").build();
         
-        given(productRepository.findById(100L)).willReturn(Optional.of(product));
+        given(productRepository.findByIdWithLock(100L)).willReturn(Optional.of(product));
 
         // when & then
         BusinessException exception = assertThrows(BusinessException.class, () -> 
@@ -98,7 +98,7 @@ class TransactionServiceTest {
         TransactionRequestDto request = TransactionRequestDto.builder()
                 .productId(100L).buyerId(2L).amount(10000L).build();
 
-        given(productRepository.findById(100L)).willReturn(Optional.of(product));
+        given(productRepository.findByIdWithLock(100L)).willReturn(Optional.of(product));
         given(userRepository.findById(2L)).willReturn(Optional.of(buyer));
         given(userAccountRepository.findByUserId(1L)).willReturn(Optional.of(sellerAcc));
         given(userAccountRepository.findByUserId(2L)).willReturn(Optional.of(buyerAcc));
@@ -134,7 +134,7 @@ class TransactionServiceTest {
         TransactionRequestDto request = TransactionRequestDto.builder()
                 .productId(100L).buyerId(2L).amount(10000L).build();
 
-        given(productRepository.findById(100L)).willReturn(Optional.of(product));
+        given(productRepository.findByIdWithLock(100L)).willReturn(Optional.of(product));
         given(userRepository.findById(2L)).willReturn(Optional.of(buyer));
         given(userAccountRepository.findByUserId(2L)).willReturn(Optional.empty());
 
