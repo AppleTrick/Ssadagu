@@ -6,6 +6,7 @@ import com.twotwo.ssadagu.domain.chat.repository.ChatRoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -58,7 +59,7 @@ public class ChatMessageService {
         return savedMessage;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ChatMessage sendSystemMessage(Long roomId, String content, ChatMessage.MessageType type) {
         ChatMessage sysMsg = ChatMessage.builder()
                 .roomId(roomId)

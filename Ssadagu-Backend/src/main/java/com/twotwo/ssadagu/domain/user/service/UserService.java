@@ -40,6 +40,7 @@ public class UserService {
     private final ProductWishRepository productWishRepository;
     private final TransactionRepository transactionRepository;
     private final DemandDepositService demandDepositService; // 수시입출금 계좌 서비스 주입
+    private final com.twotwo.ssadagu.global.service.S3Service s3Service;
 
     @Transactional
     public UserResponseDto signup(SignUpRequestDto requestDto) {
@@ -145,6 +146,40 @@ public class UserService {
         }
 
         user.markAsDeleted();
+    }
+
+    @Transactional
+    public MyPageResponseDto uploadProfileImage(Long userId, org.springframework.web.multipart.MultipartFile file) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getProfileImageUrl() != null) {
+            try {
+                s3Service.deleteImage(user.getProfileImageUrl());
+            } catch (Exception e) {
+                log.warn("기존 프로필 이미지 삭제 실패: {}", e.getMessage());
+            }
+        }
+
+        String imageUrl = s3Service.uploadImage(file);
+        user.updateProfileImage(imageUrl);
+        return MyPageResponseDto.from(user);
+    }
+
+    @Transactional
+    public MyPageResponseDto deleteProfileImage(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getProfileImageUrl() != null) {
+            try {
+                s3Service.deleteImage(user.getProfileImageUrl());
+            } catch (Exception e) {
+                log.warn("기존 프로필 이미지 삭제 실패: {}", e.getMessage());
+            }
+            user.deleteProfileImage();
+        }
+        return MyPageResponseDto.from(user);
     }
 
     @Transactional(readOnly = true)
