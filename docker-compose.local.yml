@@ -16,7 +16,9 @@ services:
     restart: always
 
   jenkins:
-    image: jenkins/jenkins:lts
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
     ports:
       - "8081:8080" # 로컬 호스트에서는 8081로 직접 접속 가능
       - "50000:50000"

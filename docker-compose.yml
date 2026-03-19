@@ -30,7 +30,9 @@ services:
       - ssadagu-network
 
   jenkins:
-    image: jenkins/jenkins:lts
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
     ports:
       - "8080:8080"
       - "50000:50000"
