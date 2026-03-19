@@ -9,34 +9,63 @@ import type { ChatRoom } from '../model/types';
  * 채팅방 데이터를 FSD 구조에 맞게 매핑해주는 유틸리티
  */
 export const mapToChatRoomDetail = (d: any, userId: number | null, fallbackNickname: string = ''): ChatRoom => {
-  const product = d.product || {};
-  const partner = d.partner || {};
+  const product = d.product || d.productResponseDto || {};
+  const partner = d.partner || d.partnerResponseDto || {};
 
-  const productTitle = product.title || d.productTitle || d.title || '상품 정보 없음';
-  const productPrice = product.price || d.productPrice || d.price || 0;
+  const productTitle = product.title || product.productName || d.productTitle || d.title || '상품 정보 없음';
+  const productPrice = product.price || product.amount || d.productPrice || d.price || 0;
   const productThumbnailUrl = product.imageUrl || product.thumbnailUrl || d.productImageUrl || d.thumbnailUrl || null;
   const productStatus = product.status || d.productStatus || d.status || 'ACTIVE';
 
-  const myRole = d.myRole;
-  const buyerId = myRole === 'BUYER' ? (userId ?? -1) : (d.buyerId || d.partnerId);
-  const sellerId = myRole === 'SELLER' ? (userId ?? -1) : (d.sellerId || d.partnerId);
+  const effectivePartnerId = partner.userId || partner.id || d.partnerId || d.targetId || -1;
+  const productSellerId = product.sellerId || product.userId || d.sellerId || d.ownerId || d.adminId;
+  const productBuyerId = d.buyerId || d.customerId;
+
+  const currentUserId = userId ? Number(userId) : null;
+  const sellerIdAsNum = productSellerId ? Number(productSellerId) : null;
+  const buyerIdAsNum = productBuyerId ? Number(productBuyerId) : null;
+
+  let finalBuyerId = buyerIdAsNum;
+  let finalSellerId = sellerIdAsNum;
+
+  // 1순위: 판매자 ID와 내 ID 비교
+  if (currentUserId && sellerIdAsNum && currentUserId === sellerIdAsNum) {
+    finalSellerId = currentUserId;
+    finalBuyerId = Number(effectivePartnerId);
+  } else if (currentUserId && sellerIdAsNum && currentUserId !== sellerIdAsNum) {
+    finalBuyerId = currentUserId;
+    finalSellerId = sellerIdAsNum;
+  } 
+  // 2순위: myRole 필드 확인
+  else if (d.myRole === 'BUYER') {
+    finalBuyerId = currentUserId || -1;
+    finalSellerId = Number(effectivePartnerId);
+  } else if (d.myRole === 'SELLER') {
+    finalSellerId = currentUserId || -1;
+    finalBuyerId = Number(effectivePartnerId);
+  }
+  // 3순위: 그래도 모르면 partner가 아닌 쪽을 나로 가정
+  else {
+    finalBuyerId = buyerIdAsNum || (currentUserId === Number(effectivePartnerId) ? -1 : currentUserId || -1);
+    finalSellerId = sellerIdAsNum || (currentUserId === Number(effectivePartnerId) ? -1 : currentUserId || -1);
+  }
 
   return {
     id: d.roomId || d.id,
-    productId: product.productId || d.productId || d.id,
+    productId: product.productId || product.id || d.productId || d.id,
     productTitle,
     productThumbnailUrl,
     productPrice,
     productStatus,
-    partnerId: partner.userId || d.partnerId,
-    partnerNickname: partner.nickname || d.partnerNickname,
+    partnerId: Number(effectivePartnerId),
+    partnerNickname: partner.nickname || d.partnerNickname || d.targetNickname || '알 수 없음',
     lastMessage: d.lastMessage,
     lastSentAt: d.lastSentAt,
     roomStatus: d.roomStatus || 'ACTIVE',
-    buyerId: buyerId ?? -1,
-    buyerNickname: myRole === 'BUYER' ? fallbackNickname : (d.partnerNickname || d.buyerNickname || ''),
-    sellerId: sellerId ?? -1,
-    sellerNickname: myRole === 'SELLER' ? fallbackNickname : (d.partnerNickname || d.sellerNickname || ''),
+    buyerId: Number(finalBuyerId ?? -1),
+    buyerNickname: (currentUserId && Number(finalBuyerId) === currentUserId) ? fallbackNickname : (d.buyerNickname || partner.nickname || ''),
+    sellerId: Number(finalSellerId ?? -1),
+    sellerNickname: (currentUserId && Number(finalSellerId) === currentUserId) ? fallbackNickname : (d.sellerNickname || partner.nickname || ''),
     unreadCount: d.unreadCount ?? 0,
   } as ChatRoom;
 };
@@ -80,9 +109,7 @@ export function useNewChatRoomInit(productId: number, userId: number | null, acc
            if (chatData.roomId || chatData.id) {
               return mapToChatRoomDetail({
                  ...chatData,
-                 productTitle: prod.title,
-                 productPrice: prod.price,
-                 productThumbnailUrl: prod.imageUrl || prod.thumbnailUrl,
+                 product: prod, // 상세 정보를 섞어줌
               }, userId, userNickname);
            }
         }

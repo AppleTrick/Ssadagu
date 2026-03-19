@@ -73,6 +73,10 @@ export function ChatRoomPage() {
   // 3. Features: 실시간 채팅 핸들링
   const { sessionMessages, isStompConnected, sendMessage, addOptimisticMessage } = useChatMessaging(roomId, accessToken, userId);
 
+  // 역할 판별 (타입 불일치 방지 위해 Number 사용)
+  const isSeller = room && userId ? Number(userId) === Number(room.sellerId) : false;
+  const isBuyer = room && userId ? Number(userId) === Number(room.buyerId) : false;
+
   // 리다이렉트 로직 (이미 방이 있을 때)
   useEffect(() => {
     if (isNewRoom && newRoomData && newRoomData.id > 0) {
@@ -136,7 +140,9 @@ export function ChatRoomPage() {
   const handleTransactionRequestSubmit = async (location: string, time: string, price: number) => {
     if (isNewRoom || !room) return;
     try {
-      const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.REQUEST, { productId: room.productId, buyerId: room.buyerId, roomId }, accessToken ?? undefined);
+      // 내가 판매자라면 대상(buyerId)은 상대방임. 아니라면 방의 구매자 정보를 사용.
+      const targetBuyerId = isSeller ? room.partnerId : room.buyerId;
+      const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.REQUEST, { productId: room.productId, buyerId: targetBuyerId, roomId }, accessToken ?? undefined);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         alert(body.message || '결제 요청 실패');
@@ -150,10 +156,14 @@ export function ChatRoomPage() {
   const handleTransactionAction = async (msg: ChatMessage, actionType: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL') => {
     if (!room) return;
     try {
+      const isMine = userId !== null && (Number(msg.senderId) === Number(userId));
+      // 결제 승인의 경우, 내가 요청을 받은 입장(!isMine)이라면 내가 곧 구매자임. 아니라면 방 정보를 따름.
+      const targetBuyerId = (actionType === 'PAYMENT_SUCCESS' && !isMine) ? userId : room.buyerId;
+
       const endpoint = actionType === 'PAYMENT_SUCCESS' ? ENDPOINTS.TRANSACTIONS.APPROVE : ENDPOINTS.TRANSACTIONS.CANCEL;
       const body = actionType === 'PAYMENT_SUCCESS' 
-        ? { productId: room.productId, buyerId: room.buyerId, amount: JSON.parse(msg.content || '{}').price || room.productPrice }
-        : { productId: room.productId, buyerId: room.buyerId, roomId };
+        ? { productId: room.productId, buyerId: targetBuyerId, amount: JSON.parse(msg.content || '{}').price || room.productPrice }
+        : { productId: room.productId, buyerId: targetBuyerId, roomId };
 
       const res = await apiClient.post(endpoint, body, accessToken ?? undefined);
       if (!res.ok) {
@@ -235,12 +245,25 @@ export function ChatRoomPage() {
         {isUploading && <UploadStatus>사진 전송 중...</UploadStatus>}
         <div ref={bottomRef} />
       </MessagesArea>
-      <ChatInputArea onSend={handleSend} onSelectTransaction={() => setReqSheetOpen(true)} onSelectLocation={() => setMapSheetOpen(true)} onPhotosSelected={handlePhotosSelected} bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} />
+      <ChatInputArea 
+        onSend={handleSend} 
+        onSelectTransaction={() => {
+          setReqSheetOpen(true);
+        }} 
+        onSelectLocation={() => setMapSheetOpen(true)} 
+        onPhotosSelected={handlePhotosSelected} 
+        bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} 
+      />
       <TransactionRequestSheet isOpen={reqSheetOpen} onClose={() => setReqSheetOpen(false)} 
         roomInfo={room ? { productTitle: room.productTitle, productPrice: room.productPrice, productThumbnailUrl: room.productThumbnailUrl } : null} onSubmit={handleTransactionRequestSubmit} />
       <TransactionConfirmSheet isOpen={confirmSheetOpen} onClose={() => setConfirmSheetOpen(false)} 
         roomInfo={room ? { productTitle: room.productTitle, productThumbnailUrl: room.productThumbnailUrl } : null} content={selectedConfirmMessage ? JSON.parse(selectedConfirmMessage.content || '{}') : undefined}
-        onConfirm={() => selectedConfirmMessage && handleTransactionAction(selectedConfirmMessage, 'PAYMENT_SUCCESS')} />
+        onConfirm={() => {
+          // 사용자의 판단을 믿고 일단 서버로 전송합니다. 권한 체크는 서버에서 수행됩니다.
+          if (selectedConfirmMessage) {
+            handleTransactionAction(selectedConfirmMessage, 'PAYMENT_SUCCESS');
+          }
+        }} />
       <ChatMapPickerSheet isOpen={mapSheetOpen} onClose={() => setMapSheetOpen(false)} onSubmit={handleMapSubmit} />
     </Page>
   );
