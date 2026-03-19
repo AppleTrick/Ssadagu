@@ -35,6 +35,7 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
 import { compressImage } from '@/shared/utils/image';
+import { useModalStore } from '@/shared/hooks/useModalStore';
 
 const CHAT_INPUT_HEIGHT = 56;
 const CHAT_INPUT_BOTTOM_OFFSET = 0;
@@ -57,6 +58,7 @@ export function ChatRoomPage() {
 
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);
+  const { alert: showAlert } = useModalStore();
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -160,12 +162,14 @@ export function ChatRoomPage() {
       const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.REQUEST, { productId: room.productId, buyerId: targetBuyerId, roomId }, accessToken ?? undefined);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        alert(body.message || '결제 요청 실패');
+        showAlert({ message: body.message || '결제 요청 실패' });
         return;
       }
       sendMessage('/pub/chat/message', { senderId: userId || -1, content: JSON.stringify({ locationName: location, time, price }), type: 'PAYMENT_REQUEST' });
       setReqSheetOpen(false);
-    } catch (e) { alert('요청 중 오류 발생'); }
+    } catch (e) { 
+      showAlert({ message: '요청 중 오류 발생\n잠시 후 다시 시도해 주세요.' }); 
+    }
   };
 
   const handleTransactionAction = async (msg: ChatMessage, actionType: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL') => {
@@ -183,13 +187,15 @@ export function ChatRoomPage() {
       const res = await apiClient.post(endpoint, body, accessToken ?? undefined);
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        alert(errJson.message || '처리 실패');
+        showAlert({ message: errJson.message || '처리 실패' });
         return;
       }
       sendMessage('/pub/chat/message', { senderId: userId || -1, content: msg.content, type: actionType });
       setConfirmSheetOpen(false);
       setSelectedConfirmMessage(null);
-    } catch (e) { alert('처리 중 오류 발생'); }
+    } catch (e) { 
+      showAlert({ message: '처리 중 오류 발생\n잠시 후 다시 시도해 주세요.' }); 
+    }
   };
 
   const handleMapSubmit = (lat: number, lng: number, locationName: string) => {
@@ -213,7 +219,9 @@ export function ChatRoomPage() {
       if (!uploadRes.ok) throw new Error('업로드 실패');
       const imageUrls: string[] = await uploadRes.json();
       imageUrls.forEach(url => sendMessage('/pub/chat/message', { senderId: userId || -1, content: '사진', type: 'IMAGE', imageUrl: url }));
-    } catch (e) { alert('사진 전송 오류'); }
+    } catch (e) { 
+      showAlert({ message: '사진 전송 중 오류가 발생했습니다.' }); 
+    }
     finally { setIsUploading(false); }
   };
 

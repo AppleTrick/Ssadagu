@@ -9,6 +9,7 @@ import { ENDPOINTS } from '@/shared/api/endpoints';
 import { ItemCard, type ProductSummary, useInfiniteProducts, ProductListSkeleton } from '@/entities/product';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { typography, colors } from '@/shared/styles/theme';
+import { useModalStore } from '@/shared/hooks/useModalStore';
 import { FadeIn } from '@/shared/ui';
 
 interface ProductListProps {
@@ -53,7 +54,9 @@ const FetchMoreIndicator = styled.div`
 
 export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { accessToken, userId } = useAuthStore((s) => ({ accessToken: s.accessToken, userId: s.userId }));
+  const { alert: showAlert } = useModalStore();
+  const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Debug: Log the current token
@@ -61,7 +64,6 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
     console.log('Current Token:', accessToken);
   }, [accessToken]);
 
-  const queryClient = useQueryClient();
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteProducts(searchQuery);
@@ -79,18 +81,19 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    onError: () => {
-      alert('찜하기에 실패했습니다. 다시 시도해주세요.');
-    }
+    onError: (err: any) => {
+      console.error(err);
+      showAlert({ message: '찜하기에 실패했습니다. 다시 시도해주세요.' });
+    },
   });
 
-  const handleWishClick = (e: React.MouseEvent, productId: number, isWished: boolean) => {
+  const handleLikeClick = (e: React.MouseEvent, productId: number, isLiked: boolean) => {
     e.stopPropagation();
     if (!accessToken) {
-      alert('로그인이 필요합니다.');
+      showAlert({ message: '로그인이 필요합니다.' });
       return;
     }
-    wishMutation.mutate({ productId, isWished });
+    wishMutation.mutate({ productId, isWished: isLiked });
   };
 
   useEffect(() => {
@@ -134,7 +137,7 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
             <ItemCard 
               product={product} 
               onClick={() => router.push(`/products/${product.id}`)} 
-              onWishClick={(e) => handleWishClick(e, product.id, !!product.isLiked)}
+              onWishClick={(e: any) => handleLikeClick(e, product.id, !!product.isLiked)}
             />
           </li>
         ))}

@@ -11,6 +11,7 @@ import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography } from '@/shared/styles/theme';
+import { useModalStore } from '@/shared/hooks/useModalStore';
 
 interface UserResponse {
   data?: User;
@@ -19,9 +20,11 @@ interface UserResponse {
 export function ProductEditPage() {
   const params = useParams();
   const router = useRouter();
-  const productId = Number(params.id);
+  const rawId = params && params.id ? (Array.isArray(params.id) ? params.id[0] : params.id) : '';
+  const productId = Number(rawId);
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);
+  const { alert: showAlert } = useModalStore();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['product', productId],
@@ -42,11 +45,14 @@ export function ProductEditPage() {
   });
 
   useEffect(() => {
-    if (data && myProfile && data.sellerId !== myProfile.id) {
-      alert('본인의 게시물만 수정할 수 있습니다.');
-      router.replace(`/products/${productId}`);
-    }
-  }, [data, myProfile, router, productId]);
+    const checkPermission = async () => {
+      if (data && myProfile && data.sellerId !== myProfile.id) {
+        await showAlert({ message: '본인의 게시물만 수정할 수 있습니다.' });
+        router.replace(`/products/${productId}`);
+      }
+    };
+    checkPermission();
+  }, [data, myProfile, router, productId, showAlert]);
 
   if (isLoading || isProfileLoading) {
     return <LoadingWrapper>불러오는 중...</LoadingWrapper>;
