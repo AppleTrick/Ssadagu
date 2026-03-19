@@ -1,6 +1,7 @@
 package com.twotwo.ssadagu.domain.demanddeposit.controller;
 
 import com.twotwo.ssadagu.domain.demanddeposit.dto.DemandDepositAccountCreateRequestDto;
+import com.twotwo.ssadagu.domain.demanddeposit.dto.DemandDepositAccountDepositRequestDto;
 import com.twotwo.ssadagu.domain.demanddeposit.service.DemandDepositService;
 import com.twotwo.ssadagu.global.dto.SsafyApiResponse;
 import com.twotwo.ssadagu.global.response.ApiResponse;
@@ -61,6 +62,22 @@ public class DemandDepositController {
         String userKey = (userDetails != null) ? userDetails.getUser().getUserKey() : null;
         SsafyApiResponse<Map<String, Object>> response = demandDepositService.getTransactionHistory(
                 accountNo, startDate, endDate, transactionType, orderByType, userKey);
+        return ApiResponse.success(response);
+    }
+
+    @Operation(summary = "수시입출금 계좌 입금 (테스트용)", description = "금융망 API를 통해 계좌에 금액을 입금(테스트 송금)합니다.")
+    @PostMapping("/accounts/{accountNo}/deposit")
+    public ApiResponse<SsafyApiResponse<Map<String, Object>>> depositAccount(
+            @PathVariable("accountNo") String accountNo,
+            @RequestBody DemandDepositAccountDepositRequestDto requestDto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        String userKey = (userDetails != null) ? userDetails.getUser().getUserKey() : null;
+        SsafyApiResponse<Map<String, Object>> response = demandDepositService.updateDeposit(
+                accountNo,
+                requestDto.getAmount(),
+                requestDto.getSummary(),
+                userKey);
         return ApiResponse.success(response);
     }
 }

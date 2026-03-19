@@ -146,4 +146,33 @@ public class DemandDepositService {
                 url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
         return response.getBody();
     }
+
+    /**
+     * SSAFY 금융망: 수시입출금 계좌 입금 (테스트용) (DEMAND_DEPOSIT_09)
+     */
+    public SsafyApiResponse<Map<String, Object>> updateDeposit(String accountNo, Long transactionBalance, String transactionSummary, String userKey) {
+        String url = baseUrl + "/edu/demandDeposit/updateDemandDepositAccountDeposit";
+
+        if (userKey == null || userKey.isEmpty()) {
+            userKey = defaultUserKey;
+        }
+
+        Map<String, String> header = ssafyHeaderUtil.createHeader("updateDemandDepositAccountDeposit", userKey);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("Header", header);
+        payload.put("accountNo", accountNo);
+        payload.put("transactionBalance", String.valueOf(transactionBalance));
+        payload.put("transactionSummary", transactionSummary != null ? transactionSummary : "테스트 입금");
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
+
+        log.info("[Demand Deposit] 계좌 입금 요청 - To: {}, Amount: {}", accountNo, transactionBalance);
+        ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
+        return response.getBody();
+    }
 }
