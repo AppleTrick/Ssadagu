@@ -54,7 +54,8 @@ const FetchMoreIndicator = styled.div`
 
 export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   const router = useRouter();
-  const { accessToken, userId } = useAuthStore((s) => ({ accessToken: s.accessToken, userId: s.userId }));
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
   const { alert: showAlert } = useModalStore();
   const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
