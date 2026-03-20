@@ -21,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -104,9 +105,9 @@ class TransactionServiceTest {
         given(userAccountRepository.findByUserId(2L)).willReturn(Optional.of(buyerAcc));
 
         // API Response mock
-        com.twotwo.ssadagu.global.dto.SsafyApiResponse<Map<String, Object>> apiResponse = com.twotwo.ssadagu.global.dto.SsafyApiResponse.<Map<String, Object>>builder()
+        com.twotwo.ssadagu.global.dto.SsafyApiResponse<List<Map<String, Object>>> apiResponse = com.twotwo.ssadagu.global.dto.SsafyApiResponse.<List<Map<String, Object>>>builder()
                 .header(com.twotwo.ssadagu.global.dto.SsafyApiResponse.SsafyHeader.builder().responseCode("0000").build())
-                .rec(Map.of("transactionUniqueNo", "TX12345"))
+                .rec(List.of(Map.of("transactionUniqueNo", "TX12345")))
                 .build();
         
         given(demandDepositService.updateTransfer(any(), any(), any(), any(), any(), any()))

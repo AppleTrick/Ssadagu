@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -96,7 +97,7 @@ public class TransactionService {
 
         // 1. SSAFY 금융망 이체 실행
         try {
-            SsafyApiResponse<Map<String, Object>> apiResponse = demandDepositService.updateTransfer(
+            SsafyApiResponse<List<Map<String, Object>>> apiResponse = demandDepositService.updateTransfer(
                     sellerAccount.getAccountNumber(), "싸다구 판매대금",
                     buyerAccount.getAccountNumber(), "싸다구 물품결제",
                     request.getAmount(), buyer.getUserKey()
@@ -104,12 +105,20 @@ public class TransactionService {
 
             // API 결과 검증
             if (apiResponse == null || apiResponse.getHeader() == null || !"0000".equals(apiResponse.getHeader().getResponseCode())) {
+                if (apiResponse != null && apiResponse.getHeader() != null) {
+                    log.error("[싸피 금융망 거절 사유] 응답코드: {}, 에러내용: {}", 
+                        apiResponse.getHeader().getResponseCode(), 
+                        apiResponse.getHeader().getResponseMessage());
+                }
                 throw new BusinessException(ErrorCode.TRANSACTION_FAILED);
             }
 
             // 2. 거래 기록 저장
-            Map<String, Object> rec = apiResponse.getRec();
-            String bankTransactionId = (rec != null) ? (String) rec.get("transactionUniqueNo") : "BTX-" + System.currentTimeMillis();
+            List<Map<String, Object>> recList = apiResponse.getRec();
+            String bankTransactionId = "BTX-" + System.currentTimeMillis();
+            if (recList != null && !recList.isEmpty() && recList.get(0) != null && recList.get(0).get("transactionUniqueNo") != null) {
+                bankTransactionId = String.valueOf(recList.get(0).get("transactionUniqueNo"));
+            }
 
             Transaction transaction = Transaction.builder()
                     .product(product)
