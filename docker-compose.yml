@@ -60,14 +60,22 @@ services:
       dockerfile: Dockerfile
     expose:
       - "8080"
+    depends_on:
+      - logstash
+    networks:
+      - ssadagu-network
+    restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - TZ=Asia/Seoul
     volumes:
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      - ssadagu-network
-    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v3/api-docs"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
   frontend:
     build:
@@ -80,6 +88,12 @@ services:
     networks:
       - ssadagu-network
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
     environment:
       - TZ=Asia/Seoul
     volumes:
@@ -102,6 +116,12 @@ services:
     networks:
       - ssadagu-network
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cat/health | grep -q 'green\\|yellow' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
 
   logstash:
     build:
@@ -120,6 +140,12 @@ services:
     depends_on:
       - elasticsearch
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-XGET", "http://localhost:9600/_node/pipeline"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 180s
 
   kibana:
     build:
