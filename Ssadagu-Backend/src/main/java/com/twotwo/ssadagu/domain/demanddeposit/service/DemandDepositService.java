@@ -9,6 +9,9 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClientResponseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +24,8 @@ public class DemandDepositService {
 
     private final SsafyHeaderUtil ssafyHeaderUtil;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Value("${ssafy.api.base-url}")
     private String baseUrl;
@@ -52,9 +57,26 @@ public class DemandDepositService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
 
         log.info("[Demand Deposit] 계좌 생성 요청 - accountTypeUniqueNo: {}", accountTypeUniqueNo);
-        ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
-                url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
-        return response.getBody();
+        try {
+            ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
+                    url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
+            return response.getBody();
+        } catch (RestClientResponseException e) {
+            log.error("[Demand Deposit] 계좌 생성 오류: {}", e.getResponseBodyAsString());
+            try {
+                // 에러 응답은 { "responseCode": "...", "responseMessage": "..." } 처럼 Flat하게 올 수 있음
+                Map<String, String> errorMap = objectMapper.readValue(e.getResponseBodyAsString(), new TypeReference<Map<String, String>>() {});
+                SsafyApiResponse.SsafyHeader errorHeader = SsafyApiResponse.SsafyHeader.builder()
+                        .responseCode(errorMap.getOrDefault("responseCode", "500"))
+                        .responseMessage(errorMap.getOrDefault("responseMessage", "SSAFY API 에러"))
+                        .build();
+                return SsafyApiResponse.<Map<String, Object>>builder()
+                        .header(errorHeader)
+                        .build();
+            } catch (Exception ex) {
+                throw new RuntimeException("API 응답 파싱 실패", ex);
+            }
+        }
     }
 
     /**
@@ -69,19 +91,37 @@ public class DemandDepositService {
 
         Map<String, String> header = ssafyHeaderUtil.createHeader("inquireDemandDepositAccount", userKey);
 
+        String cleanAccountNo = accountNo != null ? accountNo.replaceAll("[^0-9]", "") : "";
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("Header", header);
-        payload.put("accountNo", accountNo);
+        payload.put("accountNo", cleanAccountNo);
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
 
-        log.info("[Demand Deposit] 계좌 단건 조회 요청 - accountNo: {}", accountNo);
-        ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
-                url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
-        return response.getBody();
+        log.info("[Demand Deposit] 계좌 단건 조회 요청 - accountNo: {}", cleanAccountNo);
+        try {
+            ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
+                    url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
+            return response.getBody();
+        } catch (RestClientResponseException e) {
+            log.error("[Demand Deposit] 계좌 단건 조회 오류: {}", e.getResponseBodyAsString());
+            try {
+                Map<String, String> errorMap = objectMapper.readValue(e.getResponseBodyAsString(), new TypeReference<Map<String, String>>() {});
+                SsafyApiResponse.SsafyHeader errorHeader = SsafyApiResponse.SsafyHeader.builder()
+                        .responseCode(errorMap.getOrDefault("responseCode", "500"))
+                        .responseMessage(errorMap.getOrDefault("responseMessage", "SSAFY API 에러"))
+                        .build();
+                return SsafyApiResponse.<Map<String, Object>>builder()
+                        .header(errorHeader)
+                        .build();
+            } catch (Exception ex) {
+                throw new RuntimeException("API 응답 파싱 실패", ex);
+            }
+        }
     }
 
     /**

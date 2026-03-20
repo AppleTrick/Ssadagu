@@ -1,5 +1,6 @@
 package com.twotwo.ssadagu.domain.demanddeposit.controller;
 
+import com.twotwo.ssadagu.domain.account.repository.UserAccountRepository;
 import com.twotwo.ssadagu.domain.demanddeposit.dto.DemandDepositAccountCreateRequestDto;
 import com.twotwo.ssadagu.domain.demanddeposit.dto.DemandDepositAccountDepositRequestDto;
 import com.twotwo.ssadagu.domain.demanddeposit.service.DemandDepositService;
@@ -22,6 +23,17 @@ import java.util.Map;
 public class DemandDepositController {
 
     private final DemandDepositService demandDepositService;
+    private final UserAccountRepository userAccountRepository;
+
+    private String resolveUserKey(String accountNo, CustomUserDetails userDetails) {
+        if (userDetails != null && userDetails.getUser() != null) {
+            return userDetails.getUser().getUserKey();
+        }
+        String cleanAccountNo = accountNo != null ? accountNo.replaceAll("[^0-9]", "") : "";
+        return userAccountRepository.findByAccountNumber(cleanAccountNo)
+                .map(account -> account.getUser().getUserKey())
+                .orElse(null);
+    }
 
     @Operation(summary = "수시입출금 계좌 생성", description = "금융망 API를 통해 수시입출금 상품에 가입하고 계좌를 생성합니다.")
     @PostMapping("/accounts")
@@ -42,7 +54,7 @@ public class DemandDepositController {
             @PathVariable("accountNo") String accountNo,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
-        String userKey = (userDetails != null) ? userDetails.getUser().getUserKey() : null;
+        String userKey = resolveUserKey(accountNo, userDetails);
         SsafyApiResponse<Map<String, Object>> response = demandDepositService.getAccount(
                 accountNo, 
                 userKey);
@@ -59,7 +71,7 @@ public class DemandDepositController {
             @Parameter(description = "정렬순서 (ASC: 오름차순, DESC: 내림차순)", example = "DESC") @RequestParam(value = "orderByType", required = false) String orderByType,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
-        String userKey = (userDetails != null) ? userDetails.getUser().getUserKey() : null;
+        String userKey = resolveUserKey(accountNo, userDetails);
         SsafyApiResponse<Map<String, Object>> response = demandDepositService.getTransactionHistory(
                 accountNo, startDate, endDate, transactionType, orderByType, userKey);
         return ApiResponse.success(response);
@@ -72,7 +84,7 @@ public class DemandDepositController {
             @RequestBody DemandDepositAccountDepositRequestDto requestDto,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        String userKey = (userDetails != null) ? userDetails.getUser().getUserKey() : null;
+        String userKey = resolveUserKey(accountNo, userDetails);
         SsafyApiResponse<Map<String, Object>> response = demandDepositService.updateDeposit(
                 accountNo,
                 requestDto.getAmount(),

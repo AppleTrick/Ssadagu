@@ -57,13 +57,14 @@ public class UserService {
         // 즉시 금융망 수시입출금 계좌 생성 (DEMAND_DEPOSIT_03)
         // 유효한 수시입출금 상품 고유번호 (SSAFY DEMAND_DEPOSIT_01 조회 결과)
         String defaultAccountTypeUniqueNo = "001-1-7a336b19062347"; 
+        String accountNo = null;
         try {
             SsafyApiResponse<java.util.Map<String, Object>> accountResponse = demandDepositService.createAccount(defaultAccountTypeUniqueNo, issuedUserKey);
             
             if (accountResponse != null && accountResponse.getRec() != null) {
                 java.util.Map<String, Object> rec = accountResponse.getRec();
                 if (rec.containsKey("accountNo")) {
-                    String accountNo = (String) rec.get("accountNo");
+                    accountNo = (String) rec.get("accountNo");
                     log.info("[Signup] 성공적으로 계좌가 생성되었습니다. User Email: {}, AccountNo: {}", requestDto.getEmail(), accountNo);
                 }
             } else {
@@ -90,7 +91,7 @@ public class UserService {
                 userDetails, null, userDetails.getAuthorities());
         TokenDto tokenDto = jwtTokenProvider.generateToken(authentication);
 
-        return UserResponseDto.from(savedUser, tokenDto);
+        return UserResponseDto.from(savedUser, tokenDto, accountNo);
     }
 
     @Transactional
