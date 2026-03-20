@@ -75,8 +75,11 @@ const BottomNav = () => {
   return (
     <Nav>
       {navItems.map((item) => {
-        const isActive =
-          item.path === "/" ? pathname === "/" : pathname.startsWith(item.path);
+        const isActive = pathname
+          ? item.path === "/"
+            ? pathname === "/"
+            : pathname.startsWith(item.path)
+          : false;
         return (
           <NavItem key={item.path} href={item.path}>
             {item.icon(isActive)}

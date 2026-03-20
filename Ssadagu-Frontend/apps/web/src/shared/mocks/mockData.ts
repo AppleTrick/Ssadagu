@@ -62,9 +62,9 @@ export const mockProductDetail: Product = {
 };
 
 export const mockChatRooms: ChatRoom[] = [
-  { id: 1, productId: 1, productTitle: '맥북 프로 M3 14인치 풀박스', productThumbnailUrl: 'https://picsum.photos/seed/mac/80/80', buyerId: 1, buyerNickname: '개발자김싸다', sellerId: 2, sellerNickname: '판매왕이모니', lastMessage: '직거래 가능한가요?', lastSentAt: '2025-03-09T10:30:00Z', unreadCount: 2, roomStatus: 'ACTIVE' },
-  { id: 2, productId: 2, productTitle: '아이폰 15 프로 256GB 미개봉', productThumbnailUrl: 'https://picsum.photos/seed/iphone/80/80', buyerId: 1, buyerNickname: '개발자김싸다', sellerId: 2, sellerNickname: '판매왕이모니', lastMessage: '아직 판매 중인가요?', lastSentAt: '2025-03-08T15:00:00Z', unreadCount: 0, roomStatus: 'ACTIVE' },
-  { id: 3, productId: 7, productTitle: '삼성 갤럭시 탭 S9 Ultra', productThumbnailUrl: 'https://picsum.photos/seed/tablet/80/80', buyerId: 3, buyerNickname: '구매자박사다', sellerId: 1, sellerNickname: '개발자김싸다', lastMessage: '이 가격에 팔 수 있을까요?', lastSentAt: '2025-03-07T09:00:00Z', unreadCount: 1, roomStatus: 'ACTIVE' },
+  { id: 1, productId: 1, productTitle: '맥북 프로 M3 14인치 풀박스', productThumbnailUrl: 'https://picsum.photos/seed/mac/80/80', buyerId: 1, buyerNickname: '개발자김싸다', sellerId: 2, sellerNickname: '판매왕이모니', lastMessage: '직거래 가능한가요?', lastSentAt: '2025-03-09T10:30:00Z', unreadCount: 2, roomStatus: 'ACTIVE', partnerId: 2, partnerNickname: '판매왕이모니' },
+  { id: 2, productId: 2, productTitle: '아이폰 15 프로 256GB 미개봉', productThumbnailUrl: 'https://picsum.photos/seed/iphone/80/80', buyerId: 1, buyerNickname: '개발자김싸다', sellerId: 2, sellerNickname: '판매왕이모니', lastMessage: '아직 판매 중인가요?', lastSentAt: '2025-03-08T15:00:00Z', unreadCount: 0, roomStatus: 'ACTIVE', partnerId: 2, partnerNickname: '판매왕이모니' },
+  { id: 3, productId: 7, productTitle: '삼성 갤럭시 탭 S9 Ultra', productThumbnailUrl: 'https://picsum.photos/seed/tablet/80/80', buyerId: 3, buyerNickname: '구매자박사다', sellerId: 1, sellerNickname: '개발자김싸다', lastMessage: '이 가격에 팔 수 있을까요?', lastSentAt: '2025-03-07T09:00:00Z', unreadCount: 1, roomStatus: 'ACTIVE', partnerId: 3, partnerNickname: '구매자박사다' },
 ];
 
 export const mockChatMessages: ChatMessage[] = [
