@@ -251,12 +251,22 @@ export function ChatRoomPage() {
         {isLoading && displayMessages.length === 0 && <LoadingWrapper>불러오는 중...</LoadingWrapper>}
         {!isLoading && !messagesLoading && displayMessages.length === 0 && <EmptyMessages>아직 메시지가 없습니다.</EmptyMessages>}
         {displayMessages.map((msg) => {
-          const isMine = userId !== null && msg.senderId === userId;
+          const isMine = userId !== null && Number(msg.senderId) === Number(userId);
           const msgType = msg.type || msg.messageType || 'TALK';
+          
+          // 백엔드에서 닉네임이 안 내려올 경우를 대비해 룸 정보에서 매핑
+          const resolvedNickname = isMine 
+            ? '나' 
+            : (msg.senderNickname || (Number(msg.senderId) === Number(room?.sellerId) ? room?.sellerNickname : room?.buyerNickname) || room?.partnerNickname || '상대방');
+
           if (['ENTER', 'LEAVE', 'SYSTEM'].includes(msgType)) return <SystemMessage key={msg.id} message={msg.content} />;
+          
           if (['PAYMENT_REQUEST', 'PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
             return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', width: '100%' }}>
+              <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start', width: '100%', gap: '4px', padding: '2px 16px' }}>
+                <span style={{ fontSize: typography.size.xs, color: colors.textSecondary, fontWeight: typography.weight.medium, margin: isMine ? '0 2px 0 0' : '0 0 0 2px' }}>
+                  {resolvedNickname}
+                </span>
                 <TransactionBubble
                   message={msg} productThumbnailUrl={room?.productThumbnailUrl}
                   isMyMessage={isMine} onCancel={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
@@ -266,10 +276,24 @@ export function ChatRoomPage() {
               </div>
             );
           }
-          if (msgType === 'MAP') return <MapChatBubble key={msg.id} lat={msg.latitude || 0} lng={msg.longitude || 0} label={msg.locationName} isMine={isMine} sentAt={msg.sentAt || (msg as any).createdAt} />;
+          
+          if (msgType === 'MAP') {
+            return (
+              <MapChatBubble 
+                key={msg.id} 
+                lat={msg.latitude || 0} 
+                lng={msg.longitude || 0} 
+                label={msg.locationName} 
+                isMine={isMine} 
+                senderNickname={resolvedNickname}
+                sentAt={msg.sentAt || (msg as any).createdAt} 
+              />
+            );
+          }
+          
           return isMine 
             ? <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />
-            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={msg.senderNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />;
+            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={resolvedNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />;
         })}
         {isUploading && <UploadStatus>사진 전송 중...</UploadStatus>}
         <div ref={bottomRef} />

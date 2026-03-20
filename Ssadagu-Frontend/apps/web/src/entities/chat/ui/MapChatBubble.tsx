@@ -9,6 +9,7 @@ interface MapChatBubbleProps {
   lng: number;
   label?: string | null;
   isMine: boolean;
+  senderNickname?: string;
   sentAt?: string | null;
 }
 
@@ -23,7 +24,7 @@ const formatTime = (dateStr: string | null | undefined) => {
   return `${ampm} ${h}:${m}`;
 };
 
-const MapChatBubble = ({ lat, lng, label, isMine, sentAt }: MapChatBubbleProps) => {
+const MapChatBubble = ({ lat, lng, label, isMine, senderNickname, sentAt }: MapChatBubbleProps) => {
   const mapLink = `https://map.kakao.com/link/map/${label ? encodeURIComponent(label) : '위치'},${lat},${lng}`;
 
   const mainLabel = label || '선택한 위치';
@@ -39,6 +40,9 @@ const MapChatBubble = ({ lat, lng, label, isMine, sentAt }: MapChatBubbleProps) 
         </Avatar>
       )}
       <ContentCol $isMine={isMine}>
+        <Nickname $isMine={isMine}>
+          {isMine ? '나' : senderNickname}
+        </Nickname>
         <BubbleRow $isMine={isMine}>
           {isMine && <TimeText>{formatTime(sentAt)}</TimeText>}
           <CardBubble $isMine={isMine} href={mapLink} target="_blank" rel="noopener noreferrer">
@@ -84,7 +88,16 @@ const Avatar = styled.div`
 const ContentCol = styled.div<{ $isMine: boolean }>`
   display: flex;
   flex-direction: column;
+  align-items: ${({ $isMine }) => ($isMine ? 'flex-end' : 'flex-start')};
   gap: 4px;
+`;
+
+const Nickname = styled.span<{ $isMine: boolean }>`
+  font-size: ${typography.size.xs};
+  color: ${colors.textSecondary};
+  font-weight: ${typography.weight.medium};
+  margin-right: ${({ $isMine }) => ($isMine ? '2px' : '0')};
+  margin-left: ${({ $isMine }) => ($isMine ? '0' : '2px')};
 `;
 
 const BubbleRow = styled.div<{ $isMine: boolean }>`
