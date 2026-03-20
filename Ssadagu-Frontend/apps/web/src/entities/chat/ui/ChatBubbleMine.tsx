@@ -27,36 +27,18 @@ import { getProxyImageUrl } from '@/shared/utils';
 
 const ChatBubbleMine = ({ type = 'TALK', message, sentAt, imageUrl }: ChatBubbleMineProps) => {
   return (
-    <Container>
-      <Nickname>나</Nickname>
-      <Row>
-        <TimeText>{formatTime(sentAt)}</TimeText>
-        {type === 'IMAGE' && imageUrl ? (
-          <ImageBubble src={getProxyImageUrl(imageUrl)} alt="전송한 이미지" />
-        ) : (
-          <Bubble>{message}</Bubble>
-        )}
-      </Row>
-    </Container>
+    <Row>
+      <TimeText>{formatTime(sentAt)}</TimeText>
+      {type === 'IMAGE' && imageUrl ? (
+        <ImageBubble src={getProxyImageUrl(imageUrl)} alt="전송한 이미지" />
+      ) : (
+        <Bubble>{message}</Bubble>
+      )}
+    </Row>
   );
 };
 
 export default ChatBubbleMine;
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  padding: 2px 16px;
-`;
-
-const Nickname = styled.span`
-  font-size: ${typography.size.xs};
-  color: ${colors.textSecondary};
-  font-weight: ${typography.weight.medium};
-  margin-right: 2px;
-`;
 
 const Row = styled.div`
   display: flex;
@@ -64,6 +46,7 @@ const Row = styled.div`
   justify-content: flex-end;
   align-items: flex-end;
   gap: 6px;
+  padding: 2px 16px;
 `;
 
 const Bubble = styled.div`

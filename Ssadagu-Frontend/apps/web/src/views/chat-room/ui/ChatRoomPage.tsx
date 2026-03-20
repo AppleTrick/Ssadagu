@@ -264,9 +264,11 @@ export function ChatRoomPage() {
           if (['PAYMENT_REQUEST', 'PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
             return (
               <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start', width: '100%', gap: '4px', padding: '2px 16px' }}>
-                <span style={{ fontSize: typography.size.xs, color: colors.textSecondary, fontWeight: typography.weight.medium, margin: isMine ? '0 2px 0 0' : '0 0 0 2px' }}>
-                  {resolvedNickname}
-                </span>
+                {!isMine && (
+                  <span style={{ fontSize: typography.size.xs, color: colors.textSecondary, fontWeight: typography.weight.medium, margin: '0 0 0 2px' }}>
+                    {resolvedNickname}
+                  </span>
+                )}
                 <TransactionBubble
                   message={msg} productThumbnailUrl={room?.productThumbnailUrl}
                   isMyMessage={isMine} onCancel={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}

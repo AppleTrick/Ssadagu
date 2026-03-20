@@ -40,9 +40,11 @@ const MapChatBubble = ({ lat, lng, label, isMine, senderNickname, sentAt }: MapC
         </Avatar>
       )}
       <ContentCol $isMine={isMine}>
-        <Nickname $isMine={isMine}>
-          {isMine ? '나' : senderNickname}
-        </Nickname>
+        {!isMine && (
+          <Nickname $isMine={isMine}>
+            {senderNickname}
+          </Nickname>
+        )}
         <BubbleRow $isMine={isMine}>
           {isMine && <TimeText>{formatTime(sentAt)}</TimeText>}
           <CardBubble $isMine={isMine} href={mapLink} target="_blank" rel="noopener noreferrer">
