@@ -23,6 +23,7 @@ public class ProductService {
     private final UserRepository userRepository;
     private final com.twotwo.ssadagu.domain.product.repository.ProductWishRepository productWishRepository;
     private final com.twotwo.ssadagu.global.service.S3Service s3Service;
+    private final AIMetadataService aiMetadataService;
 
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequestDto request, List<org.springframework.web.multipart.MultipartFile> imageFiles) {
@@ -55,6 +56,18 @@ public class ProductService {
                         .build();
                 product.getImages().add(image);
             }
+        }
+
+        // AI를 통해 JSON-LD 메타데이터 생성
+        String metadata = aiMetadataService.generateMetadata(
+                request.getTitle(),
+                request.getDescription(),
+                request.getPrice(),
+                request.getCategoryCode(),
+                request.getRegionName()
+        );
+        if (metadata != null) {
+            product.updateMetadata(metadata);
         }
 
         Product savedProduct = productRepository.save(product);
