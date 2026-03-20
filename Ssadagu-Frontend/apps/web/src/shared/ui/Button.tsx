@@ -1,7 +1,22 @@
 'use client';
 
 import styled from '@emotion/styled';
+import { keyframes } from '@emotion/react';
 import { colors, radius, typography } from '@/shared/styles/theme';
+
+const spin = keyframes`
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+`;
+
+const Spinner = styled.div`
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: ${spin} 0.8s linear infinite;
+`;
 
 type Variant = 'primary' | 'outline' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
@@ -30,14 +45,17 @@ const StyledButton = styled.button<{ variant: Variant; size: Size; fullWidth: bo
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  border-radius: ${radius.pill};
+  gap: 8px;
+  border-radius: ${radius.md}; /* pill보다 md가 전위적인 느낌 */
   font-family: ${typography.fontFamily};
   font-weight: ${typography.weight.semibold};
   transition: opacity 0.15s, transform 0.1s;
   ${({ variant }) => variantStyles[variant]}
   ${({ size }) => sizeStyles[size]}
   ${({ fullWidth }) => fullWidth && 'width: 100%;'}
+  border: none;
+  outline: none;
+  cursor: pointer;
 
   &:disabled {
     background: ${colors.disabled};
@@ -68,7 +86,7 @@ const Button = ({
     disabled={disabled || loading}
     {...rest}
   >
-    {loading ? '로딩 중...' : children}
+    {loading ? <Spinner /> : children}
   </StyledButton>
 );
 

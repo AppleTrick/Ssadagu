@@ -401,7 +401,7 @@ export function VerifyAccountPage() {
     setError("");
     setLoading(true);
     try {
-      const id = await register({ bankCode, accountNumber, accountHolderName });
+      const id = await register({ bankCode, bankName, accountNumber, accountHolderName });
       setAccountId(id);
       setStep("verify-code");
     } catch (e) {

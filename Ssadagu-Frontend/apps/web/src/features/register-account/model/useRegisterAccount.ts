@@ -4,6 +4,7 @@ import { useAuthStore } from '@/shared/auth/useAuthStore';
 
 interface RegisterParams {
   bankCode: string;
+  bankName: string;
   accountNumber: string;
   accountHolderName: string;
 }
