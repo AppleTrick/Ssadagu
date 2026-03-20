@@ -23,8 +23,9 @@ interface UserResponse {
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
   background: ${colors.surface};
+  position: relative;
 `;
 
 const ContentArea = styled.main`
@@ -32,6 +33,7 @@ const ContentArea = styled.main`
   padding-top: ${HEADER_HEIGHT}px;
   padding-bottom: 90px;
   overflow-y: auto;
+  overflow-x: hidden;
 `;
 
 const InfoSection = styled.div`
@@ -256,10 +258,17 @@ export function ProductDetailPage() {
       if (!res.ok) throw new Error('찜 실패');
       return !isWished;
     },
-    onSuccess: (newWished) => {
-      setIsWished(newWished);
+    onMutate: async () => {
+      // 낙관적 업데이트: 즉시 UI 변경
+      setIsWished(!isWished);
+    },
+    onSuccess: () => {
+      // 서버와 동기화
       queryClient.invalidateQueries({ queryKey: ['product', productId] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    onError: () => {
+      // 실패 시 롤백
+      setIsWished(isWished);
     },
   });
 
@@ -358,19 +367,21 @@ export function ProductDetailPage() {
               </MetaRow>
             </MapSection>
 
-            <ItemDetailBottomBar
-              product={product as any}
-              isMine={product.isMine ?? false}
-              isWished={isWished}
-              onWish={() => wishMutation.mutate()}
-              onChat={handleChatClick}
-              onEdit={() => router.push(`/products/${productId}/edit`)}
-              onDelete={handleDelete}
-              bottomOffset={0}
-            />
           </FadeIn>
         )}
       </ContentArea>
+      {product && (
+        <ItemDetailBottomBar
+          product={product as any}
+          isMine={product.isMine ?? false}
+          isWished={isWished}
+          onWish={() => wishMutation.mutate()}
+          onChat={handleChatClick}
+          onEdit={() => router.push(`/products/${productId}/edit`)}
+          onDelete={handleDelete}
+          bottomOffset={0}
+        />
+      )}
     </Page>
   );
 }
