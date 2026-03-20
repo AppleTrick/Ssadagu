@@ -8,6 +8,7 @@ WORKDIR /app
 COPY .env.local* .env
 RUN [ -s .env ] || (echo "ERROR: .env file is missing or empty! Please check Jenkins Credentials." && exit 1)
 COPY . .
+RUN cp .env apps/web/.env
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build
 
