@@ -21,7 +21,7 @@ public class UserAccountController {
 
     private final UserAccountService userAccountService;
 
-    @Operation(summary = "1원 송금 인증 요청 (Mock)", description = "계좌 정보를 받아 1원 송금을 요청하고 인증 프로세스를 시작합니다.")
+    @Operation(summary = "1원 송금 인증 요청", description = "계좌 정보를 받아 실제로 1원 송금을 요청하고 인증 프로세스를 시작합니다.")
     @PostMapping
     public ApiResponse<AccountRegisterResponseDto> registerAccount(
             @AuthenticationPrincipal CustomUserDetails userDetails,
