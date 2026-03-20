@@ -17,7 +17,7 @@ import {
   SystemMessage, 
   MapChatBubble 
 } from '@/entities/chat';
-import { useChatRoomDetail, useNewChatRoomInit } from '@/entities/chat/api/useChatRoom';
+import { useChatRoomDetail, useNewChatRoomInit, useMarkAsRead } from '@/entities/chat/api/useChatRoom';
 import { useChatHistory } from '@/entities/chat/api/useChatMessages';
 import { useUserProfile } from '@/entities/user/api/useProfile';
 import type { ChatMessage, ChatRoom } from '@/entities/chat/model/types';
@@ -50,14 +50,24 @@ export function ChatRoomPage() {
   const [mapSheetOpen, setMapSheetOpen] = useState(false);
   const [selectedConfirmMessage, setSelectedConfirmMessage] = useState<ChatMessage | null>(null);
 
+  // 1. 공통 데이터 및 상태 추출 (상단 배치)
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
+  const { alert: showAlert } = useModalStore();
+
   const rawId = params && params.roomId ? (Array.isArray(params.roomId) ? params.roomId[0] : params.roomId) : '';
   const isNewRoom = rawId === 'new';
   const roomId = isNewRoom ? -1 : Number(rawId);
   const newProductId = Number(searchParams?.get('productId'));
 
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const userId = useAuthStore((s) => s.userId);
-  const { alert: showAlert } = useModalStore();
+  // 2. 읽음 처리 로직 (ID와 토큰 확보 후)
+  const { mutate: markAsRead } = useMarkAsRead(accessToken);
+  useEffect(() => {
+    if (roomId > 0 && !isNewRoom) {
+      markAsRead(roomId);
+    }
+  }, [roomId, isNewRoom, markAsRead]);
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
