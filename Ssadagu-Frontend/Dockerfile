@@ -17,7 +17,7 @@ RUN if [ -f .env ]; then \
     fi
 COPY . .
 RUN cp .env apps/web/.env
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 RUN pnpm run build
 
 FROM base AS runner
