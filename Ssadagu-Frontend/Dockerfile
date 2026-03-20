@@ -5,8 +5,16 @@ RUN corepack enable
 
 FROM base AS builder
 WORKDIR /app
-COPY .env.local* .env
-RUN [ -s .env ] || (echo "ERROR: .env file is missing or empty! Please check Jenkins Credentials." && exit 1)
+COPY .env* ./
+RUN if [ -f .env ]; then \
+        echo ".env file found"; \
+    elif [ -f .env.local ]; then \
+        cp .env.local .env; \
+        echo ".env.local copied to .env"; \
+    else \
+        echo "ERROR: .env file is missing or empty! Please check Jenkins Credentials or .env.local file."; \
+        exit 1; \
+    fi
 COPY . .
 RUN cp .env apps/web/.env
 RUN pnpm install --frozen-lockfile
