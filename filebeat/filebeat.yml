@@ -2,9 +2,22 @@ filebeat.inputs:
 - type: container
   paths:
     - /var/lib/docker/containers/*/*.log
+  # 특정 파일 패턴을 제외하고 싶을 때 (옵션)
+  # exclude_files: ['86acd78b15fc345fdefdff9f248e6284efc8c782c1b60a233571e572f6a31056'] 
+
   processors:
     - add_docker_metadata:
         host: "unix:///var/run/docker.sock"
+    
+    # [추가] Logstash 컨테이너 로그는 수집하지 않고 버립니다.
+    - drop_event:
+        when:
+          or:
+            - contains:
+                container.image.name: "logstash"
+            - contains:
+                container.name: "logstash"
+
     - decode_json_fields:
         fields: ["message"]
         target: ""
