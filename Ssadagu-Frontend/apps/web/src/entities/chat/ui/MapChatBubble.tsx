@@ -115,7 +115,7 @@ const CardBubble = styled.a<{ $isMine: boolean }>`
   flex-direction: column;
   background: ${colors.surface};
   border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: ${({ $isMine }) => ($isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px')};
+  border-radius: ${({ $isMine }) => ($isMine ? '18px 4px 18px 18px' : '4px 18px 18px 18px')};
   overflow: hidden;
   text-decoration: none;
   transition: opacity 0.2s;

@@ -302,9 +302,9 @@ export function ChatRoomPage() {
       </MessagesArea>
       <ChatInputArea 
         onSend={handleSend} 
-        onSelectTransaction={() => {
+        onSelectTransaction={isSeller ? () => {
           setReqSheetOpen(true);
-        }} 
+        } : undefined} 
         onSelectLocation={() => setMapSheetOpen(true)} 
         onPhotosSelected={handlePhotosSelected} 
         bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} 
