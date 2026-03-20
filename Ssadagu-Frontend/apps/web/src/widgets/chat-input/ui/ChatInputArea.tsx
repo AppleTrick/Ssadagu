@@ -48,11 +48,10 @@ const ChatInputArea = ({ onSend, bottomOffset = 0, onSelectTransaction, onSelect
           setAttachOpen(false);
           if (onPhotosSelected) onPhotosSelected(files);
         }}
-        onSelectTransaction={() => {
+        onSelectTransaction={onSelectTransaction ? () => {
           setAttachOpen(false);
-          if (onSelectTransaction) onSelectTransaction();
-          else modalAlert({ message: '거래요청 기능은 준비 중입니다.' });
-        }}
+          onSelectTransaction();
+        } : undefined}
         onSelectCamera={() => modalAlert({ message: '카메라 기능은 준비 중입니다.' })}
       />
     <Bar $bottomOffset={bottomOffset}>

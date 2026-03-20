@@ -76,8 +76,8 @@ export function ChatRoomPage() {
   const { sessionMessages, isStompConnected, sendMessage, addOptimisticMessage } = useChatMessaging(roomId, accessToken, userId);
 
   // 역할 판별 (타입 불일치 방지 위해 Number 사용)
-  const isSeller = room && userId ? Number(userId) === Number(room.sellerId) : false;
-  const isBuyer = room && userId ? Number(userId) === Number(room.buyerId) : false;
+  const isSeller = room && userId && Number(userId) > 0 && Number(userId) === Number(room.sellerId) && Number(userId) !== Number(room.buyerId);
+  const isBuyer = room && userId && Number(userId) > 0 && Number(userId) === Number(room.buyerId);
 
   // 리다이렉트 로직 (이미 방이 있을 때)
   useEffect(() => {
