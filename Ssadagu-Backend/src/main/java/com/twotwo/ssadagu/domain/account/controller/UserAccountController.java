@@ -3,6 +3,7 @@ package com.twotwo.ssadagu.domain.account.controller;
 import com.twotwo.ssadagu.domain.account.dto.AccountRegisterRequestDto;
 import com.twotwo.ssadagu.domain.account.dto.AccountRegisterResponseDto;
 import com.twotwo.ssadagu.domain.account.dto.AccountVerifyRequestDto;
+import com.twotwo.ssadagu.domain.account.dto.UserAccountResponseDto;
 import com.twotwo.ssadagu.domain.account.service.UserAccountService;
 import com.twotwo.ssadagu.global.response.ApiResponse;
 import com.twotwo.ssadagu.global.security.CustomUserDetails;
@@ -39,5 +40,21 @@ public class UserAccountController {
             @RequestBody @Valid AccountVerifyRequestDto requestDto) {
         userAccountService.verifyAuth(userDetails.getUser(), accountId, requestDto);
         return ApiResponse.success();
+    }
+
+    @Operation(summary = "내 계좌 정보 조회", description = "특정 유저의 주 계좌 정보를 조회합니다. (본인만 가능)")
+    @GetMapping("/users/{userId}")
+    public ApiResponse<UserAccountResponseDto> getMyAccount(
+            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        validateUserAuthority(userDetails, userId);
+        UserAccountResponseDto responseDto = userAccountService.getMyAccount(userId);
+        return ApiResponse.success(responseDto);
+    }
+
+    private void validateUserAuthority(CustomUserDetails userDetails, Long targetUserId) {
+        if (userDetails == null || !userDetails.getUser().getId().equals(targetUserId)) {
+            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.ACCESS_DENIED);
+        }
     }
 }
