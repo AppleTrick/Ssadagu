@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { StyleSheet, View, Platform, BackHandler, StatusBar } from 'react-native';
+import { StyleSheet, View, Platform, BackHandler, StatusBar, Linking } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -46,6 +46,15 @@ export default function AppScreen() {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       console.log('Web에서 받은 메시지:', data);
+
+      // 위치 권한 거부 메시지 처리
+      if (data.type === 'openLocationSettings') {
+        if (Platform.OS === 'ios') {
+          Linking.openURL('App-Prefs:root=Privacy&path=LOCATION');
+        } else if (Platform.OS === 'android') {
+          Linking.openSettings();
+        }
+      }
     } catch (e) {
       console.error('메시지 파싱 에러:', e);
     }
@@ -81,6 +90,7 @@ export default function AppScreen() {
         originWhitelist={['*']}
         scalesPageToFit={true}
         scrollEnabled={true}
+        geolocationEnabled={true}
         injectedJavaScript={`
           const meta = document.createElement('meta');
           meta.setAttribute('name', 'viewport');

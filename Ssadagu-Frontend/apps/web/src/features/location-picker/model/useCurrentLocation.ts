@@ -5,6 +5,11 @@ interface Options {
   onError?: (message: string) => void;
 }
 
+const isWebView = () => {
+  // React Native WebView에서 실행 중인지 확인
+  return typeof window !== 'undefined' && (window as any).ReactNativeWebView !== undefined;
+};
+
 export const useCurrentLocation = ({ onSuccess, onError }: Options) => {
   const [loading, setLoading] = useState(false);
 
@@ -20,8 +25,19 @@ export const useCurrentLocation = ({ onSuccess, onError }: Options) => {
         setLoading(false);
       },
       () => {
-        onError?.('위치 접근 권한이 거부되었습니다. 브라우저 설정을 확인해주세요.');
         setLoading(false);
+        // WebView 환경에서는 네이티브 설정으로 유도
+        if (isWebView()) {
+          const webView = (window as any).ReactNativeWebView;
+          if (webView) {
+            webView.postMessage(
+              JSON.stringify({ type: 'openLocationSettings' })
+            );
+          }
+          onError?.('설정 앱에서 위치 접근을 허용해주세요.');
+        } else {
+          onError?.('위치 접근 권한이 거부되었습니다. 브라우저 설정을 확인해주세요.');
+        }
       },
       { timeout: 10000, maximumAge: 0 },
     );
