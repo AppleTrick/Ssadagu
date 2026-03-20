@@ -12,7 +12,6 @@ interface SignupParams {
 export const useSignupForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const setToken = useAuthStore((s) => s.setToken);
 
   const signup = async (params: SignupParams): Promise<boolean> => {
     setError(null);
@@ -25,13 +24,13 @@ export const useSignupForm = () => {
         return false;
       }
 
-      const body = await res.json() as Record<string, unknown>;
-      const nested = body.data as Record<string, unknown> | undefined;
-      const tokenObj = (body.token || nested?.token) as Record<string, unknown> | undefined;
-      const accessToken = tokenObj?.accessToken as string | undefined;
+      const body = await res.json() as any;
+      const data = body.data || body;
+      const accessToken = data.token?.accessToken || data.token;
+      const userId = data.id || data.token?.userId;
 
-      if (accessToken) {
-        setToken(accessToken);
+      if (accessToken && userId) {
+        useAuthStore.getState().setAuthInfo(accessToken, userId);
       }
 
       return true;

@@ -215,7 +215,7 @@ export function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const rawId = params ? (Array.isArray(params.id) ? params.id[0] : params.id) : null;
   const productId = Number(rawId);
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);

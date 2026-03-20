@@ -57,7 +57,7 @@ const Bubble = styled.div`
   font-weight: ${typography.weight.regular};
   line-height: 1.5;
   padding: 10px 14px;
-  border-radius: 18px 18px 4px 18px;
+  border-radius: 18px 4px 18px 18px;
   word-break: break-word;
   white-space: pre-wrap;
 `;
@@ -72,6 +72,6 @@ const TimeText = styled.span`
 const ImageBubble = styled.img`
   max-width: 200px;
   max-height: 260px;
-  border-radius: 18px 18px 4px 18px;
+  border-radius: 18px 4px 18px 18px;
   object-fit: cover;
 `;

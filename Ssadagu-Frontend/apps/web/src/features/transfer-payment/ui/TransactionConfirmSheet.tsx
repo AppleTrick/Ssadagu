@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 import { colors, typography } from '@/shared/styles/theme';
+import { getProxyImageUrl } from '@/shared/utils';
 import type { ChatRoom, TransactionContent } from '@/entities/chat/model/types';
 
 interface TransactionConfirmSheetProps {
@@ -77,31 +78,20 @@ const TransactionConfirmSheet = ({ isOpen, onClose, roomInfo, content, onConfirm
 
         <Header>
           <Title>거래 확인</Title>
-          <CloseButton onClick={onClose}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </CloseButton>
         </Header>
 
-        <SummaryBox>
-          <SummaryRow>
-            <SummaryLabel>상품</SummaryLabel>
-            <SummaryValue>{roomInfo?.productTitle}</SummaryValue>
-          </SummaryRow>
-          <SummaryRow>
-            <SummaryLabel>거래 장소</SummaryLabel>
-            <SummaryValue>{content?.locationName}</SummaryValue>
-          </SummaryRow>
-          <SummaryRow>
-            <SummaryLabel>거래 시간</SummaryLabel>
-            <SummaryValue>{content?.time}</SummaryValue>
-          </SummaryRow>
-          <SummaryRow>
-            <SummaryLabel>거래 금액</SummaryLabel>
-            <SummaryValue $highlight>{content?.price?.toLocaleString()}원</SummaryValue>
-          </SummaryRow>
-        </SummaryBox>
+        <Divider />
+
+        <ProductCard>
+          <Thumbnail src={roomInfo?.productThumbnailUrl ? getProxyImageUrl(roomInfo.productThumbnailUrl) : undefined} alt="" />
+          <ProductInfo>
+            <ProductTitle>{roomInfo?.productTitle}</ProductTitle>
+            <ProductPrice>{content?.price?.toLocaleString()}원</ProductPrice>
+            <ProductMeta>
+              {content?.locationName} · {content?.time}
+            </ProductMeta>
+          </ProductInfo>
+        </ProductCard>
 
         <InfoText>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -113,8 +103,8 @@ const TransactionConfirmSheet = ({ isOpen, onClose, roomInfo, content, onConfirm
         </InfoText>
 
         <ButtonGroup>
-          <CancelButton onClick={onClose}>취소</CancelButton>
-          <ConfirmButton onClick={() => { onConfirm(); onClose(); }}>거래 확인</ConfirmButton>
+          <CancelButton onClick={onClose}>거절</CancelButton>
+          <ConfirmButton onClick={() => { onConfirm(); onClose(); }}>수락</ConfirmButton>
         </ButtonGroup>
       </SheetContainer>
     </>
@@ -133,11 +123,11 @@ const SheetContainer = styled.div`
   position: fixed;
   bottom: 0; left: 0; right: 0;
   background: ${colors.surface};
-  border-top-left-radius: 24px;
-  border-top-right-radius: 24px;
-  padding: 0 20px 32px;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  padding: 0 24px 40px;
   z-index: 51;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.12);
   animation: ${slideUp} 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   display: flex; flex-direction: column;
 `;
@@ -155,11 +145,56 @@ const HandleBar = styled.div`
 `;
 
 const Header = styled.div`
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 24px;
+  display: flex; justify-content: flex-start; align-items: center;
+  padding: 8px 0;
 `;
 
 const Title = styled.h2`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.base};
+  font-weight: ${typography.weight.bold};
+  color: ${colors.primary};
+  margin: 0;
+`;
+
+const Divider = styled.div`
+  height: 1px;
+  background: ${colors.border};
+  width: 100%;
+  margin-bottom: 24px;
+  opacity: 0.6;
+`;
+
+const ProductCard = styled.div`
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+`;
+
+const Thumbnail = styled.img`
+  width: 68px;
+  height: 68px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: ${colors.bg};
+`;
+
+const ProductInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+`;
+
+const ProductTitle = styled.h3`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.md};
+  font-weight: ${typography.weight.bold};
+  color: ${colors.textPrimary};
+  margin: 0;
+`;
+
+const ProductPrice = styled.p`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.lg};
   font-weight: ${typography.weight.bold};
@@ -167,9 +202,11 @@ const Title = styled.h2`
   margin: 0;
 `;
 
-const CloseButton = styled.button`
-  background: none; border: none; padding: 4px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+const ProductMeta = styled.p`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.xs};
+  color: ${colors.textSecondary};
+  margin: 4px 0 0;
 `;
 
 const SummaryBox = styled.div`
@@ -212,26 +249,28 @@ const ButtonGroup = styled.div`
 
 const CancelButton = styled.button`
   flex: 1;
-  padding: 16px;
-  background: #F2F4F6;
+  height: 54px;
+  background: #E9ECEF;
   color: ${colors.textSecondary};
-  border: none; border-radius: 12px;
+  border: none; border-radius: 16px;
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
   font-weight: ${typography.weight.bold};
   cursor: pointer;
-  &:active { opacity: 0.8; }
+  transition: all 0.2s;
+  &:active { background: #DEE2E6; transform: scale(0.98); }
 `;
 
 const ConfirmButton = styled.button`
   flex: 2;
-  padding: 16px;
+  height: 54px;
   background: ${colors.primary};
   color: white;
-  border: none; border-radius: 12px;
+  border: none; border-radius: 16px;
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
   font-weight: ${typography.weight.bold};
   cursor: pointer;
-  &:active { opacity: 0.9; }
+  transition: all 0.2s;
+  &:active { opacity: 0.9; transform: scale(0.98); }
 `;

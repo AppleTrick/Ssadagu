@@ -42,13 +42,17 @@ const TransactionBubble = ({ message, isMyMessage, productThumbnailUrl, onCancel
       <Header $isMyMessage={isMyMessage}>거래요청</Header>
       
       <CardBody>
-        {productThumbnailUrl ? (
-          <Thumbnail $isMyMessage={isMyMessage} src={getProxyImageUrl(productThumbnailUrl)} alt="상품" />
-        ) : (
-          <ThumbPlaceholder $isMyMessage={isMyMessage} />
-        )}
+        <ThumbnailWrapper>
+          {productThumbnailUrl ? (
+            <Thumbnail src={getProxyImageUrl(productThumbnailUrl)} alt="상품" />
+          ) : (
+            <ThumbPlaceholder />
+          )}
+        </ThumbnailWrapper>
         <Info>
-          <ItemTitle $isMyMessage={isMyMessage}>거래 상품 정보</ItemTitle>
+          <ItemTitle $isMyMessage={isMyMessage}>
+           {message.senderNickname ? `${message.senderNickname}님의 상품` : '거래 상품 정보'}
+          </ItemTitle>
           <Price $isMyMessage={isMyMessage}>{price?.toLocaleString() || 0}원</Price>
           <Details $isMyMessage={isMyMessage}>
             {locationName} · {time}
@@ -56,25 +60,10 @@ const TransactionBubble = ({ message, isMyMessage, productThumbnailUrl, onCancel
         </Info>
       </CardBody>
 
-      <StatusSection>
-        <StatusText $isMyMessage={isMyMessage}>
-          <Dot $color={statusColor} /> {statusText}
-        </StatusText>
-      </StatusSection>
-
       {isRequest && (
         <ActionSection>
           {isMyMessage ? (
-            <Button $isMyMessage={isMyMessage} onClick={onCancel}>
-              <IconWrapper>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
-              </IconWrapper>
-              요청 취소
-            </Button>
+            <Button $isMyMessage={isMyMessage} onClick={onCancel}>요청 취소</Button>
           ) : (
             <ButtonGroup>
               <RejectButton onClick={onReject}>거절</RejectButton>
@@ -83,6 +72,14 @@ const TransactionBubble = ({ message, isMyMessage, productThumbnailUrl, onCancel
           )}
         </ActionSection>
       )}
+
+      {!isRequest && (
+        <StatusSection>
+          <StatusText $isMyMessage={isMyMessage}>
+            <Dot $color={statusColor} /> {statusText}
+          </StatusText>
+        </StatusSection>
+      )}
     </Container>
   );
 };
@@ -90,66 +87,77 @@ const TransactionBubble = ({ message, isMyMessage, productThumbnailUrl, onCancel
 export default TransactionBubble;
 
 const Container = styled.div<{ $isMyMessage: boolean }>`
-  width: 260px;
-  background: ${({ $isMyMessage }) => ($isMyMessage ? colors.primary : 'white')};
-  border: ${({ $isMyMessage }) => ($isMyMessage ? 'none' : `1px solid ${colors.border}`)};
-  border-radius: 16px;
-  padding: 16px;
+  width: min(280px, 75%);
+  background: ${({ $isMyMessage }) => ($isMyMessage ? colors.chatMine : colors.chatOther)};
+  
+  /* 일반 말풍선 스타일의 곡률 + 이미지 가이드의 상단 말꼬리(4px) 적용 */
+  border-radius: 18px;
+  border-top-right-radius: ${({ $isMyMessage }) => ($isMyMessage ? '4px' : '18px')};
+  border-top-left-radius: ${({ $isMyMessage }) => ($isMyMessage ? '18px' : '4px')};
+  
+  padding: 14px 16px;
   display: flex; flex-direction: column;
+  
+  /* 화면 가장자리와의 여백 확보 */
+  margin: ${({ $isMyMessage }) => ($isMyMessage ? '0 16px 0 0' : '0 0 0 16px')};
 `;
 
 const Header = styled.div<{ $isMyMessage: boolean }>`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.sm};
   font-weight: ${typography.weight.bold};
-  color: ${({ $isMyMessage }) => ($isMyMessage ? 'white' : colors.textPrimary)};
-  margin-bottom: 12px;
-  padding-bottom: 12px;
+  color: ${({ $isMyMessage }) => ($isMyMessage ? 'white' : colors.primary)};
+  margin-bottom: 16px;
+  padding-bottom: 16px;
   border-bottom: 1px solid ${({ $isMyMessage }) => ($isMyMessage ? 'rgba(255, 255, 255, 0.2)' : colors.border)};
 `;
 
 const CardBody = styled.div`
-  display: flex; gap: 12px; align-items: flex-start;
-  margin-bottom: 16px;
+  display: flex; gap: 14px; align-items: center;
+  margin-bottom: 20px;
 `;
 
-const ThumbPlaceholder = styled.div<{ $isMyMessage: boolean }>`
-  width: 48px; height: 48px;
-  border-radius: 8px;
-  background: ${({ $isMyMessage }) => ($isMyMessage ? 'rgba(255, 255, 255, 0.2)' : '#F2F4F6')};
-  flex-shrink: 0;
+const ThumbnailWrapper = styled.div`
+  width: 64px; height: 64px; flex-shrink: 0;
 `;
 
-const Thumbnail = styled.img<{ $isMyMessage: boolean }>`
-  width: 48px; height: 48px;
-  border-radius: 8px;
+const ThumbPlaceholder = styled.div`
+  width: 100%; height: 100%;
+  border-radius: 12px;
+  background: #E9ECEF;
+`;
+
+const Thumbnail = styled.img`
+  width: 100%; height: 100%;
+  border-radius: 12px;
   object-fit: cover;
-  flex-shrink: 0;
-  background: ${({ $isMyMessage }) => ($isMyMessage ? 'rgba(255, 255, 255, 0.2)' : '#F2F4F6')};
+  background: #E9ECEF;
 `;
 
 const Info = styled.div`
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: column; gap: 2px;
+  overflow: hidden;
 `;
 
 const ItemTitle = styled.div<{ $isMyMessage: boolean }>`
   font-family: ${typography.fontFamily};
-  font-size: ${typography.size.sm};
-  color: ${({ $isMyMessage }) => ($isMyMessage ? 'white' : colors.textPrimary)};
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px;
+  font-size: ${typography.size.xs};
+  color: ${({ $isMyMessage }) => ($isMyMessage ? 'rgba(255, 255, 255, 0.8)' : colors.textSecondary)};
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 `;
 
 const Price = styled.div<{ $isMyMessage: boolean }>`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
   font-weight: ${typography.weight.bold};
-  color: ${({ $isMyMessage }) => ($isMyMessage ? 'white' : colors.textPrimary)};
+  color: ${({ $isMyMessage }) => ($isMyMessage ? colors.surface : colors.textPrimary)};
 `;
 
 const Details = styled.div<{ $isMyMessage: boolean }>`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.xs};
   color: ${({ $isMyMessage }) => ($isMyMessage ? 'rgba(255, 255, 255, 0.7)' : colors.textSecondary)};
+  margin-top: 2px;
 `;
 
 const StatusSection = styled.div`
@@ -159,8 +167,8 @@ const StatusSection = styled.div`
 const StatusText = styled.div<{ $isMyMessage: boolean }>`
   display: flex; align-items: center; gap: 6px;
   font-family: ${typography.fontFamily};
-  font-size: ${typography.size.sm};
-  color: ${({ $isMyMessage }) => ($isMyMessage ? 'white' : colors.textPrimary)};
+  font-size: ${typography.size.xs};
+  color: ${({ $isMyMessage }) => ($isMyMessage ? colors.surface : colors.textPrimary)};
 `;
 
 const Dot = styled.div<{ $color: string }>`
@@ -169,51 +177,51 @@ const Dot = styled.div<{ $color: string }>`
 `;
 
 const ActionSection = styled.div`
-  display: flex; justify-content: flex-end;
+  display: flex; width: 100%;
 `;
 
 const Button = styled.button<{ $isMyMessage: boolean }>`
-  display: flex; align-items: center; gap: 4px;
-  background: ${({ $isMyMessage }) => ($isMyMessage ? 'rgba(255, 255, 255, 0.2)' : '#F2F4F6')};
-  border: none; border-radius: 8px;
-  padding: 8px 12px;
+  width: 100%;
+  height: 48px;
+  background: ${({ $isMyMessage }) => ($isMyMessage ? 'rgba(255, 255, 255, 0.15)' : '#E9ECEF')};
+  border: none; border-radius: 12px;
   color: ${({ $isMyMessage }) => ($isMyMessage ? 'white' : colors.textPrimary)};
   font-family: ${typography.fontFamily};
-  font-size: ${typography.size.xs};
+  font-size: ${typography.size.sm};
+  font-weight: ${typography.weight.bold};
   cursor: pointer;
-  &:active { background: ${({ $isMyMessage }) => ($isMyMessage ? 'rgba(255, 255, 255, 0.3)' : '#E5E8EB')}; }
-`;
-
-const IconWrapper = styled.div`
-  display: flex; align-items: center;
+  transition: all 0.2s;
+  &:active { transform: scale(0.98); opacity: 0.8; }
 `;
 
 const ButtonGroup = styled.div`
-  display: flex; width: 100%; gap: 8px;
+  display: flex; width: 100%; gap: 10px;
 `;
 
 const RejectButton = styled.button`
   flex: 1;
-  padding: 10px;
-  background: #F2F4F6;
+  height: 48px;
+  background: #E9ECEF;
   color: ${colors.textSecondary};
-  border: none; border-radius: 8px;
+  border: none; border-radius: 14px;
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.sm};
   font-weight: ${typography.weight.bold};
   cursor: pointer;
-  &:active { background: #E5E8EB; }
+  transition: all 0.2s;
+  &:active { background: #DEE2E6; transform: scale(0.98); }
 `;
 
 const AcceptButton = styled.button`
   flex: 1;
-  padding: 10px;
+  height: 48px;
   background: ${colors.primary};
   color: white;
-  border: none; border-radius: 8px;
+  border: none; border-radius: 14px;
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.sm};
   font-weight: ${typography.weight.bold};
   cursor: pointer;
-  &:active { opacity: 0.9; }
+  transition: all 0.2s;
+  &:active { opacity: 0.9; transform: scale(0.98); }
 `;

@@ -1,33 +1,34 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import styled from '@emotion/styled';
-import { HeaderBack } from '@/widgets/header';
-import { Button, Input } from '@/shared/ui';
-import { useRegisterAccount } from '@/features/register-account';
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import styled from "@emotion/styled";
+import { HeaderBack } from "@/widgets/header";
+import { Button, Input } from "@/shared/ui";
+import { useRegisterAccount } from "@/features/register-account";
 import {
   colors,
   typography,
   radius,
   HEADER_HEIGHT,
-} from '@/shared/styles/theme';
+} from "@/shared/styles/theme";
 
 /* ── Types ─────────────────────────────────────────────── */
 
-type Step = 'account-number' | 'bank-select' | 'transfer-info' | 'verify-code';
+type Step = "account-number" | "bank-select" | "transfer-info" | "verify-code";
 
 const BANKS = [
-  { code: '004', name: '국민은행' },
-  { code: '088', name: '신한은행' },
-  { code: '020', name: '우리은행' },
-  { code: '081', name: '하나은행' },
-  { code: '003', name: '기업은행' },
-  { code: '011', name: '농협은행' },
-  { code: '090', name: '카카오뱅크' },
-  { code: '089', name: '케이뱅크' },
-  { code: '032', name: '부산은행' },
-  { code: '023', name: 'SC제일은행' },
+  { code: "001", name: "한국은행" },
+  { code: "004", name: "국민은행" },
+  { code: "088", name: "신한은행" },
+  { code: "020", name: "우리은행" },
+  { code: "081", name: "하나은행" },
+  { code: "003", name: "기업은행" },
+  { code: "011", name: "농협은행" },
+  { code: "090", name: "카카오뱅크" },
+  { code: "089", name: "케이뱅크" },
+  { code: "032", name: "부산은행" },
+  { code: "023", name: "SC제일은행" },
 ];
 
 /* ── Styled ─────────────────────────────────────────────── */
@@ -61,7 +62,7 @@ const StepDots = styled.div`
 `;
 
 const Dot = styled.div<{ active: boolean }>`
-  width: ${({ active }) => (active ? '20px' : '6px')};
+  width: ${({ active }) => (active ? "20px" : "6px")};
   height: 6px;
   border-radius: 3px;
   background: ${({ active }) => (active ? colors.primary : colors.border)};
@@ -76,7 +77,7 @@ const TitleBlock = styled.div`
 
 const Title = styled.h2`
   font-family: ${typography.fontFamily};
-  font-size: ${typography.size['2xl']};
+  font-size: ${typography.size["2xl"]};
   font-weight: ${typography.weight.bold};
   color: ${colors.textPrimary};
   margin: 0;
@@ -126,7 +127,10 @@ const SelectBox = styled.button`
   font-size: ${typography.size.md};
   color: ${colors.textPrimary};
   cursor: pointer;
-  &:focus { border-color: ${colors.primary}; outline: none; }
+  &:focus {
+    border-color: ${colors.primary};
+    outline: none;
+  }
 `;
 
 const SelectPlaceholder = styled.span`
@@ -135,7 +139,7 @@ const SelectPlaceholder = styled.span`
 
 const Chevron = styled.span<{ open: boolean }>`
   transition: transform 0.2s;
-  transform: ${({ open }) => (open ? 'rotate(180deg)' : 'rotate(0deg)')};
+  transform: ${({ open }) => (open ? "rotate(180deg)" : "rotate(0deg)")};
   display: flex;
 `;
 
@@ -153,7 +157,7 @@ const DropdownList = styled.ul`
   margin: 0;
   padding: 4px 0;
   list-style: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 `;
 
 const DropdownItem = styled.li<{ selected: boolean }>`
@@ -161,10 +165,13 @@ const DropdownItem = styled.li<{ selected: boolean }>`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
   color: ${({ selected }) => (selected ? colors.primary : colors.textPrimary)};
-  font-weight: ${({ selected }) => (selected ? typography.weight.semibold : typography.weight.regular)};
-  background: ${({ selected }) => (selected ? '#EBF2FE' : 'transparent')};
+  font-weight: ${({ selected }) =>
+    selected ? typography.weight.semibold : typography.weight.regular};
+  background: ${({ selected }) => (selected ? "#EBF2FE" : "transparent")};
   cursor: pointer;
-  &:hover { background: ${colors.bg}; }
+  &:hover {
+    background: ${colors.bg};
+  }
 `;
 
 /* ── Account Number Display ─────────────────────────────── */
@@ -174,7 +181,7 @@ const AccountChip = styled.div`
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: #EBF2FE;
+  background: #ebf2fe;
   border-radius: ${radius.pill};
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.base};
@@ -271,20 +278,44 @@ const BottomBar = styled.div`
 /* ── SVG Icons ──────────────────────────────────────────── */
 
 const ChevronIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+  >
     <polyline points="6 9 12 15 18 9" />
   </svg>
 );
 
 const CardIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.primary} strokeWidth="2" strokeLinecap="round">
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={colors.primary}
+    strokeWidth="2"
+    strokeLinecap="round"
+  >
     <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
     <line x1="1" y1="10" x2="23" y2="10" />
   </svg>
 );
 
 const ClockIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+  >
     <circle cx="12" cy="12" r="10" />
     <polyline points="12 6 12 12 16 14" />
   </svg>
@@ -292,7 +323,12 @@ const ClockIcon = () => (
 
 /* ── Step Dots Helper ───────────────────────────────────── */
 
-const STEPS: Step[] = ['account-number', 'bank-select', 'transfer-info', 'verify-code'];
+const STEPS: Step[] = [
+  "account-number",
+  "bank-select",
+  "transfer-info",
+  "verify-code",
+];
 
 function StepIndicator({ current }: { current: Step }) {
   const idx = STEPS.indexOf(current);
@@ -309,20 +345,17 @@ function StepIndicator({ current }: { current: Step }) {
 
 export function VerifyAccountPage() {
   const router = useRouter();
-  const { register } = useRegisterAccount();
-  // confirmCode는 백엔드 인증 준비 후 활성화 예정
-  // const { confirmCode } = useVerifyAccount();
+  const { register, sendVerification, confirmCode } = useRegisterAccount();
+  const [accountId, setAccountId] = useState<number | null>(null);
 
-  const [step, setStep] = useState<Step>('account-number');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [accountHolderName, setAccountHolderName] = useState('');
-  const [bankCode, setBankCode] = useState('');
-  const [bankName, setBankName] = useState('');
+  const [step, setStep] = useState<Step>("account-number");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountHolderName, setAccountHolderName] = useState("");
+  const [bankCode, setBankCode] = useState("");
+  const [bankName, setBankName] = useState("");
   const [bankOpen, setBankOpen] = useState(false);
-  // accountId: 백엔드 인증 준비 후 사용 예정
-  // const [accountId, setAccountId] = useState<number | null>(null);
-  const [codeDigits, setCodeDigits] = useState(['', '', '', '']);
-  const [error, setError] = useState('');
+  const [codeDigits, setCodeDigits] = useState(["", "", "", ""]);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const codeRefs = [
@@ -333,62 +366,85 @@ export function VerifyAccountPage() {
   ];
 
   const handleBack = () => {
-    if (step === 'bank-select') setStep('account-number');
-    else if (step === 'transfer-info') setStep('bank-select');
-    else if (step === 'verify-code') setStep('transfer-info');
+    if (step === "bank-select") setStep("account-number");
+    else if (step === "transfer-info") setStep("bank-select");
+    else if (step === "verify-code") setStep("transfer-info");
     else router.back();
   };
 
   /* ── Step 1 → 2 ────────────────────────────────────────── */
   const goToBankSelect = () => {
-    if (!accountNumber.trim()) { setError('계좌번호를 입력해주세요.'); return; }
-    if (!accountHolderName.trim()) { setError('예금주명을 입력해주세요.'); return; }
-    setError('');
-    setStep('bank-select');
+    if (!accountNumber.trim()) {
+      setError("계좌번호를 입력해주세요.");
+      return;
+    }
+    if (!accountHolderName.trim()) {
+      setError("예금주명을 입력해주세요.");
+      return;
+    }
+    setError("");
+    setStep("bank-select");
   };
 
   /* ── Step 2 → 3 ────────────────────────────────────────── */
   const goToTransferInfo = () => {
-    if (!bankCode) { setError('은행을 선택해주세요.'); return; }
-    setError('');
-    setStep('transfer-info');
+    if (!bankCode) {
+      setError("은행을 선택해주세요.");
+      return;
+    }
+    setError("");
+    setStep("transfer-info");
   };
 
   /* ── Step 3: 계좌 등록 + 1원 송금 (POST /accounts 단일 호출) ── */
   const handleSendTransfer = async () => {
-    setError('');
+    setError("");
     setLoading(true);
     try {
-      await register({ bankCode, accountNumber, accountHolderName });
-      // TODO: 백엔드 인증 준비 후 → setAccountId(id) 복원
-      setStep('verify-code');
+      const id = await register({ bankCode, accountNumber, accountHolderName });
+      setAccountId(id);
+      setStep("verify-code");
     } catch (e) {
-      setError(e instanceof Error ? e.message : '오류가 발생했습니다.');
+      setError(e instanceof Error ? e.message : "오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
   };
 
-  /* ── Step 4: 인증번호 확인 (검증 임시 스킵 - 백엔드 준비 후 활성화) ── */
-  const handleVerifyCode = () => {
-    const code = codeDigits.join('');
-    if (code.length < 4) { setError('인증번호 4자리를 모두 입력해주세요.'); return; }
-    // TODO: 백엔드 인증 준비 후 아래 코드로 교체
-    // await confirmCode(accountId, code);
-    router.push('/location-auth');
+  /* ── Step 4: 인증번호 확인 (실제 API 연동) ── */
+  const handleVerifyCode = async () => {
+    const code = codeDigits.join("");
+    if (code.length < 4) {
+      setError("인증번호 4자리를 모두 입력해주세요.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      if (!accountId) throw new Error("계좌 정보를 찾을 수 없습니다.");
+      await confirmCode(accountId, code);
+      router.replace("/location-auth");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "인증에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   /* ── Code digit handler ─────────────────────────────────── */
   const handleDigit = (i: number, val: string) => {
-    const digit = val.replace(/\D/g, '').slice(-1);
+    const digit = val.replace(/\D/g, "").slice(-1);
     const next = [...codeDigits];
     next[i] = digit;
     setCodeDigits(next);
     if (digit && i < 3) codeRefs[i + 1].current?.focus();
   };
 
-  const handleDigitKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !codeDigits[i] && i > 0) {
+  const handleDigitKey = (
+    i: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key === "Backspace" && !codeDigits[i] && i > 0) {
       codeRefs[i - 1].current?.focus();
     }
   };
@@ -396,7 +452,7 @@ export function VerifyAccountPage() {
   /* ══ Render ════════════════════════════════════════════════ */
 
   /* Step 1 – 계좌번호 */
-  if (step === 'account-number') {
+  if (step === "account-number") {
     return (
       <Page>
         <HeaderBack title="계좌 인증" onBack={handleBack} />
@@ -404,7 +460,7 @@ export function VerifyAccountPage() {
           <Section>
             <StepIndicator current={step} />
             <TitleBlock>
-              <Title>{'어떤 계좌를\n사용하시나요?'}</Title>
+              <Title>{"어떤 계좌를\n사용하시나요?"}</Title>
             </TitleBlock>
             <FieldGroup>
               <div>
@@ -412,7 +468,10 @@ export function VerifyAccountPage() {
                 <Input
                   placeholder="계좌번호를 입력해주세요 (- 없이)"
                   value={accountNumber}
-                  onChange={(e) => { setAccountNumber(e.target.value); setError(''); }}
+                  onChange={(e) => {
+                    setAccountNumber(e.target.value);
+                    setError("");
+                  }}
                   inputMode="numeric"
                 />
               </div>
@@ -421,7 +480,10 @@ export function VerifyAccountPage() {
                 <Input
                   placeholder="예금주명을 입력해주세요"
                   value={accountHolderName}
-                  onChange={(e) => { setAccountHolderName(e.target.value); setError(''); }}
+                  onChange={(e) => {
+                    setAccountHolderName(e.target.value);
+                    setError("");
+                  }}
                 />
               </div>
               {error && <ErrorMsg role="alert">{error}</ErrorMsg>}
@@ -444,7 +506,7 @@ export function VerifyAccountPage() {
   }
 
   /* Step 2 – 은행 선택 */
-  if (step === 'bank-select') {
+  if (step === "bank-select") {
     return (
       <Page>
         <HeaderBack title="계좌 인증" onBack={handleBack} />
@@ -452,7 +514,7 @@ export function VerifyAccountPage() {
           <Section>
             <StepIndicator current={step} />
             <TitleBlock>
-              <Title>{'어느 은행\n계좌인가요?'}</Title>
+              <Title>{"어느 은행\n계좌인가요?"}</Title>
               <AccountChip>
                 <CardIcon />
                 {accountNumber}
@@ -464,12 +526,21 @@ export function VerifyAccountPage() {
                 <SelectWrapper>
                   <SelectBox
                     type="button"
-                    onClick={() => { setBankOpen((o) => !o); setError(''); }}
+                    onClick={() => {
+                      setBankOpen((o) => !o);
+                      setError("");
+                    }}
                     aria-haspopup="listbox"
                     aria-expanded={bankOpen}
                   >
-                    {bankName ? <span>{bankName}</span> : <SelectPlaceholder>은행을 선택하세요</SelectPlaceholder>}
-                    <Chevron open={bankOpen}><ChevronIcon /></Chevron>
+                    {bankName ? (
+                      <span>{bankName}</span>
+                    ) : (
+                      <SelectPlaceholder>은행을 선택하세요</SelectPlaceholder>
+                    )}
+                    <Chevron open={bankOpen}>
+                      <ChevronIcon />
+                    </Chevron>
                   </SelectBox>
                   {bankOpen && (
                     <DropdownList role="listbox">
@@ -512,7 +583,7 @@ export function VerifyAccountPage() {
   }
 
   /* Step 3 – 1원 송금 안내 */
-  if (step === 'transfer-info') {
+  if (step === "transfer-info") {
     return (
       <Page>
         <HeaderBack title="계좌 인증" onBack={handleBack} />
@@ -520,8 +591,12 @@ export function VerifyAccountPage() {
           <Section>
             <StepIndicator current={step} />
             <TitleBlock>
-              <Title>{'1원을 송금해\n드릴게요'}</Title>
-              <Desc>{'아래 계좌로 1원을 보내드릴게요.\n입금자명 끝 3자리로 인증해요'}</Desc>
+              <Title>{"1원을 송금해\n드릴게요"}</Title>
+              <Desc>
+                {
+                  "아래 계좌로 1원을 보내드릴게요.\n입금자명 끝 3자리로 인증해요"
+                }
+              </Desc>
             </TitleBlock>
             <InfoCard>
               <InfoRow>
@@ -540,7 +615,13 @@ export function VerifyAccountPage() {
             {error && <ErrorMsg role="alert">{error}</ErrorMsg>}
           </Section>
           <BottomBar>
-            <Button variant="primary" size="lg" fullWidth loading={loading} onClick={handleSendTransfer}>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              loading={loading}
+              onClick={handleSendTransfer}
+            >
               1원 송금받기
             </Button>
           </BottomBar>
@@ -557,7 +638,7 @@ export function VerifyAccountPage() {
         <Section>
           <StepIndicator current={step} />
           <TitleBlock>
-            <Title>{'입금자명 끝\n4자리를 입력해주세요'}</Title>
+            <Title>{"입금자명 끝\n4자리를 입력해주세요"}</Title>
             <Desc>{`${bankName} ${accountNumber}로\n1원을 송금했어요`}</Desc>
           </TitleBlock>
           <FieldGroup>
