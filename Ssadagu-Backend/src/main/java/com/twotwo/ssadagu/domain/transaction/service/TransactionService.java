@@ -104,7 +104,7 @@ public class TransactionService {
             );
 
             // API 결과 검증
-            if (apiResponse == null || apiResponse.getHeader() == null || !"0000".equals(apiResponse.getHeader().getResponseCode())) {
+            if (apiResponse == null || apiResponse.getHeader() == null || !"H0000".equals(apiResponse.getHeader().getResponseCode())) {
                 if (apiResponse != null && apiResponse.getHeader() != null) {
                     log.error("[싸피 금융망 거절 사유] 응답코드: {}, 에러내용: {}", 
                         apiResponse.getHeader().getResponseCode(), 

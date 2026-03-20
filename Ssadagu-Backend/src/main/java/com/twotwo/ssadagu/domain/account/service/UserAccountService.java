@@ -7,6 +7,7 @@ import com.twotwo.ssadagu.domain.account.entity.AccountVerification;
 import com.twotwo.ssadagu.domain.account.entity.UserAccount;
 import com.twotwo.ssadagu.domain.account.repository.AccountVerificationRepository;
 import com.twotwo.ssadagu.domain.account.repository.UserAccountRepository;
+import com.twotwo.ssadagu.domain.demanddeposit.service.DemandDepositService;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class UserAccountService {
     private final AccountVerificationRepository verificationRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DemandDepositService demandDepositService;
 
     @Transactional
     public AccountRegisterResponseDto registerAccountAndStartAuth(User user, AccountRegisterRequestDto requestDto) {
@@ -58,9 +60,18 @@ public class UserAccountService {
             );
         }
 
-        // Mock: 4자리 랜덤 숫자 생성
+        // 실제 4자리 랜덤 숫자 통장 적요(Summary)로 송금
         String randomCode = String.format("%04d", new Random().nextInt(10000));
-        log.info("[1원 송금 발생] 계좌번호: {}, 인증코드: {}", requestDto.getAccountNumber(), randomCode);
+        String summary = "SSADAGU" + randomCode;
+
+        try {
+            log.info("[1원 송금 요청] 계좌번호: {}, 입금자명: {}", requestDto.getAccountNumber(), summary);
+            demandDepositService.updateDeposit(requestDto.getAccountNumber(), 1L, summary, user.getUserKey());
+            log.info("[1원 송금 완료] 계좌번호: {}, 인증코드: {}", requestDto.getAccountNumber(), randomCode);
+        } catch (Exception e) {
+            log.error("[1원 송금 오류] 1원 이체 실패: {}", e.getMessage());
+            throw new IllegalArgumentException("금융망 연동 오류: 유효한 계좌번호인지 확인해주세요.", e);
+        }
 
         // AccountVerification 생성
         AccountVerification verification = AccountVerification.builder()
