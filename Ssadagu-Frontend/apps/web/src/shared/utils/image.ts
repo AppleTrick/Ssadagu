@@ -10,9 +10,9 @@ export function getProxyImageUrl(url?: string | null): string {
     return url;
   }
 
-  // amazonaws.com 도메인이 포함된 S3 URL인 경우 api/image 로 프록시
+  // amazonaws.com 도메인이 포함된 S3 URL인 경우 next-api/image 라우트로 프록시
   if (url.includes('amazonaws.com')) {
-    return `/api/image?url=${encodeURIComponent(url)}`;
+    return `/next-api/image?url=${encodeURIComponent(url)}`;
   }
 
   return url;
