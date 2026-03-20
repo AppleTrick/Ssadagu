@@ -30,24 +30,32 @@ public class UserAccountService {
 
     @Transactional
     public AccountRegisterResponseDto registerAccountAndStartAuth(User user, AccountRegisterRequestDto requestDto) {
-        // 이미 계좌가 있는지 확인. 없다면 PENDING 상태로 생성
         UserAccount account = userAccountRepository.findByUserId(user.getId())
-                .orElseGet(() -> {
-                    UserAccount newAccount = UserAccount.builder()
-                            .user(user)
-                            .bankCode(requestDto.getBankCode())
-                            .bankName("임시은행명") // 프론트에서 넘어오지 않으므로 임시 설정
-                            .accountNumber(requestDto.getAccountNumber())
-                            .accountHash(passwordEncoder.encode(requestDto.getAccountNumber())) // 간이 해시
-                            .accountHolderName(requestDto.getAccountHolderName())
-                            .isPrimary(true)
-                            .verifiedStatus("PENDING")
-                            .build();
-                    return userAccountRepository.save(newAccount);
-                });
+                .orElse(null);
 
-        if ("VERIFIED".equals(account.getVerifiedStatus())) {
-            throw new IllegalArgumentException("이미 인증된 계좌입니다.");
+        String newHash = passwordEncoder.encode(requestDto.getAccountNumber()); // 간이 해시
+
+        if (account == null) {
+            account = UserAccount.builder()
+                    .user(user)
+                    .bankCode(requestDto.getBankCode())
+                    .bankName("임시은행명") // 프론트에서 넘어오지 않으므로 임시 설정
+                    .accountNumber(requestDto.getAccountNumber())
+                    .accountHash(newHash)
+                    .accountHolderName(requestDto.getAccountHolderName())
+                    .isPrimary(true)
+                    .verifiedStatus("PENDING")
+                    .build();
+            account = userAccountRepository.save(account);
+        } else {
+            // 이미 PENDING이거나 VERIFIED 이더라도 사용자가 재인증을 요청했으므로 덮어쓰고 PENDING으로 초기화
+            account.updateAccountAndPending(
+                    requestDto.getBankCode(),
+                    "임시은행명",
+                    requestDto.getAccountNumber(),
+                    newHash,
+                    requestDto.getAccountHolderName()
+            );
         }
 
         // Mock: 4자리 랜덤 숫자 생성

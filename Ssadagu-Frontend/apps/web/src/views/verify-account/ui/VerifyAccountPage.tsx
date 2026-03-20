@@ -423,7 +423,7 @@ export function VerifyAccountPage() {
     try {
       if (!accountId) throw new Error("계좌 정보를 찾을 수 없습니다.");
       await confirmCode(accountId, code);
-      router.push("/location-auth");
+      router.replace("/location-auth");
     } catch (e) {
       setError(e instanceof Error ? e.message : "인증에 실패했습니다.");
     } finally {
