@@ -15,6 +15,16 @@ public class SsafyApiResponse<T> {
     @JsonProperty("REC")
     private T rec;
 
+    @JsonProperty("Header")
+    public SsafyHeader getHeader() {
+        return header;
+    }
+
+    @JsonProperty("REC")
+    public T getRec() {
+        return rec;
+    }
+
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
