@@ -4,7 +4,23 @@ import { WebView, WebViewNavigation } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // 배포 URL
-const NEXTJS_URL = 'https://j14a202.p.ssafy.io';
+// const NEXTJS_URL = 'https://j14a202.p.ssafy.io';
+
+// 플랫폼별 로컬호스트 URL 설정
+const DEV_MACHINE_IP = '192.168.45.45'; // 개발 머신 IP
+
+let NEXTJS_URL = 'http://localhost:3000';
+
+if (__DEV__) {
+  if (Platform.OS === 'android') {
+    // Android 에뮬레이터: 호스트 머신 IP를 10.0.2.2로 접근
+    NEXTJS_URL = 'http://10.0.2.2:3000';
+  } else if (Platform.OS === 'ios') {
+    // iOS: 시뮬레이터와 실제 기기 모두 개발 머신 IP 사용
+    // (시뮬레이터에서는 localhost 작동하지만, 실제 기기는 IP 필요)
+    NEXTJS_URL = `http://${DEV_MACHINE_IP}:3000`;
+  }
+}
 
 export default function AppScreen() {
   const webviewRef = useRef<WebView>(null);
