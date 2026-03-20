@@ -11,6 +11,9 @@ services:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - webroot:/var/www/certbot
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Asia/Seoul
     depends_on:
       - backend
       - frontend
@@ -25,6 +28,9 @@ services:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - webroot:/var/www/certbot
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Asia/Seoul
     command: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - ssadagu-network
@@ -39,8 +45,11 @@ services:
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
     environment:
       - JENKINS_OPTS=--prefix=/jenkins
+      - JAVA_OPTS=-Duser.timezone=Asia/Seoul
+      - TZ=Asia/Seoul
     networks:
       - ssadagu-network
     restart: always
@@ -53,6 +62,9 @@ services:
       - "8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     networks:
       - ssadagu-network
     restart: always
@@ -68,6 +80,10 @@ services:
     networks:
       - ssadagu-network
     restart: always
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
 
   elasticsearch:
     build:
@@ -77,8 +93,10 @@ services:
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms4g -Xmx4g"
       - xpack.security.enabled=false
+      - TZ=Asia/Seoul
     volumes:
       - es_data:/usr/share/elasticsearch/data
+      - /etc/localtime:/etc/localtime:ro
     ports:
       - "9200:9200"
     networks:
@@ -94,6 +112,9 @@ services:
       - "9600:9600"
     environment:
       - LS_JAVA_OPTS=-Xms1g -Xmx1g
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     networks:
       - ssadagu-network
     depends_on:
@@ -107,6 +128,9 @@ services:
       - "5601:5601"
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     networks:
       - ssadagu-network
     depends_on:
@@ -117,12 +141,14 @@ services:
     build:
       context: ./filebeat
     user: root
-    command: ["--strict.perms=false"]
+    command: [ "--strict.perms=false" ]
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
     environment:
       - STRICT_PATH_CHECK=false
+      - TZ=Asia/Seoul
     networks:
       - ssadagu-network
     depends_on:
