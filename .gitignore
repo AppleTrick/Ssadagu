@@ -9,3 +9,6 @@ schema_result.txt
 *.key
 nginx/certs/
 nginx/proxy_temp/
+
+# macOS
+.DS_Store
