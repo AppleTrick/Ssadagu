@@ -38,8 +38,6 @@ import { compressImage } from '@/shared/utils/image';
 import { useModalStore } from '@/shared/hooks/useModalStore';
 
 const CHAT_INPUT_HEIGHT = 56;
-const CHAT_INPUT_BOTTOM_OFFSET = 0;
-const MESSAGES_BOTTOM_PAD = CHAT_INPUT_HEIGHT + CHAT_INPUT_BOTTOM_OFFSET + 16;
 
 export function ChatRoomPage() {
   const params = useParams();
@@ -307,7 +305,6 @@ export function ChatRoomPage() {
         } : undefined} 
         onSelectLocation={() => setMapSheetOpen(true)} 
         onPhotosSelected={handlePhotosSelected} 
-        bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} 
       />
       <TransactionRequestSheet isOpen={reqSheetOpen} onClose={() => setReqSheetOpen(false)} 
         roomInfo={room ? { productTitle: room.productTitle, productPrice: room.productPrice, productThumbnailUrl: room.productThumbnailUrl } : null} onSubmit={handleTransactionRequestSubmit} />
@@ -324,9 +321,49 @@ export function ChatRoomPage() {
   );
 }
 
-const Page = styled.div` display: flex; flex-direction: column; height: 100dvh; background: ${colors.surface}; overflow: hidden; `;
-const MessagesArea = styled.div` flex: 1; overflow-y: auto; padding: ${HEADER_HEIGHT + 80}px 0 ${MESSAGES_BOTTOM_PAD}px; display: flex; flex-direction: column; gap: 8px; `;
-const LoadingWrapper = styled.div` display: flex; align-items: center; justify-content: center; flex: 1; font-family: ${typography.fontFamily}; color: ${colors.textSecondary}; `;
-const ItemSummaryBar = styled.div` position: fixed; top: ${HEADER_HEIGHT}px; left: 0; right: 0; z-index: 4; background: ${colors.surface}; border-bottom: 1px solid ${colors.border}; `;
-const EmptyMessages = styled.div` display: flex; align-items: center; justify-content: center; height: 120px; color: ${colors.textSecondary}; `;
-const UploadStatus = styled.div` padding: 8px 16px; text-align: right; font-size: 13px; color: ${colors.textSecondary}; `;
+const Page = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: ${colors.surface};
+  overflow: hidden;
+`;
+
+const MessagesArea = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 0;
+`;
+
+const LoadingWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-family: ${typography.fontFamily};
+  color: ${colors.textSecondary};
+`;
+
+const ItemSummaryBar = styled.div`
+  background: ${colors.surface};
+  border-bottom: 1px solid ${colors.border};
+  flex-shrink: 0;
+`;
+
+const EmptyMessages = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: ${colors.textSecondary};
+`;
+
+const UploadStatus = styled.div`
+  padding: 8px 16px;
+  text-align: right;
+  font-size: 13px;
+  color: ${colors.textSecondary};
+`;
