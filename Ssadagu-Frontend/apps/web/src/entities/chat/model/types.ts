@@ -15,6 +15,8 @@ export interface ChatRoom {
   lastSentAt: string | null;
   unreadCount: number;
   roomStatus: RoomStatus;
+  partnerId: number;
+  partnerNickname: string;
 }
 
 export type MessageType = 'TALK' | 'ENTER' | 'LEAVE' | 'SYSTEM' | 'PAYMENT_REQUEST' | 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' | 'IMAGE' | 'MAP';

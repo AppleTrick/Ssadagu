@@ -37,4 +37,10 @@ export const ENDPOINTS = {
   TRANSFERS: {
     BASE: '/transfers',
   },
+  TRANSACTIONS: {
+    REQUEST: '/transactions/request', // 결제 요청 (판매자)
+    APPROVE: '/transactions/approve', // 결제 승인 (구매자)
+    CANCEL: '/transactions/cancel',   // 거래 취소
+    HISTORY: '/transactions/history', // 거래 내역 조회
+  },
 } as const;

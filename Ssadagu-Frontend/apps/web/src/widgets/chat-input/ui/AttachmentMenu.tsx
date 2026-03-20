@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 import { colors, typography } from '@/shared/styles/theme';
+import { useModalStore } from '@/shared/hooks/useModalStore';
 
 interface AttachmentMenuProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ const AttachmentMenu = ({ isOpen, onClose, onSelectPhoto, onPhotosSelected, onSe
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { alert: showAlert } = useModalStore();
 
   if (!isOpen) {
     if (offsetY !== 0) setOffsetY(0);
@@ -75,8 +77,8 @@ const AttachmentMenu = ({ isOpen, onClose, onSelectPhoto, onPhotosSelected, onSe
     const filesArray = Array.from(e.target.files);
     
     if (filesArray.length > 5) {
-      alert('사진은 최대 5장까지만 전송할 수 있습니다.');
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      showAlert({ message: '사진은 최대 5장까지만 전송할 수 있습니다.' });
+      if (e.target) e.target.value = '';
       return;
     }
 

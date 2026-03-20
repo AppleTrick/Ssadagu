@@ -8,6 +8,7 @@ import com.twotwo.ssadagu.domain.account.entity.UserAccount;
 import com.twotwo.ssadagu.domain.account.repository.AccountVerificationRepository;
 import com.twotwo.ssadagu.domain.account.repository.UserAccountRepository;
 import com.twotwo.ssadagu.domain.user.entity.User;
+import com.twotwo.ssadagu.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,28 +25,37 @@ public class UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
     private final AccountVerificationRepository verificationRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public AccountRegisterResponseDto registerAccountAndStartAuth(User user, AccountRegisterRequestDto requestDto) {
-        // 이미 계좌가 있는지 확인. 없다면 PENDING 상태로 생성
         UserAccount account = userAccountRepository.findByUserId(user.getId())
-                .orElseGet(() -> {
-                    UserAccount newAccount = UserAccount.builder()
-                            .user(user)
-                            .bankCode(requestDto.getBankCode())
-                            .bankName("임시은행명") // 프론트에서 넘어오지 않으므로 임시 설정
-                            .accountNumber(requestDto.getAccountNumber())
-                            .accountHash(passwordEncoder.encode(requestDto.getAccountNumber())) // 간이 해시
-                            .accountHolderName(requestDto.getAccountHolderName())
-                            .isPrimary(true)
-                            .verifiedStatus("PENDING")
-                            .build();
-                    return userAccountRepository.save(newAccount);
-                });
+                .orElse(null);
 
-        if ("VERIFIED".equals(account.getVerifiedStatus())) {
-            throw new IllegalArgumentException("이미 인증된 계좌입니다.");
+        String newHash = passwordEncoder.encode(requestDto.getAccountNumber()); // 간이 해시
+
+        if (account == null) {
+            account = UserAccount.builder()
+                    .user(user)
+                    .bankCode(requestDto.getBankCode())
+                    .bankName("임시은행명") // 프론트에서 넘어오지 않으므로 임시 설정
+                    .accountNumber(requestDto.getAccountNumber())
+                    .accountHash(newHash)
+                    .accountHolderName(requestDto.getAccountHolderName())
+                    .isPrimary(true)
+                    .verifiedStatus("PENDING")
+                    .build();
+            account = userAccountRepository.save(account);
+        } else {
+            // 이미 PENDING이거나 VERIFIED 이더라도 사용자가 재인증을 요청했으므로 덮어쓰고 PENDING으로 초기화
+            account.updateAccountAndPending(
+                    requestDto.getBankCode(),
+                    "임시은행명",
+                    requestDto.getAccountNumber(),
+                    newHash,
+                    requestDto.getAccountHolderName()
+            );
         }
 
         // Mock: 4자리 랜덤 숫자 생성
@@ -92,10 +102,12 @@ public class UserAccountService {
             throw new IllegalArgumentException("인증 번호가 일치하지 않습니다.");
         }
 
-        // 상태 업데이트 (더티 체킹으로 자동 UPDATE)
+        // 1. 인증 기록 및 계좌 상태 업데이트
         LocalDateTime now = LocalDateTime.now();
-        verification.verify(now); // AccountVerification: status=VERIFIED, verifiedAt 설정
-        verification.getAccount().verify(); // UserAccount: verifiedStatus=VERIFIED
-        user.setAccountVerified(); // User: status=ACCOUNT_VERIFIED
+        verification.verify(now);
+        verification.getAccount().verify();
+        
+        // 2. 중요: 로그인에 쓰이는 고유값인 '이메일'을 기반으로 DB 상태를 강제 업데이트 (가장 확실한 방법)
+        userRepository.updateStatusToVerifiedByEmail(user.getEmail());
     }
 }

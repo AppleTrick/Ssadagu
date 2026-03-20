@@ -58,4 +58,14 @@ public class UserAccount extends BaseEntity {
         this.verifiedStatus = "VERIFIED";
         this.verifiedAt = LocalDateTime.now();
     }
+
+    public void updateAccountAndPending(String bankCode, String bankName, String accountNumber, String accountHash, String accountHolderName) {
+        this.bankCode = bankCode;
+        this.bankName = bankName;
+        this.accountNumber = accountNumber;
+        this.accountHash = accountHash;
+        this.accountHolderName = accountHolderName;
+        this.verifiedStatus = "PENDING";
+        this.verifiedAt = null;
+    }
 }

@@ -2,79 +2,49 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import { useMutation } from '@tanstack/react-query';
 import styled from '@emotion/styled';
+
+// Widgets
 import { HeaderBack } from '@/widgets/header';
 import { ChatInputArea } from '@/widgets/chat-input';
-import { ChatBubbleMine, ChatBubbleOther, ChatRoomItemSummary, SystemMessage, PaymentChatBubble, MapChatBubble } from '@/entities/chat';
+
+// Entities
+import { 
+  ChatBubbleMine, 
+  ChatBubbleOther, 
+  ChatRoomItemSummary, 
+  SystemMessage, 
+  MapChatBubble 
+} from '@/entities/chat';
+import { useChatRoomDetail, useNewChatRoomInit } from '@/entities/chat/api/useChatRoom';
+import { useChatHistory } from '@/entities/chat/api/useChatMessages';
+import { useUserProfile } from '@/entities/user/api/useProfile';
+import type { ChatMessage, ChatRoom } from '@/entities/chat/model/types';
+import { User } from '@/entities/user';
+
+// Features
 import { TransactionBubble } from '@/entities/transaction';
 import { TransactionRequestSheet, TransactionConfirmSheet } from '@/features/transfer-payment';
 import { ChatMapPickerSheet } from '@/features/chat-map-picker';
-import type { ChatMessage, ChatRoom, TransactionContent } from '@/entities/chat/model/types';
-import type { User } from '@/entities/user';
+import { useChatMessaging } from '@/features/chat-messaging/lib/useChatMessaging';
+
+// Shared
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
 import { compressImage } from '@/shared/utils/image';
+import { useModalStore } from '@/shared/hooks/useModalStore';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:8080/ws-stomp';
 const CHAT_INPUT_HEIGHT = 56;
 const CHAT_INPUT_BOTTOM_OFFSET = 0;
 const MESSAGES_BOTTOM_PAD = CHAT_INPUT_HEIGHT + CHAT_INPUT_BOTTOM_OFFSET + 16;
-
-const Page = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  background: ${colors.surface};
-  overflow: hidden;
-`;
-
-const MessagesArea = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: ${HEADER_HEIGHT + 80}px 0 ${MESSAGES_BOTTOM_PAD}px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const LoadingWrapper = styled.div`
-  display: flex; align-items: center; justify-content: center; flex: 1;
-  font-family: ${typography.fontFamily}; font-size: ${typography.size.base}; color: ${colors.textSecondary};
-`;
-
-const ErrorWrapper = styled.div`
-  display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 8px;
-  font-family: ${typography.fontFamily}; font-size: ${typography.size.base}; color: ${colors.textSecondary};
-`;
-
-const RetryButton = styled.button`
-  font-family: ${typography.fontFamily}; font-size: ${typography.size.sm}; color: ${colors.primary};
-  background: none; border: none; cursor: pointer; text-decoration: underline;
-`;
-
-const ItemSummaryBar = styled.div`
-  position: fixed; top: ${HEADER_HEIGHT}px; left: 0; right: 0; z-index: 4;
-  background: ${colors.surface}; border-bottom: 1px solid ${colors.border};
-`;
-
-const EmptyMessages = styled.div`
-  display: flex; align-items: center; justify-content: center; height: 120px;
-  font-family: ${typography.fontFamily}; font-size: ${typography.size.base}; color: ${colors.textSecondary};
-`;
-
-interface ChatRoomResponse { data?: ChatRoom; }
-interface MessagesResponse { content?: ChatMessage[]; data?: ChatMessage[] | { content?: ChatMessage[] }; }
 
 export function ChatRoomPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [pendingMsg, setPendingMsg] = useState<string | null>(null);
 
   const [reqSheetOpen, setReqSheetOpen] = useState(false);
   const [confirmSheetOpen, setConfirmSheetOpen] = useState(false);
@@ -88,418 +58,180 @@ export function ChatRoomPage() {
 
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);
-  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
-  const stompRef = useRef<Client | null>(null);
+  const { alert: showAlert } = useModalStore();
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const topRef = useRef<HTMLDivElement | null>(null);
-  const hasSentPending = useRef(false);
-  const [isStompConnected, setIsStompConnected] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
-      if (!res.ok) throw new Error('사용자 정보를 불러오지 못했습니다.');
-      const json = await res.json() as User | { data?: User };
-      return (json as { data?: User }).data || (json as User);
-    },
-    enabled: !!accessToken,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: newRoomData, isLoading: newRoomLoading } = useQuery<ChatRoom>({
-    queryKey: ['newChatRoomInit', newProductId],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(newProductId), accessToken ?? undefined);
-      if (!res.ok) throw new Error('상품 정보를 불러오지 못했습니다.');
-      const prod = await res.json() as any;
-      return {
-        id: -1,
-        productId: prod.id,
-        productTitle: prod.title,
-        productThumbnailUrl: null,
-        productPrice: prod.price,
-        productStatus: prod.status,
-        buyerId: currentUser?.id ?? -1,
-        buyerNickname: currentUser?.nickname ?? '',
-        sellerId: prod.sellerId,
-        sellerNickname: prod.sellerNickname,
-        lastMessage: null,
-        lastSentAt: null,
-        unreadCount: 0,
-        roomStatus: 'ACTIVE',
-      } as ChatRoom;
-    },
-    enabled: isNewRoom && !isNaN(newProductId) && !!currentUser,
-  });
-
-  const { data: fetchedRoom, isLoading: fetchedRoomLoading } = useQuery<ChatRoom>({
-    queryKey: ['chatRoom', roomId, currentUser?.id],
-    queryFn: async () => {
-      const res = await apiClient.get(`${ENDPOINTS.CHATS.DETAIL(roomId)}?userId=${currentUser?.id}`, accessToken ?? undefined);
-      if (!res.ok) throw new Error('채팅방 정보를 불러오지 못했습니다.');
-      const json: any = await res.json();
-      const d = json.data || json;
-      
-      if (d.product) {
-        return {
-          id: d.roomId,
-          productId: d.product.productId,
-          productTitle: d.product.title,
-          productThumbnailUrl: d.product.imageUrl,
-          productPrice: d.product.price,
-          productStatus: d.product.status,
-          partnerId: d.partner?.userId,
-          partnerNickname: d.partner?.nickname,
-          lastMessage: d.lastMessage,
-          lastSentAt: d.lastSentAt,
-          roomStatus: d.roomStatus,
-          buyerId: -1,
-          buyerNickname: '',
-          sellerId: -1,
-          sellerNickname: '',
-          unreadCount: 0,
-        } as any;
-      }
-      
-      return d as ChatRoom;
-    },
-    enabled: !isNewRoom && !isNaN(roomId) && !!currentUser?.id,
-  });
-
+  // 1. Entities: 사용자 정보 및 방 정보 초기화
+  const { data: currentUser } = useUserProfile(userId, accessToken);
+  const { data: newRoomData, isLoading: newRoomLoading } = useNewChatRoomInit(newProductId, userId, accessToken, currentUser?.nickname);
+  const { data: fetchedRoom, isLoading: fetchedRoomLoading } = useChatRoomDetail(roomId, userId, accessToken);
   const room = isNewRoom ? newRoomData : fetchedRoom;
-  const roomLoading = isNewRoom ? newRoomLoading : fetchedRoomLoading;
+  const isLoading = isNewRoom ? newRoomLoading : (fetchedRoomLoading || !room);
 
-  const { data: historyMessages, isLoading: messagesLoading, isError, refetch } = useQuery<ChatMessage[]>({
-    queryKey: ['chatMessages', roomId],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.CHATS.MESSAGES(roomId), accessToken ?? undefined);
-      if (!res.ok) throw new Error('메시지를 불러오지 못했습니다.');
-      const json = await res.json() as MessagesResponse | ChatMessage[];
-      if (Array.isArray(json)) return json;
-      const body = json as MessagesResponse;
-      if (Array.isArray(body.content)) return body.content as ChatMessage[];
-      const d = body.data;
-      if (Array.isArray(d)) return d as ChatMessage[];
-      if (d && !Array.isArray(d) && Array.isArray((d as { content?: ChatMessage[] }).content)) {
-        return (d as { content: ChatMessage[] }).content;
-      }
-      return [];
-    },
-    enabled: !isNewRoom && !isNaN(roomId),
-  });
+  // 2. Entities: 대화 내역 조회
+  const { data: historyMessages, isLoading: messagesLoading } = useChatHistory(roomId, userId, accessToken);
 
+  // 3. Features: 실시간 채팅 핸들링
+  const { sessionMessages, isStompConnected, sendMessage, addOptimisticMessage } = useChatMessaging(roomId, accessToken, userId);
+
+  // 역할 판별 (타입 불일치 방지 위해 Number 사용)
+  const isSeller = room && userId ? Number(userId) === Number(room.sellerId) : false;
+  const isBuyer = room && userId ? Number(userId) === Number(room.buyerId) : false;
+
+  // 리다이렉트 로직 (이미 방이 있을 때)
   useEffect(() => {
-    if (historyMessages) {
-      setLocalMessages((prev) => {
-        // 백엔드에서 DESC로 오므로 ASC로 뒤집어줌
-        const reversedHistory = [...historyMessages].reverse();
-        
-        // 이미 프론트에 있는 (최근에 소켓으로 받은 or 낙관적) 메시지 중 API 응답에 없는 것만 추림
-        const historyIds = new Set(reversedHistory.map((m) => m.id));
-        const optimisticOrNew = prev.filter((m) => !historyIds.has(m.id));
-        
-        // 합친 후 다시 보낸 시간순 오름차순(ASC) 정렬 보장
-        const merged = [...reversedHistory, ...optimisticOrNew];
-        merged.sort((a, b) => {
-          const timeA = new Date((a.sentAt || (a as any).createdAt) as string).getTime();
-          const timeB = new Date((b.sentAt || (b as any).createdAt) as string).getTime();
-          return timeA - timeB;
-        });
-        
-        return merged;
-      });
+    if (isNewRoom && newRoomData && newRoomData.id > 0) {
+      router.replace(`/chat/${newRoomData.id}`);
     }
-  }, [historyMessages]);
-
-  useEffect(() => {
-    // Only scroll to bottom on initial load or when a new message is appended at the end
-    // For pagination, we shouldn't scroll to bottom. 
-    // We'll trust that the user was already looking near the top.
-    if (localMessages.length <= 30) {
-      bottomRef.current?.scrollIntoView({ behavior: 'auto' });
-    }
-  }, [localMessages.length]);
-
-  useEffect(() => {
-    if (!historyMessages || isError || !hasMore || localMessages.length === 0 || isFetchingMore) return;
-    
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          const loadMore = async () => {
-             const oldestId = localMessages[0].id;
-             if (typeof oldestId === 'string' && oldestId.startsWith('local-')) return;
-             
-             setIsFetchingMore(true);
-             try {
-                const res = await apiClient.get(`${ENDPOINTS.CHATS.MESSAGES(roomId)}?cursor=${oldestId}&size=30`, accessToken ?? undefined);
-                if (res.ok) {
-                   const qs = await res.json() as any;
-                   const moreMessages = Array.isArray(qs) ? qs : Array.isArray(qs.content) ? qs.content : Array.isArray(qs.data) ? qs.data : qs.data?.content || [];
-                   if (moreMessages.length < 30) setHasMore(false);
-                   if (moreMessages.length > 0) {
-                      const reversedMore = [...moreMessages].reverse();
-                      setLocalMessages(prev => {
-                         const newIds = new Set(reversedMore.map(m => m.id));
-                         const filteredPrev = prev.filter(m => !newIds.has(m.id));
-                         return [...reversedMore, ...filteredPrev];
-                      });
-                   }
-                }
-             } catch (e) { console.error(e); }
-             finally {
-                 setIsFetchingMore(false);
-             }
-          };
-          loadMore();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    
-    if (topRef.current) observer.observe(topRef.current);
-    
-    return () => observer.disconnect();
-  }, [historyMessages, isError, hasMore, localMessages[0]?.id, roomId, accessToken, isFetchingMore]);
-
-  useEffect(() => {
-    if (roomId > 0 && currentUser?.id && historyMessages && historyMessages.length > 0) {
-      apiClient.patch(ENDPOINTS.CHATS.READ(roomId), null, accessToken ?? undefined).catch(console.error);
-    }
-  }, [roomId, currentUser?.id, accessToken, historyMessages]);
-
-  useEffect(() => {
-    if (isNewRoom || isNaN(roomId)) return;
-    const client = new Client({
-      webSocketFactory: () => new SockJS(SOCKET_URL),
-      connectHeaders: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      onConnect: () => {
-        client.subscribe(`/sub/chat/room/${roomId}`, (frame) => {
-          try {
-            const msg = JSON.parse(frame.body) as ChatMessage;
-            setLocalMessages((prev) => {
-              const exists = prev.some((m) => m.id === msg.id);
-              return exists ? prev : [...prev, msg];
-            });
-          } catch {
-            // ignore
-          }
-        });
-        setIsStompConnected(true);
-
-        const pending = sessionStorage.getItem('pendingChatMsg');
-        if (pending && currentUser?.id) {
-          client.publish({
-            destination: `/pub/chat/message`,
-            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-            body: JSON.stringify({ roomId, senderId: currentUser.id, content: pending, type: 'TALK', isRead: false }),
-          });
-          sessionStorage.removeItem('pendingChatMsg');
-          // No need to add local optimistic message, as WebSocket subscribe will catch it immediately.
-        }
-      },
-      onDisconnect: () => {
-        setIsStompConnected(false);
-      },
-      reconnectDelay: 5000,
-    });
-    client.activate();
-    stompRef.current = client;
-    return () => {
-      client.deactivate();
-      stompRef.current = null;
-    };
-  }, [roomId, accessToken, isNewRoom]);
-
-  const currentUserId = currentUser?.id ?? null;
+  }, [isNewRoom, newRoomData, router]);
 
   const displayMessages = useMemo(() => {
-    const result: (ChatMessage & { resolvedType?: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' })[] = [];
+    const history = historyMessages ? [...historyMessages].reverse() : [];
+    const historyIds = new Set(history.map(m => m.id));
+    const filteredSession = sessionMessages.filter(m => !historyIds.has(m.id));
     
-    for (const msg of localMessages) {
+    const rawList = [...history, ...filteredSession].sort((a, b) => {
+      const timeA = new Date((a.sentAt || (a as any).createdAt || 0) as string).getTime();
+      const timeB = new Date((b.sentAt || (b as any).createdAt || 0) as string).getTime();
+      return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
+    });
+
+    const result: (ChatMessage & { resolvedType?: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' })[] = [];
+    for (const msg of rawList) {
       const msgType = msg.type || msg.messageType || 'TALK';
       
-      if (msgType === 'PAYMENT_SUCCESS' || msgType === 'PAYMENT_FAIL') {
+      // 버그 방지: 결제 요청 메시지의 경우 내용(JSON)이 올바르지 않거나 정보가 없으면 제외
+      if (msgType === 'PAYMENT_REQUEST') {
+        try {
+          const content = JSON.parse(msg.content || '{}');
+          if (!content.price || content.price <= 0) {
+            // 가격이 없거나 0원인 거래 요청은 비정상 데이터로 간주하고 무시
+            continue;
+          }
+        } catch (e) {
+          // JSON 파싱 실패 시에도 비정상 데이터로 간주
+          continue;
+        }
+      }
+
+      if (['PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
         for (let i = result.length - 1; i >= 0; i--) {
-          const prevMsg = result[i];
-          const prevType = prevMsg.type || prevMsg.messageType;
-          if (prevType === 'PAYMENT_REQUEST' && prevMsg.content === msg.content && !prevMsg.resolvedType) {
-             prevMsg.resolvedType = msgType;
-             prevMsg.type = msgType; 
-             prevMsg.messageType = msgType; 
-             break;
+          if ((result[i].type || result[i].messageType) === 'PAYMENT_REQUEST' && result[i].content === msg.content && !result[i].resolvedType) {
+            result[i].resolvedType = msgType as any;
+            break;
           }
         }
       } else {
         result.push({ ...msg });
       }
     }
-    
     return result;
-  }, [localMessages]);
+  }, [historyMessages, sessionMessages]);
+
+  useEffect(() => {
+    if (displayMessages.length > 0) bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+  }, [displayMessages.length]);
+
   const createChatMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiClient.post(
-        ENDPOINTS.CHATS.CREATE,
-        { productId: newProductId },
-        accessToken ?? undefined,
-      );
+      const res = await apiClient.post(ENDPOINTS.CHATS.CREATE, { productId: newProductId }, accessToken ?? undefined);
       if (!res.ok) throw new Error('채팅방 생성 실패');
-      const json = await res.json() as { data?: { id: number }; id?: number };
-      return json.data ? json.data.id : json.id;
+      const json = await res.json() as any;
+      return json.data?.id || json.id || json.data?.roomId;
     },
   });
 
-  const handleSend = useCallback(
-    async (content: string) => {
-      if (isNewRoom) {
-        try {
-          const newRoomId = await createChatMutation.mutateAsync();
-          if (newRoomId) {
-            sessionStorage.setItem('pendingChatMsg', content);
-            router.replace(`/chat/${newRoomId}`);
-          }
-        } catch (e) {
-          console.error(e);
-        }
-        return;
+  const extractCleanErrorMsg = (msg: string) => {
+    if (!msg) return '';
+    const match = msg.match(/"responseMessage"\s*:\s*"([^"]+)"/);
+    return match ? match[1] : msg;
+  };
+
+  const handleSend = async (content: string) => {
+    if (isNewRoom) {
+      const id = await createChatMutation.mutateAsync();
+      if (id) {
+        sessionStorage.setItem('pendingChatMsg', content);
+        router.replace(`/chat/${id}`);
       }
-      if (!stompRef.current?.connected) {
-        const optimistic: ChatMessage = {
-          id: `local-${Date.now()}`,
-          roomId,
-          senderId: currentUserId ?? -1,
-          senderNickname: currentUser?.nickname ?? '나',
-          content,
-          sentAt: new Date().toISOString(),
-          isRead: false,
-        };
-        setLocalMessages((prev) => [...prev, optimistic]);
-        return;
-      }
-      stompRef.current.publish({
-        destination: `/pub/chat/message`,
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content, type: 'TALK', isRead: false }),
-      });
-    },
-    [roomId, accessToken, currentUserId, currentUser?.nickname, isNewRoom, createChatMutation, router]
-  );
-
-  const handleTransactionRequestSubmit = useCallback((location: string, time: string, price: number) => {
-    if (!stompRef.current?.connected) return;
-    const content = JSON.stringify({ locationName: location, time, price });
-    stompRef.current.publish({
-      destination: `/pub/chat/message`,
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content, type: 'PAYMENT_REQUEST', isRead: false }),
-    });
-    setReqSheetOpen(false);
-  }, [roomId, accessToken, currentUserId]);
-
-  const handleTransactionAction = useCallback((msg: ChatMessage, actionType: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL') => {
-    if (!stompRef.current?.connected) return;
-    stompRef.current.publish({
-      destination: `/pub/chat/message`,
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content: msg.content, type: actionType, isRead: false }),
-    });
-    setConfirmSheetOpen(false);
-    setSelectedConfirmMessage(null);
-  }, [roomId, accessToken, currentUserId]);
-
-  const handleMapSubmit = useCallback((lat: number, lng: number, locationName: string) => {
-    if (!stompRef.current?.connected) {
-      // Optimistic offline map msg
-      const optimistic: ChatMessage = {
-        id: `local-${Date.now()}`,
-        roomId,
-        senderId: currentUserId ?? -1,
-        senderNickname: currentUser?.nickname ?? '나',
-        content: '',
-        latitude: lat,
-        longitude: lng,
-        locationName, // store in msg root based on entity schema
-        sentAt: new Date().toISOString(),
-        isRead: false,
-        type: 'MAP',
-        messageType: 'MAP'
-      };
-      setLocalMessages((prev) => [...prev, optimistic]);
-      setMapSheetOpen(false);
       return;
     }
-    stompRef.current.publish({
-      destination: `/pub/chat/message`,
-      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      body: JSON.stringify({ roomId, senderId: currentUserId ?? -1, content: locationName, type: 'MAP', latitude: lat, longitude: lng, locationName, isRead: false }),
-    });
-    setMapSheetOpen(false);
-  }, [roomId, accessToken, currentUserId, currentUser?.nickname]);
+    sendMessage('/pub/chat/message', { senderId: userId || -1, content, type: 'TALK' });
+  };
 
-  const handlePhotosSelected = useCallback(async (files: File[]) => {
-    if (!stompRef.current?.connected) {
-      alert('채팅 서버에 연결되어 있지 않습니다.');
-      return;
-    }
-
+  const handleTransactionRequestSubmit = async (location: string, time: string, price: number) => {
+    if (isNewRoom || !room) return;
     try {
-      setIsUploading(true);
-      
-      const compressedFiles = await Promise.all(
-        files.map((file) => compressImage(file, 1920, 1920, 2))
-      );
+      // 내가 판매자라면 대상(buyerId)은 상대방임. 아니라면 방의 구매자 정보를 사용.
+      const targetBuyerId = isSeller ? room.partnerId : room.buyerId;
+      const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.REQUEST, { productId: room.productId, buyerId: targetBuyerId, roomId }, accessToken ?? undefined);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        showAlert({ message: extractCleanErrorMsg(body.message || '결제 요청 실패') });
+        return;
+      }
+      sendMessage('/pub/chat/message', { senderId: userId || -1, content: JSON.stringify({ locationName: location, time, price }), type: 'PAYMENT_REQUEST' });
+      setReqSheetOpen(false);
+    } catch (e) { 
+      showAlert({ message: '요청 중 오류 발생\n잠시 후 다시 시도해 주세요.' }); 
+    }
+  };
 
+  const handleTransactionAction = async (msg: ChatMessage, actionType: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL') => {
+    if (!room) return;
+    try {
+      const isMine = userId !== null && (Number(msg.senderId) === Number(userId));
+      // 결제 승인의 경우, 내가 요청을 받은 입장(!isMine)이라면 내가 곧 구매자임. 아니라면 방 정보를 따름.
+      const targetBuyerId = (actionType === 'PAYMENT_SUCCESS' && !isMine) ? userId : room.buyerId;
+
+      const endpoint = actionType === 'PAYMENT_SUCCESS' ? ENDPOINTS.TRANSACTIONS.APPROVE : ENDPOINTS.TRANSACTIONS.CANCEL;
+      const body = actionType === 'PAYMENT_SUCCESS' 
+        ? { productId: room.productId, buyerId: targetBuyerId, amount: JSON.parse(msg.content || '{}').price || room.productPrice }
+        : { productId: room.productId, buyerId: targetBuyerId, roomId };
+
+      const res = await apiClient.post(endpoint, body, accessToken ?? undefined);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        showAlert({ message: extractCleanErrorMsg(errJson.message || '처리 실패') });
+        return;
+      }
+      sendMessage('/pub/chat/message', { senderId: userId || -1, content: msg.content, type: actionType });
+      setConfirmSheetOpen(false);
+      setSelectedConfirmMessage(null);
+    } catch (e) { 
+      showAlert({ message: '처리 중 오류 발생\n잠시 후 다시 시도해 주세요.' }); 
+    }
+  };
+
+  const handleMapSubmit = (lat: number, lng: number, locationName: string) => {
+    sendMessage('/pub/chat/message', { senderId: userId || -1, content: locationName, type: 'MAP', latitude: lat, longitude: lng, locationName });
+    setMapSheetOpen(false);
+  };
+
+  const handlePhotosSelected = async (files: File[]) => {
+    setIsUploading(true);
+    try {
+      const compressedFiles = await Promise.all(files.map(f => compressImage(f, 1920, 1920, 2)));
       const formData = new FormData();
-      compressedFiles.forEach((file) => {
-        formData.append('files', file);
-      });
+      compressedFiles.forEach(f => formData.append('files', f));
 
       const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/files/upload`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
         body: formData,
       });
 
-      if (!uploadRes.ok) throw new Error('파일 업로드 실패');
-
+      if (!uploadRes.ok) throw new Error('업로드 실패');
       const imageUrls: string[] = await uploadRes.json();
-
-      imageUrls.forEach((url) => {
-        stompRef.current?.publish({
-          destination: `/pub/chat/message`,
-          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-          body: JSON.stringify({
-            roomId,
-            senderId: currentUserId ?? -1,
-            content: '사진',
-            type: 'IMAGE',
-            imageUrl: url,
-            isRead: false,
-          }),
-        });
-      });
-    } catch (error) {
-      console.error('사진 전송 에러:', error);
-      alert('사진을 전송하는 동안 오류가 발생했습니다.');
-    } finally {
-      setIsUploading(false);
+      imageUrls.forEach(url => sendMessage('/pub/chat/message', { senderId: userId || -1, content: '사진', type: 'IMAGE', imageUrl: url }));
+    } catch (e) { 
+      showAlert({ message: '사진 전송 중 오류가 발생했습니다.' }); 
     }
-  }, [roomId, accessToken, currentUserId]);
+    finally { setIsUploading(false); }
+  };
 
-  const headerTitle = room
-    ? (room as any).partnerNickname || (room.buyerId === currentUserId
-      ? room.sellerNickname || '채팅'
-      : room.buyerNickname || '채팅')
-    : '채팅';
-    
-  const isLoading = roomLoading || messagesLoading;
+  const headerTitle = room?.partnerNickname || (room?.buyerId === userId ? room?.sellerNickname : room?.buyerNickname) || '채팅';
 
   return (
     <Page>
@@ -509,105 +241,66 @@ export function ChatRoomPage() {
           <ChatRoomItemSummary
             productId={room.productId}
             productTitle={room.productTitle}
-            productThumbnailUrl={room.productThumbnailUrl || null}
+            productThumbnailUrl={room.productThumbnailUrl}
             price={room.productPrice ?? 0}
             status={room.productStatus ?? room.roomStatus}
           />
         </ItemSummaryBar>
       )}
-      {isError && !isLoading && (
-        <ErrorWrapper>
-          <span>메시지를 불러오지 못했습니다.</span>
-          <RetryButton onClick={() => refetch()}>다시 시도</RetryButton>
-        </ErrorWrapper>
-      )}
-        <MessagesArea>
-          {isLoading && localMessages.length === 0 && (
-            <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
-          )}
-          {!isLoading && displayMessages.length === 0 && (
-            <EmptyMessages>아직 메시지가 없습니다. 먼저 인사해보세요!</EmptyMessages>
-          )}
-          {displayMessages.length > 0 && hasMore && <div ref={topRef} style={{ height: '1px' }} />}
-          {isFetchingMore && <div style={{ textAlign: 'center', fontSize: '12px', color: '#888' }}>이전 메시지 불러오는 중...</div>}
-          {displayMessages.map((msg) => {
-            const isMine = currentUserId !== null && msg.senderId === currentUserId;
-            const msgType = msg.type || msg.messageType || 'TALK';
-            
-            if (['ENTER', 'LEAVE', 'SYSTEM'].includes(msgType)) {
-              return <SystemMessage key={msg.id} message={msg.content} />;
-            }
-            if (['PAYMENT_REQUEST', 'PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
-              return (
-                <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', width: '100%' }}>
-                  <TransactionBubble
-                    message={msg}
-                    isMyMessage={isMine}
-                    productThumbnailUrl={room?.productThumbnailUrl}
-                    onCancel={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
-                    onReject={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
-                    onAccept={() => {
-                      setSelectedConfirmMessage(msg);
-                      setConfirmSheetOpen(true);
-                    }}
-                  />
-                </div>
-              );
-            }
-            if (msgType === 'MAP') {
-              return <MapChatBubble key={msg.id} lat={msg.latitude || 0} lng={msg.longitude || 0} label={msg.locationName} isMine={isMine} sentAt={msg.sentAt || (msg as any).createdAt} />;
-            }
-
-            return isMine ? (
-              <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />
-            ) : (
-              <ChatBubbleOther
-                key={msg.id}
-                type={msgType}
-                senderNickname={msg.senderNickname}
-                message={msg.content}
-                sentAt={msg.sentAt || (msg as any).createdAt}
-                imageUrl={msg.imageUrl}
-              />
+      <MessagesArea>
+        {isLoading && displayMessages.length === 0 && <LoadingWrapper>불러오는 중...</LoadingWrapper>}
+        {!isLoading && !messagesLoading && displayMessages.length === 0 && <EmptyMessages>아직 메시지가 없습니다.</EmptyMessages>}
+        {displayMessages.map((msg) => {
+          const isMine = userId !== null && msg.senderId === userId;
+          const msgType = msg.type || msg.messageType || 'TALK';
+          if (['ENTER', 'LEAVE', 'SYSTEM'].includes(msgType)) return <SystemMessage key={msg.id} message={msg.content} />;
+          if (['PAYMENT_REQUEST', 'PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
+            return (
+              <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', width: '100%' }}>
+                <TransactionBubble
+                  message={msg} productThumbnailUrl={room?.productThumbnailUrl}
+                  isMyMessage={isMine} onCancel={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
+                  onReject={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
+                  onAccept={() => { setSelectedConfirmMessage(msg); setConfirmSheetOpen(true); }}
+                />
+              </div>
             );
-          })}
-          {isUploading && (
-            <div style={{ padding: '8px 16px', textAlign: 'right', fontSize: '13px', color: colors.textSecondary }}>
-              사진 전송 중...
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </MessagesArea>
+          }
+          if (msgType === 'MAP') return <MapChatBubble key={msg.id} lat={msg.latitude || 0} lng={msg.longitude || 0} label={msg.locationName} isMine={isMine} sentAt={msg.sentAt || (msg as any).createdAt} />;
+          return isMine 
+            ? <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />
+            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={msg.senderNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />;
+        })}
+        {isUploading && <UploadStatus>사진 전송 중...</UploadStatus>}
+        <div ref={bottomRef} />
+      </MessagesArea>
       <ChatInputArea 
         onSend={handleSend} 
-        onSelectTransaction={() => setReqSheetOpen(true)}
-        onSelectLocation={() => setMapSheetOpen(true)}
-        onPhotosSelected={handlePhotosSelected}
+        onSelectTransaction={() => {
+          setReqSheetOpen(true);
+        }} 
+        onSelectLocation={() => setMapSheetOpen(true)} 
+        onPhotosSelected={handlePhotosSelected} 
         bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} 
       />
-
-      <TransactionRequestSheet
-        isOpen={reqSheetOpen}
-        onClose={() => setReqSheetOpen(false)}
-        roomInfo={room ? { productTitle: room.productTitle, productPrice: room.productPrice, productThumbnailUrl: room.productThumbnailUrl } : null}
-        onSubmit={handleTransactionRequestSubmit}
-      />
-
-      <TransactionConfirmSheet
-        isOpen={confirmSheetOpen}
-        onClose={() => setConfirmSheetOpen(false)}
-        roomInfo={room ? { productTitle: room.productTitle, productThumbnailUrl: room.productThumbnailUrl } : null}
-        content={selectedConfirmMessage ? JSON.parse(selectedConfirmMessage.content || '{}') : undefined}
+      <TransactionRequestSheet isOpen={reqSheetOpen} onClose={() => setReqSheetOpen(false)} 
+        roomInfo={room ? { productTitle: room.productTitle, productPrice: room.productPrice, productThumbnailUrl: room.productThumbnailUrl } : null} onSubmit={handleTransactionRequestSubmit} />
+      <TransactionConfirmSheet isOpen={confirmSheetOpen} onClose={() => setConfirmSheetOpen(false)} 
+        roomInfo={room ? { productTitle: room.productTitle, productThumbnailUrl: room.productThumbnailUrl } : null} content={selectedConfirmMessage ? JSON.parse(selectedConfirmMessage.content || '{}') : undefined}
         onConfirm={() => {
-          if (selectedConfirmMessage) handleTransactionAction(selectedConfirmMessage, 'PAYMENT_SUCCESS');
-        }}
-      />
-
-      <ChatMapPickerSheet
-        isOpen={mapSheetOpen}
-        onClose={() => setMapSheetOpen(false)}
-        onSubmit={handleMapSubmit}
-      />
+          // 사용자의 판단을 믿고 일단 서버로 전송합니다. 권한 체크는 서버에서 수행됩니다.
+          if (selectedConfirmMessage) {
+            handleTransactionAction(selectedConfirmMessage, 'PAYMENT_SUCCESS');
+          }
+        }} />
+      <ChatMapPickerSheet isOpen={mapSheetOpen} onClose={() => setMapSheetOpen(false)} onSubmit={handleMapSubmit} />
     </Page>
   );
 }
+
+const Page = styled.div` display: flex; flex-direction: column; height: 100dvh; background: ${colors.surface}; overflow: hidden; `;
+const MessagesArea = styled.div` flex: 1; overflow-y: auto; padding: ${HEADER_HEIGHT + 80}px 0 ${MESSAGES_BOTTOM_PAD}px; display: flex; flex-direction: column; gap: 8px; `;
+const LoadingWrapper = styled.div` display: flex; align-items: center; justify-content: center; flex: 1; font-family: ${typography.fontFamily}; color: ${colors.textSecondary}; `;
+const ItemSummaryBar = styled.div` position: fixed; top: ${HEADER_HEIGHT}px; left: 0; right: 0; z-index: 4; background: ${colors.surface}; border-bottom: 1px solid ${colors.border}; `;
+const EmptyMessages = styled.div` display: flex; align-items: center; justify-content: center; height: 120px; color: ${colors.textSecondary}; `;
+const UploadStatus = styled.div` padding: 8px 16px; text-align: right; font-size: 13px; color: ${colors.textSecondary}; `;

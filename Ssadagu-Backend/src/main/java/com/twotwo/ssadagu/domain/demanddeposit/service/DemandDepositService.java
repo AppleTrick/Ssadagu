@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -117,7 +118,7 @@ public class DemandDepositService {
     /**
      * SSAFY 금융망: 수시입출금 계좌 이체 (DEMAND_DEPOSIT_02)
      */
-    public SsafyApiResponse<Map<String, Object>> updateTransfer(String depositAccountNo, String depositTransactionMemo, 
+    public SsafyApiResponse<List<Map<String, Object>>> updateTransfer(String depositAccountNo, String depositTransactionMemo, 
                                                                String withdrawalAccountNo, String withdrawalTransactionMemo, 
                                                                Long transactionBalance, String userKey) {
         String url = baseUrl + "/edu/demandDeposit/updateDemandDepositAccountTransfer";
@@ -142,8 +143,8 @@ public class DemandDepositService {
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, httpHeaders);
 
         log.info("[Demand Deposit] 계좌 이체 요청 - From: {}, To: {}, Amount: {}", withdrawalAccountNo, depositAccountNo, transactionBalance);
-        ResponseEntity<SsafyApiResponse<Map<String, Object>>> response = restTemplate.exchange(
-                url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<Map<String, Object>>>() {});
+        ResponseEntity<SsafyApiResponse<List<Map<String, Object>>>> response = restTemplate.exchange(
+                url, HttpMethod.POST, entity, new ParameterizedTypeReference<SsafyApiResponse<List<Map<String, Object>>>>() {});
         return response.getBody();
     }
 

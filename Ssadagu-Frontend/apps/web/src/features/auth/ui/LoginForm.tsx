@@ -8,10 +8,9 @@ import { z } from 'zod';
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
 import Button from '@/shared/ui/Button';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { MOCK_TOKEN } from '@/shared/mocks/mockData';
+import { useLoginForm } from '../model/useLoginForm';
 
 const schema = z.object({
   email: z.string().min(1, '이메일을 입력해주세요').email('올바른 이메일을 입력해주세요'),
@@ -178,7 +177,7 @@ const SignupLink = styled.div`
 
 const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const setAuthInfo = useAuthStore((s) => s.setAuthInfo);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const { login, loading, error: serverError } = useLoginForm();
 
   const {
     register,
@@ -196,53 +195,8 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
   };
 
   const onSubmit = async (data: FormValues) => {
-    setServerError(null);
-    try {
-      const res = await apiClient.post(ENDPOINTS.AUTH.LOGIN, {
-        email: data.email,
-        password: data.password,
-      });
-
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as Record<
-          string,
-          unknown
-        >;
-        setServerError(
-          typeof body?.message === 'string'
-            ? body.message
-            : '로그인에 실패했습니다. 다시 시도해주세요.',
-        );
-        return;
-      }
-
-      const body = (await res.json()) as Record<string, unknown>;
-      const nested = body?.data as Record<string, unknown> | undefined;
-      const token =
-        typeof body?.accessToken === 'string'
-          ? body.accessToken
-          : typeof nested?.accessToken === 'string'
-            ? (nested.accessToken as string)
-            : '';
-
-      const userId =
-        typeof nested?.id === 'number'
-          ? nested.id
-          : typeof body?.id === 'number'
-            ? body.id
-            : null;
-
-      if (token && userId) {
-        setAuthInfo(token, userId);
-        onSuccess?.();
-      } else if (token) {
-        // userId가 없는 경우 기존 방식으로 토큰만 저장 (하위 호환성)
-        useAuthStore.getState().setToken(token);
-        onSuccess?.();
-      }
-    } catch {
-      setServerError('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
-    }
+    const ok = await login(data.email, data.password);
+    if (ok) onSuccess?.();
   };
 
   return (
@@ -286,8 +240,8 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
               variant="primary"
               size="lg"
               fullWidth
-              loading={isSubmitting}
-              disabled={isSubmitting}
+              loading={loading || isSubmitting}
+              disabled={loading || isSubmitting}
             >
               시작하기
             </Button>
