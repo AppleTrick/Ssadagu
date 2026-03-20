@@ -3,6 +3,7 @@ package com.twotwo.ssadagu.domain.account.service;
 import com.twotwo.ssadagu.domain.account.dto.AccountRegisterRequestDto;
 import com.twotwo.ssadagu.domain.account.dto.AccountRegisterResponseDto;
 import com.twotwo.ssadagu.domain.account.dto.AccountVerifyRequestDto;
+import com.twotwo.ssadagu.domain.account.dto.UserAccountResponseDto;
 import com.twotwo.ssadagu.domain.account.entity.AccountVerification;
 import com.twotwo.ssadagu.domain.account.entity.UserAccount;
 import com.twotwo.ssadagu.domain.account.repository.AccountVerificationRepository;
@@ -41,7 +42,7 @@ public class UserAccountService {
             account = UserAccount.builder()
                     .user(user)
                     .bankCode(requestDto.getBankCode())
-                    .bankName("임시은행명") // 프론트에서 넘어오지 않으므로 임시 설정
+                    .bankName(requestDto.getBankName() != null ? requestDto.getBankName() : "등록은행")
                     .accountNumber(requestDto.getAccountNumber())
                     .accountHash(newHash)
                     .accountHolderName(requestDto.getAccountHolderName())
@@ -53,7 +54,7 @@ public class UserAccountService {
             // 이미 PENDING이거나 VERIFIED 이더라도 사용자가 재인증을 요청했으므로 덮어쓰고 PENDING으로 초기화
             account.updateAccountAndPending(
                     requestDto.getBankCode(),
-                    "임시은행명",
+                    requestDto.getBankName() != null ? requestDto.getBankName() : "등록은행",
                     requestDto.getAccountNumber(),
                     newHash,
                     requestDto.getAccountHolderName()
@@ -84,7 +85,7 @@ public class UserAccountService {
                 .requestedAt(LocalDateTime.now())
                 .build();
 
-        AccountVerification savedVerification = verificationRepository.save(verification);
+        verificationRepository.save(verification);
 
         return AccountRegisterResponseDto.builder()
                 .id(account.getId())
@@ -120,5 +121,12 @@ public class UserAccountService {
         
         // 2. 중요: 로그인에 쓰이는 고유값인 '이메일'을 기반으로 DB 상태를 강제 업데이트 (가장 확실한 방법)
         userRepository.updateStatusToVerifiedByEmail(user.getEmail());
+    }
+
+    @Transactional(readOnly = true)
+    public UserAccountResponseDto getMyAccount(Long userId) {
+        UserAccount account = userAccountRepository.findByUserId(userId)
+                .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.ACCOUNT_NOT_FOUND));
+        return UserAccountResponseDto.from(account);
     }
 }
