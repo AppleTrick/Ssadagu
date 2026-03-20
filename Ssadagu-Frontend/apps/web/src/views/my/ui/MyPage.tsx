@@ -340,6 +340,10 @@ export function MyPage() {
             label="동네 재인증"
             onClick={() => router.push('/region-select?mode=reauth')}
           />
+          <MenuListItem
+            label="2차 비밀번호 변경"
+            onClick={() => router.push('/secondary-password-change')}
+          />
           <MenuListItem label="알림 설정" onClick={() => {}} />
           <MenuListItem label="로그아웃" onClick={handleLogout} />
           <MenuListItem
