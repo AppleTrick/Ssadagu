@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 
 // Widgets
@@ -42,6 +42,7 @@ const CHAT_INPUT_HEIGHT = 56;
 export function ChatRoomPage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
 
   const [reqSheetOpen, setReqSheetOpen] = useState(false);
@@ -74,8 +75,8 @@ export function ChatRoomPage() {
   const { sessionMessages, isStompConnected, sendMessage, addOptimisticMessage } = useChatMessaging(roomId, accessToken, userId);
 
   // 역할 판별 (타입 불일치 방지 위해 Number 사용)
-  const isSeller = room && userId && Number(userId) > 0 && Number(userId) === Number(room.sellerId) && Number(userId) !== Number(room.buyerId);
-  const isBuyer = room && userId && Number(userId) > 0 && Number(userId) === Number(room.buyerId);
+  const isSeller = room && userId && Number(userId) > 0 && Number(userId) === Number(room.sellerId);
+  const isBuyer = room && userId && Number(userId) > 0 && Number(userId) === Number(room.buyerId) && !isSeller;
 
   // 리다이렉트 로직 (이미 방이 있을 때)
   useEffect(() => {
@@ -194,6 +195,25 @@ export function ChatRoomPage() {
         showAlert({ message: extractCleanErrorMsg(errJson.message || '처리 실패') });
         return;
       }
+
+      // 결제 성공 시 추가 후처리
+      if (actionType === 'PAYMENT_SUCCESS') {
+        const result = await res.json().catch(() => ({}));
+        const amount = result?.data?.amount || result?.amount || 0;
+        const counterpart = result?.data?.counterpartNickname || result?.counterpartNickname || '판매자';
+
+        showAlert({ 
+          title: '결제 완료', 
+          message: `${counterpart}님께 ${amount.toLocaleString()}원 송금이 완료되었습니다.\n이제 상품이 '거래완료' 상태로 변경됩니다.` 
+        });
+
+        // 관련 데이터 무효화 (실시간 UI 갱신)
+        queryClient.invalidateQueries({ queryKey: ['product', room.productId] });
+        queryClient.invalidateQueries({ queryKey: ['chatRoom', roomId] });
+        queryClient.invalidateQueries({ queryKey: ['myAccount'] });
+        queryClient.invalidateQueries({ queryKey: ['userPurchases'] });
+      }
+
       sendMessage('/pub/chat/message', { senderId: userId || -1, content: msg.content, type: actionType });
       setConfirmSheetOpen(false);
       setSelectedConfirmMessage(null);

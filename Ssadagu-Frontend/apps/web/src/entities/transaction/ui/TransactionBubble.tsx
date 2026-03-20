@@ -21,25 +21,31 @@ const TransactionBubble = ({ message, isMyMessage, productThumbnailUrl, onCancel
   }
 
   const { price, time, locationName } = contentData;
-  const msgType = (message as any).type || message.messageType || 'PAYMENT_REQUEST';
+  const rawType = (message as any).type || message.messageType || 'PAYMENT_REQUEST';
+  const resolvedType = (message as any).resolvedType; // ChatRoomPage에서 주입한 상태
 
-  const isRequest = msgType === 'PAYMENT_REQUEST';
-  const isSuccess = msgType === 'PAYMENT_SUCCESS';
-  const isFail = msgType === 'PAYMENT_FAIL';
+  // 이미 성공/실패로 처리된 요청이거나, 메시지 자체가 결과 메시지인 경우
+  const isSuccess = rawType === 'PAYMENT_SUCCESS' || resolvedType === 'PAYMENT_SUCCESS';
+  const isFail = rawType === 'PAYMENT_FAIL' || resolvedType === 'PAYMENT_FAIL';
+  const isRequest = rawType === 'PAYMENT_REQUEST' && !resolvedType;
 
   let statusColor: string = colors.warning;
   let statusText = '수락 대기 중...';
+  let headerText = '거래요청';
+
   if (isSuccess) {
-    statusColor = colors.primary;
-    statusText = '거래수락 완료';
+    statusColor = isMyMessage ? '#FFFFFF' : colors.primary;
+    statusText = '거래가 완료되었습니다.';
+    headerText = '거래완료';
   } else if (isFail) {
-    statusColor = colors.red;
+    statusColor = isMyMessage ? '#FFFFFF' : colors.red;
     statusText = '요청이 취소/거절되었습니다.';
+    headerText = '거래취소';
   }
 
   return (
-    <Container $isMyMessage={isMyMessage}>
-      <Header $isMyMessage={isMyMessage}>거래요청</Header>
+    <Container $isMyMessage={isMyMessage} $isSuccess={isSuccess}>
+      <Header $isMyMessage={isMyMessage} $isSuccess={isSuccess}>{headerText}</Header>
       
       <CardBody>
         <ThumbnailWrapper>
@@ -86,9 +92,13 @@ const TransactionBubble = ({ message, isMyMessage, productThumbnailUrl, onCancel
 
 export default TransactionBubble;
 
-const Container = styled.div<{ $isMyMessage: boolean }>`
+const Container = styled.div<{ $isMyMessage: boolean; $isSuccess?: boolean }>`
   width: min(280px, 75%);
-  background: ${({ $isMyMessage }) => ($isMyMessage ? colors.chatMine : colors.chatOther)};
+  background: ${({ $isMyMessage, $isSuccess }) => {
+    if ($isMyMessage) return colors.chatMine;
+    if ($isSuccess) return'#F0F7FF'; // 성공 시 아주 연한 파란색 배경 (다른 사람이 보낼 때)
+    return colors.chatOther;
+  }};
   
   /* 일반 말풍선 스타일의 곡률 + 이미지 가이드의 상단 말꼬리(4px) 적용 */
   border-radius: 18px;
@@ -100,13 +110,18 @@ const Container = styled.div<{ $isMyMessage: boolean }>`
   
   /* 화면 가장자리와의 여백 확보 */
   margin: ${({ $isMyMessage }) => ($isMyMessage ? '0 16px 0 0' : '0 0 0 16px')};
+  border: ${({ $isSuccess }) => ($isSuccess ? `1px solid ${colors.primary}` : 'none')};
 `;
 
-const Header = styled.div<{ $isMyMessage: boolean }>`
+const Header = styled.div<{ $isMyMessage: boolean; $isSuccess?: boolean }>`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.sm};
   font-weight: ${typography.weight.bold};
-  color: ${({ $isMyMessage }) => ($isMyMessage ? 'white' : colors.primary)};
+  color: ${({ $isMyMessage, $isSuccess }) => {
+    if ($isMyMessage) return 'white';
+    if ($isSuccess) return colors.primary;
+    return colors.primary;
+  }};
   margin-bottom: 16px;
   padding-bottom: 16px;
   border-bottom: 1px solid ${({ $isMyMessage }) => ($isMyMessage ? 'rgba(255, 255, 255, 0.2)' : colors.border)};
