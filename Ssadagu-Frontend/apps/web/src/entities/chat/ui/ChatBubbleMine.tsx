@@ -50,7 +50,7 @@ const Row = styled.div`
 `;
 
 const Bubble = styled.div`
-  max-width: 70%;
+  max-width: 85%;
   background: ${colors.chatMine};
   color: ${colors.surface};
   font-size: ${typography.size.base};

@@ -46,6 +46,8 @@ const formatTimeAgo = (dateInput: string | number[] | null | undefined) => {
 import { getProxyImageUrl } from '@/shared/utils';
 
 const ItemCard = ({ product, onClick, onWishClick }: ItemCardProps) => {
+  const isSold = product.status === 'SOLD';
+  
   return (
     <Card onClick={onClick}>
       <Thumbnail>
@@ -54,14 +56,19 @@ const ItemCard = ({ product, onClick, onWishClick }: ItemCardProps) => {
         ) : (
           <ThumbnailPlaceholder />
         )}
+        {isSold && (
+          <SoldOverlay>
+            <span>거래완료</span>
+          </SoldOverlay>
+        )}
       </Thumbnail>
       <Info>
-        <Title>{product.title}</Title>
-        <Meta>
+        <Title $isSold={isSold}>{product.title}</Title>
+        <Meta $isSold={isSold}>
           {product.regionName} · {formatTimeAgo(product.createdAt)}
         </Meta>
         <Bottom>
-          <Price>{formatPrice(product.price)}</Price>
+          <Price $isSold={isSold}>{formatPrice(product.price)}</Price>
           <StatsContainer>
             <StatItem>
               {/* Chat bubble icon */}
@@ -118,12 +125,34 @@ const Card = styled.div`
 `;
 
 const Thumbnail = styled.div`
+  position: relative;
   width: 100px;
   height: 100px;
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
   background: ${colors.bg};
+`;
+
+const SoldOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  span {
+    color: white;
+    font-size: ${typography.size.xs};
+    font-weight: ${typography.weight.bold};
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
 `;
 
 const ThumbnailImg = styled.img`
@@ -148,11 +177,12 @@ const Info = styled.div`
   padding-top: 2px;
 `;
 
-const Title = styled.p`
+const Title = styled.p<{ $isSold?: boolean }>`
   margin: 0;
   font-size: ${typography.size.md};
   font-weight: ${typography.weight.medium};
-  color: ${colors.textPrimary};
+  color: ${({ $isSold }) => ($isSold ? colors.textSecondary : colors.textPrimary)};
+  opacity: ${({ $isSold }) => ($isSold ? 0.6 : 1)};
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -160,10 +190,11 @@ const Title = styled.p`
   line-height: 1.4;
 `;
 
-const Meta = styled.p`
+const Meta = styled.p<{ $isSold?: boolean }>`
   margin: 0;
   font-size: ${typography.size.sm};
   color: ${colors.textSecondary};
+  opacity: ${({ $isSold }) => ($isSold ? 0.5 : 1)};
   line-height: 1.4;
 `;
 
@@ -174,10 +205,11 @@ const Bottom = styled.div`
   margin-top: 4px;
 `;
 
-const Price = styled.span`
+const Price = styled.span<{ $isSold?: boolean }>`
   font-size: ${typography.size.md};
   font-weight: ${typography.weight.bold};
-  color: ${colors.textPrimary};
+  color: ${({ $isSold }) => ($isSold ? colors.textSecondary : colors.textPrimary)};
+  opacity: ${({ $isSold }) => ($isSold ? 0.6 : 1)};
 `;
 
 const StatsContainer = styled.div`

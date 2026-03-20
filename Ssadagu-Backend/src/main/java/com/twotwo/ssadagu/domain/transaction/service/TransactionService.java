@@ -91,26 +91,41 @@ public class TransactionService {
         UserAccount sellerAccount = userAccountRepository.findByUserId(seller.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
+        // 0. 금액 검증: 프론트에서 보낸 금액이 상품 가격과 일치하는지 확인 (보안 강화)
+        if (!product.getPrice().equals(request.getAmount())) {
+            log.error("[Transaction] 결제 금액 불일치 - 상품가격: {}, 요청금액: {}", product.getPrice(), request.getAmount());
+            throw new BusinessException(ErrorCode.INVALID_TRANSACTION_AMOUNT);
+        }
+
         Long roomId = chatRoomRepository.findByProductIdAndBuyerId(product.getId(), buyer.getId())
                 .map(room -> room.getId())
                 .orElse(null);
 
-        // 1. SSAFY 금융망 이체 실행
+        // 1. SSAFY 금융망 이체 실행 (실제 상품 가격 사용)
         try {
+            Long transferAmount = product.getPrice();
+            log.info("[Transaction Debug] 이체 요청 정보 - 구매자계좌: {}, 판매자계좌: {}, 금액: {}, UserKey: {}", 
+                buyerAccount.getAccountNumber(), sellerAccount.getAccountNumber(), transferAmount, buyer.getUserKey());
+
             SsafyApiResponse<List<Map<String, Object>>> apiResponse = demandDepositService.updateTransfer(
                     sellerAccount.getAccountNumber(), "싸다구 판매대금",
                     buyerAccount.getAccountNumber(), "싸다구 물품결제",
-                    request.getAmount(), buyer.getUserKey()
+                    transferAmount, buyer.getUserKey()
             );
 
             // API 결과 검증
             if (apiResponse == null || apiResponse.getHeader() == null || !"H0000".equals(apiResponse.getHeader().getResponseCode())) {
-                if (apiResponse != null && apiResponse.getHeader() != null) {
-                    log.error("[싸피 금융망 거절 사유] 응답코드: {}, 에러내용: {}", 
-                        apiResponse.getHeader().getResponseCode(), 
-                        apiResponse.getHeader().getResponseMessage());
-                }
-                throw new BusinessException(ErrorCode.TRANSACTION_FAILED);
+                String errorMsg = (apiResponse != null && apiResponse.getHeader() != null) 
+                    ? apiResponse.getHeader().getResponseMessage() : "금융망 응답 없음";
+                
+                log.error("[싸피 금융망 거절 사유] 응답코드: {}, 에러내용: {}", 
+                    apiResponse != null && apiResponse.getHeader() != null ? apiResponse.getHeader().getResponseCode() : "null", 
+                    errorMsg);
+
+                // 화면에 상세 원인을 뿌려주기 위해 메시지 보강
+                throw new BusinessException(ErrorCode.TRANSACTION_FAILED, 
+                    String.format("금융망 거절[%s]: 구매자(%s), 판매자(%s), 금액(%d원)", 
+                        errorMsg, buyerAccount.getAccountNumber(), sellerAccount.getAccountNumber(), transferAmount));
             }
 
             // 2. 거래 기록 저장
@@ -124,7 +139,7 @@ public class TransactionService {
                     .product(product)
                     .buyer(buyer)
                     .seller(seller)
-                    .amount(request.getAmount())
+                    .amount(transferAmount)
                     .paymentMethod("TRANSFER")
                     .bankTransactionId(bankTransactionId)
                     .status("COMPLETED")

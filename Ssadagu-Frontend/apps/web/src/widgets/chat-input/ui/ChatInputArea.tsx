@@ -48,14 +48,13 @@ const ChatInputArea = ({ onSend, bottomOffset = 0, onSelectTransaction, onSelect
           setAttachOpen(false);
           if (onPhotosSelected) onPhotosSelected(files);
         }}
-        onSelectTransaction={() => {
+        onSelectTransaction={onSelectTransaction ? () => {
           setAttachOpen(false);
-          if (onSelectTransaction) onSelectTransaction();
-          else modalAlert({ message: '거래요청 기능은 준비 중입니다.' });
-        }}
+          onSelectTransaction();
+        } : undefined}
         onSelectCamera={() => modalAlert({ message: '카메라 기능은 준비 중입니다.' })}
       />
-    <Bar $bottomOffset={bottomOffset}>
+    <Bar>
       <AttachButton onClick={() => setAttachOpen((v) => !v)} aria-label="첨부">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="12" y1="5" x2="12" y2="19" />
@@ -83,11 +82,7 @@ export default ChatInputArea;
 
 const CHAT_INPUT_HEIGHT = 56;
 
-const Bar = styled.div<{ $bottomOffset: number }>`
-  position: fixed;
-  bottom: ${({ $bottomOffset }) => $bottomOffset}px;
-  left: 0;
-  right: 0;
+const Bar = styled.div`
   height: ${CHAT_INPUT_HEIGHT}px;
   background: ${colors.surface};
   border-top: 1px solid ${colors.border};

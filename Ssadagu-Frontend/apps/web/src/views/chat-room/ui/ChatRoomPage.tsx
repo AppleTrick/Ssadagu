@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 
 // Widgets
@@ -17,7 +17,7 @@ import {
   SystemMessage, 
   MapChatBubble 
 } from '@/entities/chat';
-import { useChatRoomDetail, useNewChatRoomInit } from '@/entities/chat/api/useChatRoom';
+import { useChatRoomDetail, useNewChatRoomInit, useMarkAsRead } from '@/entities/chat/api/useChatRoom';
 import { useChatHistory } from '@/entities/chat/api/useChatMessages';
 import { useUserProfile } from '@/entities/user/api/useProfile';
 import type { ChatMessage, ChatRoom } from '@/entities/chat/model/types';
@@ -38,12 +38,11 @@ import { compressImage } from '@/shared/utils/image';
 import { useModalStore } from '@/shared/hooks/useModalStore';
 
 const CHAT_INPUT_HEIGHT = 56;
-const CHAT_INPUT_BOTTOM_OFFSET = 0;
-const MESSAGES_BOTTOM_PAD = CHAT_INPUT_HEIGHT + CHAT_INPUT_BOTTOM_OFFSET + 16;
 
 export function ChatRoomPage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
 
   const [reqSheetOpen, setReqSheetOpen] = useState(false);
@@ -51,14 +50,24 @@ export function ChatRoomPage() {
   const [mapSheetOpen, setMapSheetOpen] = useState(false);
   const [selectedConfirmMessage, setSelectedConfirmMessage] = useState<ChatMessage | null>(null);
 
+  // 1. 공통 데이터 및 상태 추출 (상단 배치)
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
+  const { alert: showAlert } = useModalStore();
+
   const rawId = params && params.roomId ? (Array.isArray(params.roomId) ? params.roomId[0] : params.roomId) : '';
   const isNewRoom = rawId === 'new';
   const roomId = isNewRoom ? -1 : Number(rawId);
   const newProductId = Number(searchParams?.get('productId'));
 
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const userId = useAuthStore((s) => s.userId);
-  const { alert: showAlert } = useModalStore();
+  // 2. 읽음 처리 로직 (ID와 토큰 확보 후)
+  const { mutate: markAsRead } = useMarkAsRead(accessToken);
+  useEffect(() => {
+    if (roomId > 0 && !isNewRoom) {
+      markAsRead(roomId);
+    }
+  }, [roomId, isNewRoom, markAsRead]);
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -76,8 +85,8 @@ export function ChatRoomPage() {
   const { sessionMessages, isStompConnected, sendMessage, addOptimisticMessage } = useChatMessaging(roomId, accessToken, userId);
 
   // 역할 판별 (타입 불일치 방지 위해 Number 사용)
-  const isSeller = room && userId ? Number(userId) === Number(room.sellerId) : false;
-  const isBuyer = room && userId ? Number(userId) === Number(room.buyerId) : false;
+  const isSeller = room && userId && Number(userId) > 0 && Number(userId) === Number(room.sellerId);
+  const isBuyer = room && userId && Number(userId) > 0 && Number(userId) === Number(room.buyerId) && !isSeller;
 
   // 리다이렉트 로직 (이미 방이 있을 때)
   useEffect(() => {
@@ -196,6 +205,25 @@ export function ChatRoomPage() {
         showAlert({ message: extractCleanErrorMsg(errJson.message || '처리 실패') });
         return;
       }
+
+      // 결제 성공 시 추가 후처리
+      if (actionType === 'PAYMENT_SUCCESS') {
+        const result = await res.json().catch(() => ({}));
+        const amount = result?.data?.amount || result?.amount || 0;
+        const counterpart = result?.data?.counterpartNickname || result?.counterpartNickname || '판매자';
+
+        showAlert({ 
+          title: '결제 완료', 
+          message: `${counterpart}님께 ${amount.toLocaleString()}원 송금이 완료되었습니다.\n이제 상품이 '거래완료' 상태로 변경됩니다.` 
+        });
+
+        // 관련 데이터 무효화 (실시간 UI 갱신)
+        queryClient.invalidateQueries({ queryKey: ['product', room.productId] });
+        queryClient.invalidateQueries({ queryKey: ['chatRoom', roomId] });
+        queryClient.invalidateQueries({ queryKey: ['myAccount'] });
+        queryClient.invalidateQueries({ queryKey: ['userPurchases'] });
+      }
+
       sendMessage('/pub/chat/message', { senderId: userId || -1, content: msg.content, type: actionType });
       setConfirmSheetOpen(false);
       setSelectedConfirmMessage(null);
@@ -251,12 +279,24 @@ export function ChatRoomPage() {
         {isLoading && displayMessages.length === 0 && <LoadingWrapper>불러오는 중...</LoadingWrapper>}
         {!isLoading && !messagesLoading && displayMessages.length === 0 && <EmptyMessages>아직 메시지가 없습니다.</EmptyMessages>}
         {displayMessages.map((msg) => {
-          const isMine = userId !== null && msg.senderId === userId;
+          const isMine = userId !== null && Number(msg.senderId) === Number(userId);
           const msgType = msg.type || msg.messageType || 'TALK';
+          
+          // 백엔드에서 닉네임이 안 내려올 경우를 대비해 룸 정보에서 매핑
+          const resolvedNickname = isMine 
+            ? '나' 
+            : (msg.senderNickname || (Number(msg.senderId) === Number(room?.sellerId) ? room?.sellerNickname : room?.buyerNickname) || room?.partnerNickname || '상대방');
+
           if (['ENTER', 'LEAVE', 'SYSTEM'].includes(msgType)) return <SystemMessage key={msg.id} message={msg.content} />;
+          
           if (['PAYMENT_REQUEST', 'PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
             return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', width: '100%' }}>
+              <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start', width: '100%', gap: '4px', padding: '2px 16px' }}>
+                {!isMine && (
+                  <span style={{ fontSize: typography.size.xs, color: colors.textSecondary, fontWeight: typography.weight.medium, margin: '0 0 0 2px' }}>
+                    {resolvedNickname}
+                  </span>
+                )}
                 <TransactionBubble
                   message={msg} productThumbnailUrl={room?.productThumbnailUrl}
                   isMyMessage={isMine} onCancel={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
@@ -266,22 +306,35 @@ export function ChatRoomPage() {
               </div>
             );
           }
-          if (msgType === 'MAP') return <MapChatBubble key={msg.id} lat={msg.latitude || 0} lng={msg.longitude || 0} label={msg.locationName} isMine={isMine} sentAt={msg.sentAt || (msg as any).createdAt} />;
+          
+          if (msgType === 'MAP') {
+            return (
+              <MapChatBubble 
+                key={msg.id} 
+                lat={msg.latitude || 0} 
+                lng={msg.longitude || 0} 
+                label={msg.locationName} 
+                isMine={isMine} 
+                senderNickname={resolvedNickname}
+                sentAt={msg.sentAt || (msg as any).createdAt} 
+              />
+            );
+          }
+          
           return isMine 
             ? <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />
-            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={msg.senderNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />;
+            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={resolvedNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />;
         })}
         {isUploading && <UploadStatus>사진 전송 중...</UploadStatus>}
         <div ref={bottomRef} />
       </MessagesArea>
       <ChatInputArea 
         onSend={handleSend} 
-        onSelectTransaction={() => {
+        onSelectTransaction={isSeller ? () => {
           setReqSheetOpen(true);
-        }} 
+        } : undefined} 
         onSelectLocation={() => setMapSheetOpen(true)} 
         onPhotosSelected={handlePhotosSelected} 
-        bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} 
       />
       <TransactionRequestSheet isOpen={reqSheetOpen} onClose={() => setReqSheetOpen(false)} 
         roomInfo={room ? { productTitle: room.productTitle, productPrice: room.productPrice, productThumbnailUrl: room.productThumbnailUrl } : null} onSubmit={handleTransactionRequestSubmit} />
@@ -298,9 +351,49 @@ export function ChatRoomPage() {
   );
 }
 
-const Page = styled.div` display: flex; flex-direction: column; height: 100dvh; background: ${colors.surface}; overflow: hidden; `;
-const MessagesArea = styled.div` flex: 1; overflow-y: auto; padding: ${HEADER_HEIGHT + 80}px 0 ${MESSAGES_BOTTOM_PAD}px; display: flex; flex-direction: column; gap: 8px; `;
-const LoadingWrapper = styled.div` display: flex; align-items: center; justify-content: center; flex: 1; font-family: ${typography.fontFamily}; color: ${colors.textSecondary}; `;
-const ItemSummaryBar = styled.div` position: fixed; top: ${HEADER_HEIGHT}px; left: 0; right: 0; z-index: 4; background: ${colors.surface}; border-bottom: 1px solid ${colors.border}; `;
-const EmptyMessages = styled.div` display: flex; align-items: center; justify-content: center; height: 120px; color: ${colors.textSecondary}; `;
-const UploadStatus = styled.div` padding: 8px 16px; text-align: right; font-size: 13px; color: ${colors.textSecondary}; `;
+const Page = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: ${colors.surface};
+  overflow: hidden;
+`;
+
+const MessagesArea = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 0;
+`;
+
+const LoadingWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-family: ${typography.fontFamily};
+  color: ${colors.textSecondary};
+`;
+
+const ItemSummaryBar = styled.div`
+  background: ${colors.surface};
+  border-bottom: 1px solid ${colors.border};
+  flex-shrink: 0;
+`;
+
+const EmptyMessages = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: ${colors.textSecondary};
+`;
+
+const UploadStatus = styled.div`
+  padding: 8px 16px;
+  text-align: right;
+  font-size: 13px;
+  color: ${colors.textSecondary};
+`;

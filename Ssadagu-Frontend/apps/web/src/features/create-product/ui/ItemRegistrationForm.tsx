@@ -381,7 +381,7 @@ const BottomSheetOverlay = styled.div`
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.6);
-  z-index: 10000;
+  z-index: 20000; /* 최전면으로 상향 */
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -391,11 +391,30 @@ const BottomSheetOverlay = styled.div`
 const BottomSheetContent = styled.div`
   background: ${colors.surface};
   border-radius: 24px 24px 0 0;
-  padding: 28px 24px 40px;
+  padding: 28px 24px 0;
   animation: ${slideUp} 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-  max-height: 85vh;
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.12);
+`;
+
+const CategoryScrollArea = styled.div`
+  flex: 1;
   overflow-y: auto;
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+  padding-bottom: 40px;
+  
+  /* 스크롤 가시성(Scroll UI) 개선 */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: ${colors.border};
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 `;
 
 const SheetHeader = styled.div`
@@ -596,6 +615,18 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
       }
     }
   }, [initialData, reset]);
+
+  // 모달이 열려있을 때 배경 스크롤 방지
+  useEffect(() => {
+    if (isCategorySheetOpen || isLocationPickerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isCategorySheetOpen, isLocationPickerOpen]);
 
   const handlePhotoAdd = () => {
     if (imagePreviews.length >= 5) return;
@@ -871,21 +902,23 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
                 <CloseIcon />
               </BackButton>
             </SheetHeader>
-            <CategoryList>
-              {CATEGORIES.map((cat) => (
-                <CategoryItem
-                  key={cat.code}
-                  type="button"
-                  isSelected={selectedCategoryCode === cat.code}
-                  onClick={() => {
-                    setValue('categoryCode', cat.code, { shouldValidate: true, shouldDirty: true });
-                    setIsCategorySheetOpen(false);
-                  }}
-                >
-                  {cat.label}
-                </CategoryItem>
-              ))}
-            </CategoryList>
+            <CategoryScrollArea>
+              <CategoryList>
+                {CATEGORIES.map((cat) => (
+                  <CategoryItem
+                    key={cat.code}
+                    type="button"
+                    isSelected={selectedCategoryCode === cat.code}
+                    onClick={() => {
+                      setValue('categoryCode', cat.code, { shouldValidate: true, shouldDirty: true });
+                      setIsCategorySheetOpen(false);
+                    }}
+                  >
+                    {cat.label}
+                  </CategoryItem>
+                ))}
+              </CategoryList>
+            </CategoryScrollArea>
           </BottomSheetContent>
         </BottomSheetOverlay>
       )}

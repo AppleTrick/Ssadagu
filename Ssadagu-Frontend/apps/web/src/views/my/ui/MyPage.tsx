@@ -6,9 +6,9 @@ import { useQuery } from "@tanstack/react-query";
 import styled from "@emotion/styled";
 import { HeaderMain } from "@/widgets/header";
 import { BottomNav } from "@/widgets/bottom-nav";
-import { ProfileHeader, useMyProfile } from "@/entities/user";
+import { ProfileHeader, useMyProfile, useMyAccount, useAccountDetail, useDeposit } from "@/entities/user";
 import type { User } from "@/entities/user";
-import { QuickMenuItem, MenuListItem, ConfirmDialog } from "@/shared/ui";
+import { QuickMenuItem, MenuListItem, ConfirmDialog, Button } from "@/shared/ui";
 import { apiClient } from "@/shared/api/client";
 import { ENDPOINTS } from "@/shared/api/endpoints";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
@@ -140,6 +140,104 @@ const WishIcon = () => (
   </svg>
 );
 
+const BalanceCardContainer = styled.div`
+  background: ${colors.surface};
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const BalanceInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const BalanceLabel = styled.span`
+  font-size: ${typography.size.xs};
+  color: ${colors.textSecondary};
+  font-family: ${typography.fontFamily};
+`;
+
+const BalanceAmount = styled.span`
+  font-size: ${typography.size.lg};
+  font-weight: ${typography.weight.bold};
+  color: ${colors.textPrimary};
+  font-family: ${typography.fontFamily};
+`;
+
+const BANK_MAP: Record<string, string> = {
+  "001": "한국은행",
+  "002": "산업은행",
+  "003": "기업은행",
+  "004": "국민은행",
+  "007": "수협은행",
+  "011": "농협은행",
+  "020": "우리은행",
+  "023": "SC제일은행",
+  "031": "대구은행",
+  "032": "부산은행",
+  "034": "광주은행",
+  "035": "제주은행",
+  "037": "전북은행",
+  "039": "경남은행",
+  "045": "새마을금고",
+  "048": "신협중앙회",
+  "071": "우체국",
+  "081": "하나은행",
+  "088": "신한은행",
+  "089": "케이뱅크",
+  "090": "카카오뱅크",
+  "092": "토스뱅크",
+};
+
+function BalanceCardSection({ accessToken, userId }: { accessToken: string; userId: number | undefined }) {
+  const { data: account } = useMyAccount(userId, accessToken);
+  const { data: detail, isLoading: isDetailLoading } = useAccountDetail(account?.accountNumber, accessToken);
+  const depositMutation = useDeposit(accessToken);
+  const { alert: modalAlert } = useModalStore();
+
+  const handleDeposit = async () => {
+    if (!account?.accountNumber) return;
+    try {
+      await depositMutation.mutateAsync({
+        accountNo: account.accountNumber,
+        amount: 10000,
+        summary: "테스트 충전",
+      });
+      modalAlert({ message: "10,000원이 성공적으로 충전되었습니다!\n금융망 잔액이 갱신되었습니다." });
+    } catch (e) {
+      modalAlert({ message: "충전 중 오류가 발생했습니다." });
+    }
+  };
+
+  if (!account) return null;
+
+  const bankDisplayName = BANK_MAP[account.bankCode] || account.bankName || "금융망 등록 은행";
+
+  return (
+    <BalanceCardContainer>
+      <BalanceInfo>
+        <BalanceLabel>내 지갑 잔액 ({bankDisplayName})</BalanceLabel>
+        <BalanceAmount>
+          {isDetailLoading ? "..." : `${Number(detail?.accountBalance || 0).toLocaleString()}원`}
+        </BalanceAmount>
+      </BalanceInfo>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        loading={depositMutation.isPending}
+        onClick={handleDeposit}
+        style={{ width: "80px" }}
+      >
+        충전
+      </Button>
+    </BalanceCardContainer>
+  );
+}
+
 
 export function MyPage() {
   const router = useRouter();
@@ -216,6 +314,8 @@ export function MyPage() {
             />
           )}
         </ProfileSection>
+
+        {accessToken && <BalanceCardSection accessToken={accessToken} userId={user?.id} />}
 
         <QuickMenuRow>
           <QuickMenuItem

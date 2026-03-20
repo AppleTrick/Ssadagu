@@ -14,6 +14,9 @@ public class AccountRegisterRequestDto {
     @NotBlank(message = "은행 코드는 필수 입력값입니다.")
     private String bankCode;
 
+    @Schema(description = "은행 명", example = "국민은행")
+    private String bankName;
+
     @Schema(description = "계좌 번호", example = "1234567890")
     @NotBlank(message = "계좌 번호는 필수 입력값입니다.")
     private String accountNumber;

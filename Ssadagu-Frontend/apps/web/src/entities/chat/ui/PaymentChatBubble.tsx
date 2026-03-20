@@ -91,7 +91,7 @@ const BubbleRow = styled.div<{ $isMine: boolean }>`
 const CardBubble = styled.div<{ $isMine: boolean }>`
   background: ${colors.surface};
   border: 1px solid ${colors.border};
-  border-radius: ${({ $isMine }) => ($isMine ? '18px 18px 4px 18px' : '18px 18px 18px 4px')};
+  border-radius: ${({ $isMine }) => ($isMine ? '18px 4px 18px 18px' : '4px 18px 18px 18px')};
   padding: 12px 16px;
   min-width: 200px;
 `;

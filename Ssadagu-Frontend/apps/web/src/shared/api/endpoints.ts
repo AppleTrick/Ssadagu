@@ -20,6 +20,12 @@ export const ENDPOINTS = {
     BASE: '/accounts',
     VERIFY_SEND: (id: number) => `/accounts/${id}/verify/send`,
     VERIFY_CONFIRM: (id: number) => `/accounts/${id}/verify/confirm`,
+    MY: (userId: number) => `/accounts/users/${userId}`,
+  },
+  DEMAND_DEPOSITS: {
+    GET_ACCOUNT: (accountNo: string) => `/demand-deposits/accounts/${accountNo}`,
+    DEPOSIT: (accountNo: string) => `/demand-deposits/accounts/${accountNo}/deposit`,
+    HISTORY: (accountNo: string) => `/demand-deposits/accounts/${accountNo}/transactions`,
   },
   PRODUCTS: {
     BASE: '/products',

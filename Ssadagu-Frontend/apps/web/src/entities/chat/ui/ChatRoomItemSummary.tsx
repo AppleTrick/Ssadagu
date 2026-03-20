@@ -16,6 +16,7 @@ const formatPrice = (price: number) =>
 
 const statusLabel: Record<string, string> = {
   ON_SALE: '판매중',
+  TRADING: '거래중',
   RESERVED: '예약중',
   SOLD: '거래완료',
   DELETED: '삭제됨',

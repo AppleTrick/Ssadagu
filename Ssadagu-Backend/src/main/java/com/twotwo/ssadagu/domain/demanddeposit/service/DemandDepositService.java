@@ -169,13 +169,20 @@ public class DemandDepositService {
 
         Map<String, String> header = ssafyHeaderUtil.createHeader("updateDemandDepositAccountTransfer", userKey);
 
+        String cleanDepositAccountNo = depositAccountNo != null ? depositAccountNo.replaceAll("[^0-9]", "") : "";
+        String cleanWithdrawalAccountNo = withdrawalAccountNo != null ? withdrawalAccountNo.replaceAll("[^0-9]", "") : "";
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("Header", header);
-        payload.put("depositAccountNo", depositAccountNo);
+        payload.put("depositAccountNo", cleanDepositAccountNo);
         payload.put("depositTransactionMemo", depositTransactionMemo);
-        payload.put("withdrawalAccountNo", withdrawalAccountNo);
+        // 출금 계좌 필드 호환성 (withdrawalAccountNo / withdrawAccountNo)
+        payload.put("withdrawalAccountNo", cleanWithdrawalAccountNo);
+        payload.put("withdrawAccountNo", cleanWithdrawalAccountNo);
         payload.put("withdrawalTransactionMemo", withdrawalTransactionMemo);
-        payload.put("transactionBalance", String.valueOf(transactionBalance));
+        // 금액 필드 호환성 (transactionBalance / transactionAmount)
+        payload.put("transactionBalance", transactionBalance);
+        payload.put("transactionAmount", transactionBalance);
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -200,10 +207,12 @@ public class DemandDepositService {
 
         Map<String, String> header = ssafyHeaderUtil.createHeader("updateDemandDepositAccountDeposit", userKey);
 
+        String cleanAccountNo = accountNo != null ? accountNo.replaceAll("[^0-9]", "") : "";
+
         Map<String, Object> payload = new HashMap<>();
         payload.put("Header", header);
-        payload.put("accountNo", accountNo);
-        payload.put("transactionBalance", String.valueOf(transactionBalance));
+        payload.put("accountNo", cleanAccountNo);
+        payload.put("transactionBalance", transactionBalance);
         payload.put("transactionSummary", transactionSummary != null ? transactionSummary : "테스트 입금");
 
         HttpHeaders httpHeaders = new HttpHeaders();

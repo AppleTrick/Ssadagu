@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import type { ChatRoom } from '../model/types';
@@ -138,5 +138,28 @@ export function useNewChatRoomInit(productId: number, userId: number | null, acc
       } as ChatRoom;
     },
     enabled: productId > 0 && !!userId && !!accessToken,
+  });
+}
+
+/**
+ * 채팅방 읽음 처리 훅
+ */
+export function useMarkAsRead(accessToken: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (roomId: number | string) => {
+      const id = typeof roomId === 'string' ? Number(roomId) : Number(roomId);
+      if (!id || id <= 0) return null;
+      
+      const res = await apiClient.patch(ENDPOINTS.CHATS.READ(id), {}, accessToken ?? undefined);
+      if (!res.ok) throw new Error('읽음 처리 실패');
+      return res.json();
+    },
+    onSuccess: (_, roomId) => {
+      const id = typeof roomId === 'string' ? Number(roomId) : Number(roomId);
+      // 채팅 리스트와 특정 채팅방 정보 갱신
+      queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+      queryClient.invalidateQueries({ queryKey: ['chatRoom', id] });
+    },
   });
 }
