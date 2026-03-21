@@ -244,6 +244,29 @@ public class UserService {
     public void toggleBiometric(Long userId, BiometricToggleRequestDto requestDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        user.updateBiometricEnabled(requestDto.getEnabled());
+        if (!requestDto.getEnabled()) {
+            // 비활성화 시 등록된 공개키도 함께 삭제
+            user.clearBiometric();
+        } else {
+            user.updateBiometricEnabled(true);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void verifyBiometric(Long userId, BiometricVerifyRequestDto requestDto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getBiometricPublicKey() == null) {
+            throw new BusinessException(ErrorCode.BIOMETRIC_NOT_REGISTERED);
+        }
+
+        if (!Boolean.TRUE.equals(user.getIsBiometricEnabled())) {
+            throw new BusinessException(ErrorCode.BIOMETRIC_NOT_ENABLED);
+        }
+
+        if (!user.getBiometricPublicKey().equals(requestDto.getPublicKey())) {
+            throw new BusinessException(ErrorCode.BIOMETRIC_TOKEN_NOT_MATCH);
+        }
     }
 }
