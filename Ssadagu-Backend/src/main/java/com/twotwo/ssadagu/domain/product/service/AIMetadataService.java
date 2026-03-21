@@ -17,7 +17,7 @@ import org.springframework.web.client.RestTemplate;
 public class AIMetadataService {
 
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${gms.api.key}")
     private String gmsApiKey;
