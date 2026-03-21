@@ -71,7 +71,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/v3/api-docs"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/v3/api-docs" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -89,7 +89,7 @@ services:
       - ssadagu-network
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -117,7 +117,7 @@ services:
       - ssadagu-network
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cat/health | grep -q 'green\\|yellow' || exit 1"]
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cat/health | grep -q 'green\\|yellow' || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 15
@@ -141,7 +141,7 @@ services:
       - elasticsearch
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-s", "-XGET", "http://localhost:9600/_node/pipeline"]
+      test: [ "CMD", "curl", "-s", "-XGET", "http://localhost:9600/_node/pipeline" ]
       interval: 30s
       timeout: 10s
       retries: 15
@@ -183,7 +183,7 @@ services:
 
 networks:
   ssadagu-network:
-    driver: bridge
+    external: true
 
 volumes:
   certs:

@@ -60,10 +60,13 @@ pipeline {
                         }
                         
                         echo "Docker Compose를 이용한 서비스 빌드 (환경 변수 포함)"
-                        sh 'docker-compose -p s14p21a202 build --pull backend frontend elasticsearch logstash kibana filebeat'
+                        sh 'docker-compose -p s14p21a202 build --pull backend frontend'
                         
                         echo "서비스 배포"
-                        sh 'docker-compose -p s14p21a202 up -d backend frontend elasticsearch logstash kibana filebeat'
+                        sh 'docker-compose -p s14p21a202 up -d backend frontend'
+                        
+                        echo "Nginx 설정 및 주소판 새로고침"
+                        sh 'docker-compose -p s14p21a202 exec -T nginx nginx -s reload'
                     }
                 }
             }

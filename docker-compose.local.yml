@@ -61,7 +61,9 @@ services:
 
 networks:
   ssadagu-network:
-    driver: bridge
+    # 로컬 테스트 시에도 운영 환경과 동일하게 외부 네트워크를 사용할 수 있습니다.
+    # 사용 전: docker network create ssadagu-network 실행 필요
+    external: true
 
 volumes:
   jenkins_home_local:
