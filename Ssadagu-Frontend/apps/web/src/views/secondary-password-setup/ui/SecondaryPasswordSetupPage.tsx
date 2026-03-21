@@ -1,10 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
-import { Button, Input } from '@/shared/ui';
+import { PinPad } from '@/shared/ui/PinPad';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
@@ -12,9 +12,14 @@ import { useModalStore } from '@/shared/hooks/useModalStore';
 import {
   colors,
   typography,
-  radius,
   HEADER_HEIGHT,
 } from '@/shared/styles/theme';
+import {
+  isInWebView,
+  generateAndStoreDeviceToken,
+} from '@/shared/lib/biometricBridge';
+
+type Step = 'enter' | 'confirm';
 
 const Page = styled.div`
   display: flex;
@@ -26,82 +31,46 @@ const Page = styled.div`
 const ContentArea = styled.main`
   flex: 1;
   padding-top: ${HEADER_HEIGHT}px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding-bottom: 40px;
+  padding-left: 24px;
+  padding-right: 24px;
+`;
+
+const BiometricRow = styled.div`
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  cursor: pointer;
 `;
 
-const Section = styled.div`
-  flex: 1;
+const BiometricCheck = styled.div<{ checked: boolean }>`
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: ${({ checked }) => (checked ? colors.primary : 'transparent')};
+  border: 2px solid ${({ checked }) => (checked ? colors.primary : colors.border)};
   display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
 `;
 
-const TitleBlock = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+const CheckMark = styled.svg`
+  width: 12px;
+  height: 12px;
+  color: ${colors.surface};
 `;
 
-const Title = styled.h2`
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size['2xl']};
-  font-weight: ${typography.weight.bold};
-  color: ${colors.textPrimary};
-  margin: 0;
-  line-height: 1.3;
-`;
-
-const Desc = styled.p`
+const BiometricLabel = styled.span`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.base};
-  color: ${colors.textSecondary};
-  margin: 0;
-  line-height: 1.6;
-`;
-
-const FieldGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const FieldLabel = styled.label`
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.sm};
-  font-weight: ${typography.weight.medium};
   color: ${colors.textPrimary};
-  display: block;
-  margin-bottom: 6px;
-`;
-
-const InfoCard = styled.div`
-  background: ${colors.bg};
-  border-radius: ${radius.lg};
-  padding: 16px;
-  border-left: 3px solid ${colors.primary};
-`;
-
-const InfoText = styled.p`
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.sm};
-  color: ${colors.textSecondary};
-  margin: 0;
-  line-height: 1.6;
-`;
-
-const ErrorMsg = styled.p`
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.sm};
-  color: ${colors.red};
-  margin: 0;
-  padding-left: 4px;
-`;
-
-const BottomBar = styled.div`
-  padding: 16px 24px 40px;
 `;
 
 export function SecondaryPasswordSetupPage() {
@@ -110,128 +79,139 @@ export function SecondaryPasswordSetupPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const { alert: modalAlert } = useModalStore();
 
+  const [step, setStep] = useState<Step>('enter');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [useBiometric, setUseBiometric] = useState(false);
+  const [inWebView, setInWebView] = useState(false);
 
-  const validatePassword = (pwd: string): boolean => {
-    const pattern = /^\d{6}$/;
-    return pattern.test(pwd);
-  };
+  useEffect(() => {
+    setInWebView(isInWebView());
+  }, []);
 
-  const handleSetPassword = async () => {
+  // 6자리 완성 시 자동 다음 단계
+  useEffect(() => {
+    if (step === 'enter' && password.length === 6) {
+      setTimeout(() => setStep('confirm'), 100);
+    }
+  }, [password, step]);
+
+  useEffect(() => {
+    if (step === 'confirm' && confirm.length === 6) {
+      handleSubmit(confirm);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirm]);
+
+  const handleSubmit = async (confirmValue: string) => {
     setError('');
 
-    // 검증
-    if (!password) {
-      setError('2차 비밀번호를 입력해주세요.');
-      return;
-    }
-
-    if (!validatePassword(password)) {
-      setError('2차 비밀번호는 6자리 숫자여야 합니다.');
-      return;
-    }
-
-    if (!confirmPassword) {
-      setError('2차 비밀번호 확인을 입력해주세요.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('2차 비밀번호가 일치하지 않습니다.');
+    if (password !== confirmValue) {
+      setError('비밀번호가 일치하지 않습니다. 다시 시도해주세요.');
+      setTimeout(() => {
+        setStep('enter');
+        setPassword('');
+        setConfirm('');
+        setError('');
+      }, 1200);
       return;
     }
 
     setLoading(true);
     try {
+      // 1. 2차 비밀번호 설정
       const res = await apiClient.post(
         ENDPOINTS.USERS.SECONDARY_PASSWORD(userId!),
         { secondaryPassword: password },
         accessToken ?? undefined
       );
+      if (!res.ok) throw new Error('2차 비밀번호 설정에 실패했습니다.');
 
-      if (!res.ok) {
-        throw new Error('2차 비밀번호 설정에 실패했습니다.');
+      // 2. 생체인증 등록 (선택)
+      if (useBiometric && inWebView) {
+        try {
+          // 네이티브에서 UUID 생성 + Keychain 저장, 토큰 받아옴
+          const deviceToken = await generateAndStoreDeviceToken();
+
+          // 백엔드에 디바이스 토큰을 publicKey로 등록
+          // registerBiometric은 isBiometricEnabled도 자동으로 true로 설정
+          await apiClient.post(
+            ENDPOINTS.USERS.BIOMETRIC_REGISTER(userId!),
+            { publicKey: deviceToken },
+            accessToken ?? undefined
+          );
+        } catch (bioErr) {
+          // 생체인증 등록 실패해도 비밀번호 설정은 완료로 처리
+          console.warn('생체인증 등록 실패:', bioErr);
+        }
       }
 
       await modalAlert({ message: '2차 비밀번호가 설정되었습니다.' });
       router.replace('/home');
     } catch (err) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
+      setConfirm('');
     } finally {
       setLoading(false);
     }
   };
 
+  const getBiometricLabel = () => {
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.includes('iphone') || ua.includes('ipad')) return '다음부터 Face ID 사용하기';
+    }
+    return '다음부터 생체인증 사용하기';
+  };
+
+  if (step === 'enter') {
+    return (
+      <Page>
+        <HeaderBack title="2차 비밀번호 설정" onBack={() => router.back()} />
+        <ContentArea>
+          <PinPad
+            title={'비밀번호 6자리 입력'}
+            value={password}
+            onInput={setPassword}
+          />
+          {inWebView && (
+            <BiometricRow onClick={() => setUseBiometric((v) => !v)}>
+              <BiometricCheck checked={useBiometric}>
+                {useBiometric && (
+                  <CheckMark viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="1.5,6 4.5,9 10.5,3" strokeLinecap="round" strokeLinejoin="round" />
+                  </CheckMark>
+                )}
+              </BiometricCheck>
+              <BiometricLabel>{getBiometricLabel()}</BiometricLabel>
+            </BiometricRow>
+          )}
+        </ContentArea>
+      </Page>
+    );
+  }
+
   return (
     <Page>
-      <HeaderBack title="2차 비밀번호 설정" onBack={() => router.back()} />
+      <HeaderBack
+        title="2차 비밀번호 설정"
+        onBack={() => {
+          setStep('enter');
+          setPassword('');
+          setConfirm('');
+          setError('');
+        }}
+      />
       <ContentArea>
-        <Section>
-          <TitleBlock>
-            <Title>거래 보호를 위해{'\\n'}2차 비밀번호를 설정하세요</Title>
-            <Desc>결제 및 민감한 거래 시 2차 비밀번호가 필요합니다.</Desc>
-          </TitleBlock>
-
-          <InfoCard>
-            <InfoText>
-              ✓ 6자리 숫자로 설정합니다{'\n'}
-              ✓ 나중에 마이페이지에서 변경 가능합니다{'\n'}
-              ✓ 잊어버린 경우 고객센터에 문의해주세요
-            </InfoText>
-          </InfoCard>
-
-          <FieldGroup>
-            <div>
-              <FieldLabel>2차 비밀번호 (6자리 숫자)</FieldLabel>
-              <Input
-                type="password"
-                placeholder="000000"
-                value={password}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                  setPassword(val);
-                  setError('');
-                }}
-                inputMode="numeric"
-                maxLength={6}
-              />
-            </div>
-
-            <div>
-              <FieldLabel>2차 비밀번호 확인</FieldLabel>
-              <Input
-                type="password"
-                placeholder="000000"
-                value={confirmPassword}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                  setConfirmPassword(val);
-                  setError('');
-                }}
-                inputMode="numeric"
-                maxLength={6}
-              />
-            </div>
-
-            {error && <ErrorMsg role="alert">{error}</ErrorMsg>}
-          </FieldGroup>
-        </Section>
-
-        <BottomBar>
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            loading={loading}
-            disabled={!password || !confirmPassword || loading}
-            onClick={handleSetPassword}
-          >
-            2차 비밀번호 설정 완료
-          </Button>
-        </BottomBar>
+        <PinPad
+          title={'비밀번호 한 번 더 입력'}
+          value={confirm}
+          onInput={setConfirm}
+          error={error}
+          disabled={loading}
+        />
       </ContentArea>
     </Page>
   );
