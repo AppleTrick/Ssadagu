@@ -17,6 +17,9 @@ export const ENDPOINTS = {
     GET_USER_WISHES: (id: number) => `/users/${id}/wishes`,
     SECONDARY_PASSWORD: (id: number) => `/users/${id}/secondary-password`,
     VERIFY_SECONDARY_PASSWORD: (id: number) => `/users/${id}/secondary-password/verify`,
+    BIOMETRIC_REGISTER: (id: number) => `/users/${id}/biometric/register`,
+    BIOMETRIC_TOGGLE: (id: number) => `/users/${id}/biometric/toggle`,
+    BIOMETRIC_VERIFY: (id: number) => `/users/${id}/biometric/verify`,
   },
   ACCOUNTS: {
     BASE: '/accounts',
