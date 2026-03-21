@@ -12,7 +12,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "위치 기반 중고거래 서비스를 위해 위치 정보가 필요합니다.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "위치 기반 중고거래 서비스를 위해 위치 정보가 필요합니다."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "위치 기반 중고거래 서비스를 위해 위치 정보가 필요합니다.",
+        "NSFaceIDUsageDescription": "2차 비밀번호 인증을 위해 Face ID가 필요합니다."
       }
     },
     "android": {
@@ -27,7 +28,9 @@
       "usesCleartextTraffic": true,
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
       ]
     },
     "web": {
