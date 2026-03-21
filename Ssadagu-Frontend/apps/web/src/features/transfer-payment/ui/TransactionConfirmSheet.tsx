@@ -104,7 +104,7 @@ const TransactionConfirmSheet = ({ isOpen, onClose, roomInfo, content, onConfirm
 
         <ButtonGroup>
           <CancelButton onClick={onClose}>거절</CancelButton>
-          <ConfirmButton onClick={() => { onConfirm(); onClose(); }}>수락</ConfirmButton>
+          <ConfirmButton onClick={onConfirm}>수락</ConfirmButton>
         </ButtonGroup>
       </SheetContainer>
     </>

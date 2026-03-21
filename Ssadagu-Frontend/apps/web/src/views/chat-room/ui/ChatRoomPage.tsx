@@ -26,6 +26,7 @@ import { User } from '@/entities/user';
 // Features
 import { TransactionBubble } from '@/entities/transaction';
 import { TransactionRequestSheet, TransactionConfirmSheet } from '@/features/transfer-payment';
+import TransactionAuthModal from '@/features/transfer-payment/ui/TransactionAuthModal';
 import { ChatMapPickerSheet } from '@/features/chat-map-picker';
 import { useChatMessaging } from '@/features/chat-messaging/lib/useChatMessaging';
 
@@ -47,6 +48,7 @@ export function ChatRoomPage() {
 
   const [reqSheetOpen, setReqSheetOpen] = useState(false);
   const [confirmSheetOpen, setConfirmSheetOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [mapSheetOpen, setMapSheetOpen] = useState(false);
   const [selectedConfirmMessage, setSelectedConfirmMessage] = useState<ChatMessage | null>(null);
 
@@ -338,14 +340,23 @@ export function ChatRoomPage() {
       />
       <TransactionRequestSheet isOpen={reqSheetOpen} onClose={() => setReqSheetOpen(false)} 
         roomInfo={room ? { productTitle: room.productTitle, productPrice: room.productPrice, productThumbnailUrl: room.productThumbnailUrl } : null} onSubmit={handleTransactionRequestSubmit} />
-      <TransactionConfirmSheet isOpen={confirmSheetOpen} onClose={() => setConfirmSheetOpen(false)} 
+      <TransactionConfirmSheet isOpen={confirmSheetOpen} onClose={() => setConfirmSheetOpen(false)}
         roomInfo={room ? { productTitle: room.productTitle, productThumbnailUrl: room.productThumbnailUrl } : null} content={selectedConfirmMessage ? JSON.parse(selectedConfirmMessage.content || '{}') : undefined}
         onConfirm={() => {
-          // 사용자의 판단을 믿고 일단 서버로 전송합니다. 권한 체크는 서버에서 수행됩니다.
+          // 수락 버튼 → 2차 비밀번호/생체인증 확인 후 결제 진행
+          setAuthModalOpen(true);
+        }} />
+      <TransactionAuthModal
+        isOpen={authModalOpen}
+        onSuccess={() => {
+          setAuthModalOpen(false);
+          setConfirmSheetOpen(false);
           if (selectedConfirmMessage) {
             handleTransactionAction(selectedConfirmMessage, 'PAYMENT_SUCCESS');
           }
-        }} />
+        }}
+        onClose={() => setAuthModalOpen(false)}
+      />
       <ChatMapPickerSheet isOpen={mapSheetOpen} onClose={() => setMapSheetOpen(false)} onSubmit={handleMapSubmit} />
     </Page>
   );
