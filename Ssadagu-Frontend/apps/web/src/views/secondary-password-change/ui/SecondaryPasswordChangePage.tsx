@@ -97,11 +97,6 @@ export function SecondaryPasswordChangePage() {
     if (newPwd !== confirmValue) {
       setError('비밀번호가 일치하지 않습니다. 다시 시도해주세요.');
       setConfirm('');
-      setTimeout(() => {
-        setStep('new');
-        setNewPwd('');
-        setError('');
-      }, 1200);
       return;
     }
 
@@ -131,7 +126,10 @@ export function SecondaryPasswordChangePage() {
           <PinPad
             title={'기존 비밀번호 입력'}
             value={current}
-            onInput={setCurrent}
+            onInput={(val) => {
+              setCurrent(val);
+              if (error) setError('');
+            }}
             error={error}
             disabled={loading}
           />
@@ -148,7 +146,10 @@ export function SecondaryPasswordChangePage() {
           <PinPad
             title={'새 비밀번호 입력'}
             value={newPwd}
-            onInput={setNewPwd}
+            onInput={(val) => {
+              setNewPwd(val);
+              if (error) setError('');
+            }}
           />
         </ContentArea>
       </Page>
@@ -165,7 +166,10 @@ export function SecondaryPasswordChangePage() {
         <PinPad
           title={'새 비밀번호 한 번 더'}
           value={confirm}
-          onInput={setConfirm}
+          onInput={(val) => {
+            setConfirm(val);
+            if (error) setError('');
+          }}
           error={error}
           disabled={loading}
         />

@@ -14,7 +14,8 @@ export const mapToChatRoomDetail = (d: any, userId: number | null, fallbackNickn
 
   const productTitle = product.title || product.productName || d.productTitle || d.title || '상품 정보 없음';
   const productPrice = product.price || product.amount || d.productPrice || d.price || 0;
-  const productThumbnailUrl = product.imageUrl || product.thumbnailUrl || d.productImageUrl || d.thumbnailUrl || null;
+  const finalImageUrl = product.images && product.images.length > 0 ? product.images[0].imageUrl : (d.images && d.images.length > 0 ? d.images[0].imageUrl : null);
+  const productThumbnailUrl = finalImageUrl || product.productThumbnailUrl || product.thumbnailUrl || product.imageUrl || product.image || d.productThumbnailUrl || d.thumbnailUrl || d.productImageUrl || d.imageUrl || d.image || null;
   const productStatus = product.status || d.productStatus || d.status || 'ACTIVE';
 
   const effectivePartnerId = partner.userId || partner.id || d.partnerId || d.targetId || -1;
@@ -81,7 +82,25 @@ export function useChatRoomDetail(roomId: number, userId: number | null, accessT
       if (!res.ok) throw new Error('채팅방 정보를 불러오지 못했습니다.');
       const json: any = await res.json();
       const d = json.data || json.response || json.result || json;
-      return mapToChatRoomDetail(d, userId);
+      const mapped = mapToChatRoomDetail(d, userId);
+
+      // 백엔드 채팅방 상세 API에서 사진을 아예 주지 않을 경우 대비 폴백 패치
+      if (!mapped.productThumbnailUrl && mapped.productId > 0) {
+         try {
+           const prodRes = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(mapped.productId), accessToken ?? undefined);
+           if (prodRes.ok) {
+             const prodJson: any = await prodRes.json();
+             const prod = prodJson.data || prodJson;
+             const finalImageUrl = (prod.images && prod.images.length > 0) ? prod.images[0].imageUrl : (prod.imageUrl || prod.thumbnailUrl || null);
+             if (finalImageUrl) {
+                mapped.productThumbnailUrl = finalImageUrl;
+             }
+           }
+         } catch (e) {
+           console.warn('상품 썸네일 폴백 조회 실패', e);
+         }
+      }
+      return mapped;
     },
     enabled: roomId > 0 && !!userId && !!accessToken,
   });
@@ -122,7 +141,7 @@ export function useNewChatRoomInit(productId: number, userId: number | null, acc
         id: -1,
         productId: prod.id,
         productTitle: prod.title,
-        productThumbnailUrl: prod.imageUrl || prod.thumbnailUrl,
+        productThumbnailUrl: (prod.images && prod.images.length > 0) ? prod.images[0].imageUrl : (prod.imageUrl || prod.thumbnailUrl || null),
         productPrice: prod.price,
         productStatus: prod.status,
         buyerId: userId ?? -1,

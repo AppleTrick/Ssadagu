@@ -41,11 +41,11 @@ export function PinPad({
 
       <DotsRow>
         {Array.from({ length: maxLength }).map((_, i) => (
-          <Dot key={i} filled={i < value.length} hasError={!!error} />
+          <Dot key={i} filled={i < value.length} />
         ))}
       </DotsRow>
 
-      {error && <ErrorText role="alert">{error}</ErrorText>}
+      <ErrorText role="alert">{error}</ErrorText>
 
       {onForgot && (
         <ForgotButton type="button" onClick={onForgot}>
@@ -110,16 +110,11 @@ const DotsRow = styled.div`
   margin-bottom: 8px;
 `;
 
-const Dot = styled.div<{ filled: boolean; hasError: boolean }>`
+const Dot = styled.div<{ filled: boolean }>`
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: ${({ filled, hasError }) =>
-    hasError
-      ? colors.red
-      : filled
-      ? colors.primary
-      : colors.border};
+  background: ${({ filled }) => (filled ? colors.primary : colors.border)};
   transition: background 0.15s ease;
 `;
 
@@ -129,6 +124,7 @@ const ErrorText = styled.p`
   color: ${colors.red};
   margin: 8px 0 0;
   text-align: center;
+  min-height: 20px;
 `;
 
 const ForgotButton = styled.button`
