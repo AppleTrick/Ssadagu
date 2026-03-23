@@ -7,6 +7,7 @@ import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { ImageCarousel, FadeIn } from '@/shared/ui';
 import { SellerCard, ItemDetailBottomBar, getProduct, ProductDetailSkeleton } from '@/entities/product';
+import { useMyProfile } from '@/entities/user';
 import { useDeleteProduct } from '@/features/create-product';
 import type { ProductDetail } from '@/entities/product';
 import { apiClient } from '@/shared/api/client';
@@ -155,7 +156,59 @@ const TextButton = styled.button`
   background: none; border: none; cursor: pointer; text-decoration: underline;
 `;
 
-const statusLabel: Record<string, string> = { ON_SALE: '판매중', RESERVED: '예약중', SOLD: '판매완료' };
+const HeaderIconButton = styled.button`
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: ${colors.textPrimary};
+  &:active {
+    background: ${colors.bg};
+  }
+`;
+
+const DropdownMenu = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: ${colors.surface};
+  border: 1px solid ${colors.border};
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-top: 8px;
+  min-width: 120px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const DropdownItem = styled.button<{ $danger?: boolean }>`
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.base};
+  color: ${({ $danger }) => ($danger ? colors.red : colors.textPrimary)};
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  width: 100%;
+
+  &:active {
+    background: ${colors.bg};
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid ${colors.border};
+  }
+`;
+
+const statusLabel: Record<string, string> = { ON_SALE: '판매중', RESERVED: '판매중', SOLD: '거래완료' };
 
 // 카카오맵 컴포넌트
 function KakaoMap({ regionName }: { regionName: string }) {
@@ -223,6 +276,15 @@ export function ProductDetailPage() {
   const userId = useAuthStore((s) => s.userId);
   const { alert: modalAlert, confirm: modalConfirm } = useModalStore();
   const [isWished, setIsWished] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleCloseMenu = () => setIsMenuOpen(false);
+    if (isMenuOpen) {
+      window.addEventListener('click', handleCloseMenu);
+    }
+    return () => window.removeEventListener('click', handleCloseMenu);
+  }, [isMenuOpen]);
 
   const { data: product, isLoading, isError, refetch } = useQuery<ProductDetail>({
     queryKey: ['product', productId],
@@ -230,17 +292,7 @@ export function ProductDetailPage() {
     enabled: !isNaN(productId),
   });
 
-  const { data: myProfile } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
-      if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
-      const json = await res.json() as User | UserResponse;
-      if ((json as UserResponse).data) return (json as UserResponse).data as User;
-      return json as User;
-    },
-    enabled: !!accessToken,
-  });
+  const { data: myProfile } = useMyProfile();
 
   useEffect(() => {
     if (product) {
@@ -305,21 +357,43 @@ export function ProductDetailPage() {
     }
   };
 
-  const shareButton = (
-    <button
-      onClick={handleShare}
-      aria-label="공유"
-      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: colors.textPrimary, padding: '4px' }}
-    >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </button>
+  const headerRight = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative' }}>
+      <HeaderIconButton onClick={handleShare} aria-label="공유">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />
+        </svg>
+      </HeaderIconButton>
+      {product?.isMine && (
+        <>
+          <HeaderIconButton 
+            onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }} 
+            aria-label="메뉴"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="6" r="1" fill="currentColor" />
+              <circle cx="12" cy="12" r="1" fill="currentColor" />
+              <circle cx="12" cy="18" r="1" fill="currentColor" />
+            </svg>
+          </HeaderIconButton>
+          {isMenuOpen && (
+            <DropdownMenu>
+              <DropdownItem onClick={() => { setIsMenuOpen(false); router.push(`/products/${productId}/edit`); }}>
+                수정하기
+              </DropdownItem>
+              <DropdownItem $danger onClick={() => { setIsMenuOpen(false); handleDelete(); }}>
+                삭제하기
+              </DropdownItem>
+            </DropdownMenu>
+          )}
+        </>
+      )}
+    </div>
   );
 
   return (
     <Page>
-      <HeaderBack title="상품 상세" onBack={() => router.back()} rightElement={shareButton} />
+      <HeaderBack title="상품 상세" onBack={() => router.back()} rightElement={headerRight} />
       <ContentArea>
         {isLoading && <ProductDetailSkeleton />}
         {isError && (

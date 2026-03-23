@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import type { User } from '@/entities/user';
+import { useMyProfile, type User } from '@/entities/user';
 import styled from '@emotion/styled';
 import { HeaderMain } from '@/widgets/header';
 import { BottomNav } from '@/widgets/bottom-nav';
@@ -11,6 +10,7 @@ import { TabBar } from '@/widgets/tab-bar';
 import { ChatListItem } from '@/entities/chat';
 import type { ChatRoom } from '@/entities/chat';
 import { apiClient } from '@/shared/api/client';
+import { useQuery } from '@tanstack/react-query';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import {
@@ -106,18 +106,7 @@ export function ChatListPage() {
   const userId = useAuthStore((s) => s.userId);
   const [activeTab, setActiveTab] = useState('all');
 
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
-      if (!res.ok) throw new Error('사용자 정보 오류');
-      const json = await res.json();
-      if (json?.data) return json.data as User;
-      return json as User;
-    },
-    enabled: !!accessToken,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: currentUser } = useMyProfile();
 
   const { data: rooms, isLoading, isError, refetch } = useQuery<ChatRoom[]>({
     queryKey: ['chatRooms', currentUser?.id],

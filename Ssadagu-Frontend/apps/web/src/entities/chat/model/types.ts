@@ -25,6 +25,8 @@ export interface TransactionContent {
   price?: number;
   time?: string;
   locationName?: string;
+  buyerNickname?: string;
+  sellerNickname?: string;
 }
 
 export interface ChatMessage {

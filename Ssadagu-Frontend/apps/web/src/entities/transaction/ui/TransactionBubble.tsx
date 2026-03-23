@@ -63,6 +63,9 @@ const TransactionBubble = ({ message, isMyMessage, productThumbnailUrl, onCancel
           <Details $isMyMessage={isMyMessage}>
             {locationName} · {time}
           </Details>
+          <Details $isMyMessage={isMyMessage} style={{ fontSize: '10px', marginTop: '6px', opacity: 0.8 }}>
+            구매자: {contentData.buyerNickname || '-'} / 판매자: {contentData.sellerNickname || '-'}
+          </Details>
         </Info>
       </CardBody>
 

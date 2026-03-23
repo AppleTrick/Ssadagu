@@ -30,6 +30,9 @@ const ItemDetailBottomBar = ({
   onDelete,
   bottomOffset = 0,
 }: ItemDetailBottomBarProps) => {
+  const isSold = product.status === 'SOLD';
+  const isReserved = product.status === 'RESERVED';
+
   return (
     <Bar $bottomOffset={bottomOffset}>
       <Left>
@@ -43,16 +46,28 @@ const ItemDetailBottomBar = ({
       </Left>
       <Right>
         {isMine ? (
-          <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-            <ChatButton onClick={onDelete} style={{ background: colors.surface, color: colors.red, border: `1px solid ${colors.red}`, padding: '0 12px' }}>삭제</ChatButton>
-            <ChatButton onClick={onEdit} style={{ background: colors.bg, color: colors.textPrimary, padding: '0 12px' }}>수정</ChatButton>
-            <BuyButton style={{ padding: '0 12px' }}>거래 완료</BuyButton>
-          </div>
+          <StatusLabel>
+            {isSold ? '거래 완료' : '판매 중'}
+          </StatusLabel>
         ) : (
           <>
-            <ChatButton onClick={onChat}>채팅하기</ChatButton>
+            <ChatButton 
+              onClick={!isSold ? onChat : undefined} 
+              disabled={isSold}
+              style={{
+                background: isSold ? colors.disabled : colors.primary,
+                cursor: !isSold ? 'pointer' : 'default',
+              }}
+            >
+              {isSold ? '거래 완료' : isReserved ? '거래 중' : '채팅하기'}
+            </ChatButton>
             {onBuy && (
-              <BuyButton onClick={onBuy}>구매하기</BuyButton>
+              <BuyButton 
+                onClick={product.status === 'ON_SALE' ? onBuy : undefined} 
+                disabled={product.status !== 'ON_SALE'}
+              >
+                {isSold ? '거래 완료' : isReserved ? '거래 중' : '구매하기'}
+              </BuyButton>
             )}
           </>
         )}
@@ -62,6 +77,20 @@ const ItemDetailBottomBar = ({
 };
 
 export default ItemDetailBottomBar;
+
+const StatusLabel = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  min-width: 100px;
+  padding: 0 20px;
+  background: ${colors.bg};
+  color: ${colors.textSecondary};
+  border-radius: 8px;
+  font-size: ${typography.size.base};
+  font-weight: ${typography.weight.semibold};
+`;
 
 const Bar = styled.div<{ $bottomOffset: number }>`
   position: fixed;
@@ -124,6 +153,11 @@ const ChatButton = styled.button`
   font-size: ${typography.size.base};
   font-weight: ${typography.weight.medium};
   cursor: pointer;
+
+  &:disabled {
+    background: ${colors.disabled};
+    cursor: not-allowed;
+  }
 `;
 
 const BuyButton = styled.button`
@@ -136,6 +170,11 @@ const BuyButton = styled.button`
   font-size: ${typography.size.base};
   font-weight: ${typography.weight.medium};
   cursor: pointer;
+
+  &:disabled {
+    background: ${colors.disabled};
+    cursor: not-allowed;
+  }
 `;
 
 const StatusBadge = styled.span`

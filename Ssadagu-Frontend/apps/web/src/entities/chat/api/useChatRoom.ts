@@ -19,37 +19,64 @@ export const mapToChatRoomDetail = (d: any, userId: number | null, fallbackNickn
   const productStatus = product.status || d.productStatus || d.status || 'ACTIVE';
 
   const effectivePartnerId = partner.userId || partner.id || d.partnerId || d.targetId || -1;
-  const productSellerId = product.sellerId || product.userId || d.sellerId || d.ownerId || d.adminId;
-  const productBuyerId = d.buyerId || d.customerId;
+  const productSellerId = product.sellerId || product.userId || d.sellerId || d.ownerId || d.adminId || d.productSellerId;
+  const productBuyerId = d.buyerId || d.customerId || d.productBuyerId;
 
   const currentUserId = userId ? Number(userId) : null;
   const sellerIdAsNum = productSellerId ? Number(productSellerId) : null;
   const buyerIdAsNum = productBuyerId ? Number(productBuyerId) : null;
+  const partnerIdNum = Number(effectivePartnerId);
 
-  let finalBuyerId = buyerIdAsNum;
-  let finalSellerId = sellerIdAsNum;
+  let finalBuyerId = -1;
+  let finalSellerId = -1;
 
-  // 1순위: 판매자 ID와 내 ID 비교
+  // 로직 개선: 상호 배타적으로 할당
+  // 1. 내가 판매자인 경우
   if (currentUserId && sellerIdAsNum && currentUserId === sellerIdAsNum) {
     finalSellerId = currentUserId;
-    finalBuyerId = Number(effectivePartnerId);
-  } else if (currentUserId && sellerIdAsNum && currentUserId !== sellerIdAsNum) {
+    finalBuyerId = partnerIdNum;
+  }
+  // 2. 내가 구매자인 경우
+  else if (currentUserId && buyerIdAsNum && currentUserId === buyerIdAsNum) {
+    finalBuyerId = currentUserId;
+    finalSellerId = partnerIdNum;
+  }
+  // 3. 내가 구매자임이 확실한 경우 (판매자가 나랑 다름)
+  else if (currentUserId && sellerIdAsNum && currentUserId !== sellerIdAsNum && currentUserId !== partnerIdNum) {
     finalBuyerId = currentUserId;
     finalSellerId = sellerIdAsNum;
-  } 
-  // 2순위: myRole 필드 확인
-  else if (d.myRole === 'BUYER') {
+  }
+  // 4. 역할 필드 기반
+  else if (d.myRole === 'BUYER' || d.role === 'BUYER') {
     finalBuyerId = currentUserId || -1;
-    finalSellerId = Number(effectivePartnerId);
-  } else if (d.myRole === 'SELLER') {
+    finalSellerId = partnerIdNum;
+  } else if (d.myRole === 'SELLER' || d.role === 'SELLER') {
     finalSellerId = currentUserId || -1;
-    finalBuyerId = Number(effectivePartnerId);
+    finalBuyerId = partnerIdNum;
   }
-  // 3순위: 그래도 모르면 partner가 아닌 쪽을 나로 가정
-  else {
-    finalBuyerId = buyerIdAsNum || (currentUserId === Number(effectivePartnerId) ? -1 : currentUserId || -1);
-    finalSellerId = sellerIdAsNum || (currentUserId === Number(effectivePartnerId) ? -1 : currentUserId || -1);
+  // 5. 최후의 보루: 내가 파트너가 아니라면 확실한 정보를 기반으로만 할당
+  else if (currentUserId && currentUserId !== partnerIdNum) {
+    if (sellerIdAsNum && sellerIdAsNum !== currentUserId) {
+        finalBuyerId = currentUserId;
+        finalSellerId = partnerIdNum;
+    } else if (buyerIdAsNum && buyerIdAsNum !== currentUserId) {
+        finalSellerId = currentUserId;
+        finalBuyerId = partnerIdNum;
+    } else if (d.sellerNickname && d.sellerNickname === fallbackNickname) {
+        finalSellerId = currentUserId;
+        finalBuyerId = partnerIdNum;
+    } else if (d.buyerNickname && d.buyerNickname === fallbackNickname) {
+        finalBuyerId = currentUserId;
+        finalSellerId = partnerIdNum;
+    } else {
+        // 확실하지 않은 경우 섣불리 판매자(권한자)로 지정하지 않음
+        finalBuyerId = buyerIdAsNum || -1;
+        finalSellerId = sellerIdAsNum || -1;
+    }
   }
+
+  const finalBuyerNickname = (currentUserId && finalBuyerId === currentUserId) ? fallbackNickname : (d.buyerNickname || (finalBuyerId === partnerIdNum ? partner.nickname : '') || '');
+  const finalSellerNickname = (currentUserId && finalSellerId === currentUserId) ? fallbackNickname : (d.sellerNickname || (finalSellerId === partnerIdNum ? partner.nickname : '') || '');
 
   return {
     id: d.roomId || d.id,
@@ -58,15 +85,15 @@ export const mapToChatRoomDetail = (d: any, userId: number | null, fallbackNickn
     productThumbnailUrl,
     productPrice,
     productStatus,
-    partnerId: Number(effectivePartnerId),
+    partnerId: partnerIdNum,
     partnerNickname: partner.nickname || d.partnerNickname || d.targetNickname || '알 수 없음',
     lastMessage: d.lastMessage,
     lastSentAt: d.lastSentAt,
     roomStatus: d.roomStatus || 'ACTIVE',
-    buyerId: Number(finalBuyerId ?? -1),
-    buyerNickname: (currentUserId && Number(finalBuyerId) === currentUserId) ? fallbackNickname : (d.buyerNickname || partner.nickname || ''),
-    sellerId: Number(finalSellerId ?? -1),
-    sellerNickname: (currentUserId && Number(finalSellerId) === currentUserId) ? fallbackNickname : (d.sellerNickname || partner.nickname || ''),
+    buyerId: finalBuyerId,
+    buyerNickname: finalBuyerNickname || '구매자',
+    sellerId: finalSellerId,
+    sellerNickname: finalSellerNickname || '판매자',
     unreadCount: d.unreadCount ?? 0,
   } as ChatRoom;
 };
@@ -74,33 +101,42 @@ export const mapToChatRoomDetail = (d: any, userId: number | null, fallbackNickn
 /**
  * 기존 채팅방 상세 조회 훅 (엔터티 계층)
  */
-export function useChatRoomDetail(roomId: number, userId: number | null, accessToken: string | null) {
+export function useChatRoomDetail(roomId: number, userId: number | null, accessToken: string | null, userNickname: string = '') {
   return useQuery<ChatRoom>({
-    queryKey: ['chatRoom', roomId, userId],
+    queryKey: ['chatRoom', roomId, userId, userNickname],
     queryFn: async () => {
       const res = await apiClient.get(`${ENDPOINTS.CHATS.DETAIL(roomId)}?userId=${userId}`, accessToken ?? undefined);
       if (!res.ok) throw new Error('채팅방 정보를 불러오지 못했습니다.');
       const json: any = await res.json();
       const d = json.data || json.response || json.result || json;
-      const mapped = mapToChatRoomDetail(d, userId);
+      // 백엔드 채팅방 응답에 정보가 누락되었을 수 있으므로 방어 로직 추가
+      // productId가 있다면 상품 상세 정보를 직접 조회하여 병합합니다. (역할 판별 및 썸네일 표시용)
+      let productInfo = {};
+      const targetProductId = d.productId || d.product?.id || d.product?.productId;
+      
+      const missingSeller = !d.sellerId && !d.productSellerId;
+      const finalImageUrl = (d.product?.images && d.product?.images.length > 0) ? d.product.images[0].imageUrl : (d.product?.imageUrl || d.product?.thumbnailUrl || d.productThumbnailUrl || d.thumbnailUrl || d.productImageUrl || d.imageUrl);
+      const missingImage = !finalImageUrl;
 
-      // 백엔드 채팅방 상세 API에서 사진을 아예 주지 않을 경우 대비 폴백 패치
-      if (!mapped.productThumbnailUrl && mapped.productId > 0) {
+      if ((missingSeller || missingImage) && targetProductId) {
          try {
-           const prodRes = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(mapped.productId), accessToken ?? undefined);
-           if (prodRes.ok) {
-             const prodJson: any = await prodRes.json();
-             const prod = prodJson.data || prodJson;
-             const finalImageUrl = (prod.images && prod.images.length > 0) ? prod.images[0].imageUrl : (prod.imageUrl || prod.thumbnailUrl || null);
-             if (finalImageUrl) {
-                mapped.productThumbnailUrl = finalImageUrl;
-             }
+           const pRes = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(targetProductId), accessToken ?? undefined);
+           if (pRes.ok) {
+              const pJson: any = await pRes.json();
+              productInfo = pJson.data || pJson;
            }
          } catch (e) {
-           console.warn('상품 썸네일 폴백 조회 실패', e);
+           console.warn('역할/썸네일 판별을 위한 상품 정보 추가 조회 실패', e);
          }
       }
-      return mapped;
+
+      return mapToChatRoomDetail({ 
+          ...d, 
+          product: { ...(d.product || {}), ...productInfo } 
+        }, 
+        userId, 
+        userNickname
+      );
     },
     enabled: roomId > 0 && !!userId && !!accessToken,
   });
