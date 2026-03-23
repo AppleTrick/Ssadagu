@@ -59,7 +59,8 @@ export function SecondaryPasswordChangePage() {
   // Step: new - 새 비밀번호 6자리 완성 시
   useEffect(() => {
     if (step === 'new' && newPwd.length === 6) {
-      setTimeout(() => setStep('confirm'), 100);
+      const timer = setTimeout(() => setStep('confirm'), 100);
+      return () => clearTimeout(timer);
     }
   }, [newPwd, step]);
 
@@ -95,10 +96,10 @@ export function SecondaryPasswordChangePage() {
     setError('');
     if (newPwd !== confirmValue) {
       setError('비밀번호가 일치하지 않습니다. 다시 시도해주세요.');
+      setConfirm('');
       setTimeout(() => {
         setStep('new');
         setNewPwd('');
-        setConfirm('');
         setError('');
       }, 1200);
       return;
