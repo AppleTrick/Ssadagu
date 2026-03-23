@@ -49,6 +49,6 @@ export const useInfiniteProducts = (searchQuery: string) => {
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.page + 1 : undefined),
-    enabled: !!accessToken,
+    enabled: !!accessToken && !!user?.regionName,
   });
 };
