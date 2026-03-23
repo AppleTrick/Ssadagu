@@ -11,6 +11,10 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,10 +32,10 @@ public class AIMetadataService {
     /**
      * 상품 정보를 기반으로 JSON-LD 메타데이터를 생성합니다.
      */
-    public String generateMetadata(String title, String description, Long price, String categoryCode, String regionName) {
+    public String generateMetadata(String title, String description, Long price, String categoryCode, String regionName, List<String> imageUrls) {
         try {
             String prompt = buildPrompt(title, description, price, categoryCode, regionName);
-            String response = callGmsApi(prompt);
+            String response = callGmsApi(prompt, imageUrls);
             return extractJsonFromResponse(response);
         } catch (Exception e) {
             log.error("Failed to generate metadata: {}", e.getMessage());
@@ -42,12 +46,12 @@ public class AIMetadataService {
     /**
      * GMS API를 호출하여 메타데이터를 생성합니다.
      */
-    private String callGmsApi(String prompt) throws Exception {
+    private String callGmsApi(String prompt, List<String> imageUrls) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + gmsApiKey);
 
-        String requestBody = objectMapper.writeValueAsString(new GmsRequest(prompt));
+        String requestBody = objectMapper.writeValueAsString(new GmsRequest(prompt, imageUrls));
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
         String response = restTemplate.postForObject(gmsEndpoint, entity, String.class);
@@ -61,7 +65,8 @@ public class AIMetadataService {
      */
     private String buildPrompt(String title, String description, Long price, String categoryCode, String regionName) {
         return String.format("""
-                다음 상품 정보를 분석하여 JSON-LD 형식의 구조화된 메타데이터를 생성해줘.
+                첨부된 상품 이미지와 아래 상품 정보를 함께 분석하여 JSON-LD 형식의 구조화된 메타데이터를 생성해줘.
+                이미지가 있다면 이미지에서 색상, 브랜드, 상태, 결함 등을 직접 확인해줘.
                 한국어로 답변하고, 유추 가능한 정보도 포함해줘.
 
                 상품 제목: %s
@@ -75,17 +80,17 @@ public class AIMetadataService {
                   "색상": "string or null",
                   "브랜드": "string or null",
                   "제품명": "string or null",
-                  "모델": "string or null",
+                  "모델명": "string or null",
+                  "사이즈": "string or null (의류/신발/가구 등 크기가 있는 경우)",
+                  "소재": "string or null (의류/가구/잡화 등 소재가 있는 경우)",
                   "출시년도": "number or null",
                   "상태": "string (신상품/거의새상품/좋음/사용감있음/불량)",
                   "가격": %d,
-                  "저장용량": "string or null",
-                  "화면크기": "string or null",
-                  "배터리상태": "string or null",
-                  "주요특징": ["string"],
-                  "결함": ["string"],
+                  "주요특징": ["string (카테고리에 맞는 핵심 특징 나열)"],
+                  "결함": ["string (육안으로 보이는 결함, 없으면 빈 배열)"],
                   "카테고리": "string",
-                  "지역": "string"
+                  "지역": "string",
+                  "추가정보": {"key": "value (카테고리 특화 정보: 전자기기면 저장용량/화면크기/배터리상태, 도서면 저자/출판사, 식품이면 유통기한/원산지 등)"}
                 }
                 """, title, description, price, categoryCode, regionName, price);
     }
@@ -140,25 +145,40 @@ public class AIMetadataService {
      */
     static class GmsRequest {
         public String model = "gpt-4o-mini";
-        public GmsMessage[] messages;
+        public Object[] messages;
         public int max_tokens = 2048;
         public double temperature = 0.3;
 
-        GmsRequest(String userContent) {
-            this.messages = new GmsMessage[]{
-                    new GmsMessage("system", "Answer in Korean. You are an expert at analyzing product information and creating structured metadata."),
-                    new GmsMessage("user", userContent)
-            };
-        }
+        GmsRequest(String userContent, List<String> imageUrls) {
+            Map<String, Object> systemMsg = new java.util.HashMap<>();
+            systemMsg.put("role", "system");
+            systemMsg.put("content", "Answer in Korean. You are an expert at analyzing product information and creating structured metadata.");
 
-        static class GmsMessage {
-            public String role;
-            public String content;
+            Map<String, Object> userMsg = new java.util.HashMap<>();
+            userMsg.put("role", "user");
 
-            GmsMessage(String role, String content) {
-                this.role = role;
-                this.content = content;
+            if (imageUrls != null && !imageUrls.isEmpty()) {
+                // 비전 포맷: 이미지 URL + 텍스트
+                List<Map<String, Object>> contentParts = new ArrayList<>();
+                for (String url : imageUrls) {
+                    Map<String, Object> imageUrlObj = new java.util.HashMap<>();
+                    imageUrlObj.put("url", url);
+                    Map<String, Object> imagePart = new java.util.HashMap<>();
+                    imagePart.put("type", "image_url");
+                    imagePart.put("image_url", imageUrlObj);
+                    contentParts.add(imagePart);
+                }
+                Map<String, Object> textPart = new java.util.HashMap<>();
+                textPart.put("type", "text");
+                textPart.put("text", userContent);
+                contentParts.add(textPart);
+                userMsg.put("content", contentParts);
+            } else {
+                // 텍스트 전용 포맷
+                userMsg.put("content", userContent);
             }
+
+            this.messages = new Object[]{systemMsg, userMsg};
         }
     }
 }
