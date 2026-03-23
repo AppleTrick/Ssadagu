@@ -3,6 +3,7 @@
 import styled from "@emotion/styled";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useGlobalChatStomp, useNotificationStore } from "@/features/chat-messaging/lib/useGlobalChatStomp";
 import {
   colors,
   typography,
@@ -71,6 +72,11 @@ const navItems = [
 
 const BottomNav = () => {
   const pathname = usePathname();
+  
+  // 프론트 단독 다중 STOMP 구독 활성화
+  useGlobalChatStomp();
+  // 실시간으로 변동하는 배지 개수 불러오기 (Zustand)
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   return (
     <Nav>
@@ -82,7 +88,12 @@ const BottomNav = () => {
           : false;
         return (
           <NavItem key={item.path} href={item.path}>
-            {item.icon(isActive)}
+            <IconWrapper>
+              {item.icon(isActive)}
+              {item.path === "/chat" && unreadCount > 0 && (
+                <Badge>{unreadCount > 99 ? '99+' : unreadCount}</Badge>
+              )}
+            </IconWrapper>
             <NavLabel $active={isActive}>{item.label}</NavLabel>
           </NavItem>
         );
@@ -121,4 +132,30 @@ const NavLabel = styled.span<{ $active: boolean }>`
   font-size: ${typography.size.xs};
   font-weight: ${typography.weight.medium};
   color: ${({ $active }) => ($active ? colors.primary : colors.inactiveTab)};
+`;
+
+const IconWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const Badge = styled.div`
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background-color: #FF3B30;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  height: 16px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid ${colors.surface};
+  box-sizing: content-box;
 `;

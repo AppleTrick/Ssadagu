@@ -71,7 +71,21 @@ export function ChatRoomPage() {
   }, [roomId, isNewRoom, markAsRead]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesAreaRef = useRef<HTMLDivElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const handleScroll = () => {
+    if (!messagesAreaRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesAreaRef.current;
+    // 오차 범위 150px 이내면 맨 아래로 간주
+    const atBottom = scrollHeight - scrollTop - clientHeight < 150;
+    setIsAtBottom(atBottom);
+    if (atBottom && unreadCount > 0) {
+      setUnreadCount(0);
+    }
+  };
 
   // 1. Entities: 사용자 정보 및 방 정보 초기화
   const { data: currentUser } = useUserProfile(userId, accessToken);
@@ -141,7 +155,17 @@ export function ChatRoomPage() {
   }, [historyMessages, sessionMessages]);
 
   useEffect(() => {
-    if (displayMessages.length > 0) bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+    if (displayMessages.length === 0) return;
+    const latestMsg = displayMessages[displayMessages.length - 1];
+    const isMine = userId !== null && Number(latestMsg.senderId) === Number(userId);
+
+    if (isMine || isAtBottom) {
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    } else {
+      setUnreadCount((prev) => prev + 1);
+    }
   }, [displayMessages.length]);
 
   const createChatMutation = useMutation({
@@ -261,7 +285,7 @@ export function ChatRoomPage() {
           />
         </ItemSummaryBar>
       )}
-      <MessagesArea>
+      <MessagesArea ref={messagesAreaRef} onScroll={handleScroll}>
         {isLoading && displayMessages.length === 0 && <LoadingWrapper>불러오는 중...</LoadingWrapper>}
         {!isLoading && !messagesLoading && displayMessages.length === 0 && <EmptyMessages>아직 메시지가 없습니다.</EmptyMessages>}
         {displayMessages.map((msg) => {
@@ -312,7 +336,21 @@ export function ChatRoomPage() {
             : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={resolvedNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />;
         })}
         {isUploading && <UploadStatus>사진 전송 중...</UploadStatus>}
-        <div ref={bottomRef} />
+        <div ref={bottomRef} style={{ height: '1px' }} />
+        
+        {/* 채팅방 하단 새 메시지 플로팅 알림 (안 읽음 배지) */}
+        {unreadCount > 0 && !isAtBottom && (
+          <FloatingBadge onClick={() => {
+            setUnreadCount(0);
+            setIsAtBottom(true);
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }}>
+            {unreadCount}개의 새 메시지
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </FloatingBadge>
+        )}
       </MessagesArea>
       <ChatInputArea 
         onSend={handleSend} 
@@ -394,6 +432,31 @@ const MessagesArea = styled.div`
   flex-direction: column;
   gap: 8px;
   padding: 16px 0;
+  position: relative;
+`;
+
+const FloatingBadge = styled.button`
+  position: sticky;
+  bottom: 24px;
+  align-self: center;
+  background: ${colors.primary};
+  color: ${colors.surface};
+  border: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-size: ${typography.size.sm};
+  font-weight: ${typography.weight.semibold};
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s, transform 0.2s;
+  
+  &:active {
+    transform: scale(0.96);
+  }
 `;
 
 const LoadingWrapper = styled.div`
