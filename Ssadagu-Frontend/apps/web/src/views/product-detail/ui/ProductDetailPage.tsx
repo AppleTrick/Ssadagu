@@ -7,6 +7,7 @@ import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { ImageCarousel, FadeIn } from '@/shared/ui';
 import { SellerCard, ItemDetailBottomBar, getProduct, ProductDetailSkeleton } from '@/entities/product';
+import { useMyProfile } from '@/entities/user';
 import { useDeleteProduct } from '@/features/create-product';
 import type { ProductDetail } from '@/entities/product';
 import { apiClient } from '@/shared/api/client';
@@ -230,17 +231,7 @@ export function ProductDetailPage() {
     enabled: !isNaN(productId),
   });
 
-  const { data: myProfile } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
-      if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
-      const json = await res.json() as User | UserResponse;
-      if ((json as UserResponse).data) return (json as UserResponse).data as User;
-      return json as User;
-    },
-    enabled: !!accessToken,
-  });
+  const { data: myProfile } = useMyProfile();
 
   useEffect(() => {
     if (product) {

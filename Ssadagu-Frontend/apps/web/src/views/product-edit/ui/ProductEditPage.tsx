@@ -6,9 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { ItemRegistrationForm } from '@/features/create-product';
 import { getProduct } from '@/entities/product';
-import type { User } from '@/entities/user';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
+import { useMyProfile, type User } from '@/entities/user';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography } from '@/shared/styles/theme';
 import { useModalStore } from '@/shared/hooks/useModalStore';
@@ -32,17 +30,7 @@ export function ProductEditPage() {
     enabled: !isNaN(productId),
   });
 
-  const { data: myProfile, isLoading: isProfileLoading } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
-      if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
-      const json = await res.json() as User | UserResponse;
-      if ((json as UserResponse).data) return (json as UserResponse).data as User;
-      return json as User;
-    },
-    enabled: !!accessToken,
-  });
+  const { data: myProfile, isLoading: isProfileLoading } = useMyProfile();
 
   useEffect(() => {
     const checkPermission = async () => {

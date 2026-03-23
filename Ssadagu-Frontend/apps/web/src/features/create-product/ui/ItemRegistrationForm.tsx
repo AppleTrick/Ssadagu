@@ -15,6 +15,7 @@ import { useUpdateProduct } from '../model/useUpdateProduct';
 import { LocationPicker } from '@/features/location-picker';
 import { MapBase } from '@/shared/ui';
 import { getProxyImageUrl } from '@/shared/utils';
+import { useMyProfile } from '@/entities/user';
 import type { ProductDetail } from '@/entities/product';
 import { useQuery } from '@tanstack/react-query';
 import type { User } from '@/entities/user';
@@ -561,17 +562,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   const [imagePreviews, setImagePreviews] = useState<{ id?: number; url: string; file?: File }[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const { data: myProfile } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.PROFILE(userId!), accessToken ?? undefined);
-      if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
-      const json = await res.json() as any;
-      if (json.data) return json.data as User;
-      return json as User;
-    },
-    enabled: !!accessToken,
-  });
+  const { data: myProfile } = useMyProfile();
 
   const isEdit = !!productId;
 
