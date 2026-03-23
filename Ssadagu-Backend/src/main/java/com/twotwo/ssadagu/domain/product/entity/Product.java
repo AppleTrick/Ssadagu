@@ -55,6 +55,9 @@ public class Product extends BaseEntity {
     @Builder.Default
     private java.util.List<ProductImage> images = new java.util.ArrayList<>();
 
+    @Column(columnDefinition = "JSON")
+    private String metadata;
+
     public void update(String title, String description, Long price, String categoryCode, String regionName,
             String status) {
         if (title != null)
@@ -96,5 +99,9 @@ public class Product extends BaseEntity {
 
     public void cancelReservation() {
         this.status = "ON_SALE";
+    }
+
+    public void updateMetadata(String metadata) {
+        this.metadata = metadata;
     }
 }

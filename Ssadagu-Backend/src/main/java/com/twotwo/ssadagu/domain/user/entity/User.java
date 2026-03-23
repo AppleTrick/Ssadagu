@@ -75,6 +75,11 @@ public class User extends BaseEntity {
         this.isBiometricEnabled = enabled;
     }
 
+    public void clearBiometric() {
+        this.biometricPublicKey = null;
+        this.isBiometricEnabled = false;
+    }
+
     public void updateProfileImage(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }

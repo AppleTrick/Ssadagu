@@ -180,7 +180,7 @@ public class UserController {
         return ApiResponse.success(null);
     }
 
-    @Operation(summary = "생체 인증 활성화 여부 변경", description = "생체 인증 사용 여부(활성화/비활성화)를 변경합니다.")
+    @Operation(summary = "생체 인증 활성화 여부 변경", description = "생체 인증 사용 여부(활성화/비활성화)를 변경합니다. 비활성화 시 등록된 공개키도 삭제됩니다.")
     @PatchMapping("/{userId}/biometric/toggle")
     public ApiResponse<Void> toggleBiometric(
             @PathVariable("userId") Long userId,
@@ -188,6 +188,17 @@ public class UserController {
             @RequestBody @Valid BiometricToggleRequestDto requestDto) {
         validateUserAuthority(userDetails, userId);
         userService.toggleBiometric(userId, requestDto);
+        return ApiResponse.success(null);
+    }
+
+    @Operation(summary = "생체 인증 검증", description = "디바이스 토큰(publicKey)으로 생체 인증을 검증합니다. 성공 시 결제 등 민감한 기능이 허용됩니다.")
+    @PostMapping("/{userId}/biometric/verify")
+    public ApiResponse<Void> verifyBiometric(
+            @PathVariable("userId") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid BiometricVerifyRequestDto requestDto) {
+        validateUserAuthority(userDetails, userId);
+        userService.verifyBiometric(userId, requestDto);
         return ApiResponse.success(null);
     }
 

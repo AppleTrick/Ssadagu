@@ -16,6 +16,8 @@ public enum ErrorCode {
     SECONDARY_PASSWORD_NOT_MATCH(HttpStatus.BAD_REQUEST, "U005", "2차 비밀번호가 일치하지 않습니다."),
     SECONDARY_PASSWORD_NOT_SET(HttpStatus.BAD_REQUEST, "U006", "2차 비밀번호가 설정되어 있지 않습니다."),
     BIOMETRIC_NOT_ENABLED(HttpStatus.BAD_REQUEST, "U007", "생체 인증이 비활성화되어 있습니다."),
+    BIOMETRIC_NOT_REGISTERED(HttpStatus.BAD_REQUEST, "U008", "생체 인증이 등록되어 있지 않습니다."),
+    BIOMETRIC_TOKEN_NOT_MATCH(HttpStatus.UNAUTHORIZED, "U009", "생체 인증 토큰이 일치하지 않습니다."),
 
     // Product
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "상품을 찾을 수 없습니다."),
