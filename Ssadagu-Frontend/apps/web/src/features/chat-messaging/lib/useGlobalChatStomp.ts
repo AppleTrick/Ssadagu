@@ -7,6 +7,7 @@ import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { create } from 'zustand';
+import { useQueryClient } from '@tanstack/react-query';
 
 // 전역 알림(안 읽음 배지) 관리를 위한 Zustand 스토어
 interface NotificationStore {
@@ -34,6 +35,7 @@ export function useGlobalChatStomp() {
   const setUnreadCount = useNotificationStore((s) => s.setUnreadCount);
   const increment = useNotificationStore((s) => s.increment);
   const stompRef = useRef<Client | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!userId || !accessToken) return;
@@ -67,9 +69,11 @@ export function useGlobalChatStomp() {
                 client.subscribe(`/sub/chat/room/${roomId}`, (frame) => {
                    try {
                      const msg = JSON.parse(frame.body);
-                     // 다른 사람이 보낸 메시지일 경우에만 전역 배지 + 1
                      if (msg && Number(msg.senderId) !== Number(userId)) {
                         increment();
+                        // 🔔 [핵심] 메시지가 오면 채팅 목록 페이지(ChatListPage)의 React Query 캐시를 강제로 파기하여, 
+                        // 화면 밖(채팅 목록 등)에 있어도 최신 메시지와 시간, 안 읽음 수가 즉시 UI에 반영되도록 합니다.
+                        queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
                      }
                    } catch (e) {
                      console.warn('STOMP 메시지 파싱 오류', e);
