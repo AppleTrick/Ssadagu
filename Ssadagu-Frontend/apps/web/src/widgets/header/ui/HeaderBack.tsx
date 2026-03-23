@@ -48,7 +48,7 @@ const Header = styled.header`
   background: ${colors.surface};
   border-bottom: 1px solid ${colors.border};
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  grid-template-columns: min-content 1fr min-content;
   align-items: center;
   padding: 0 8px;
   z-index: ${zIndex.header};
