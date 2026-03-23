@@ -469,7 +469,9 @@ export function VerifyAccountPage() {
                   placeholder="계좌번호를 입력해주세요 (- 없이)"
                   value={accountNumber}
                   onChange={(e) => {
-                    setAccountNumber(e.target.value.replace(/[^0-9]/g, ''));
+                    const onlyNum = e.target.value.replace(/[^0-9]/g, '');
+                    e.target.value = onlyNum;
+                    setAccountNumber(onlyNum);
                     setError("");
                   }}
                   inputMode="numeric"
