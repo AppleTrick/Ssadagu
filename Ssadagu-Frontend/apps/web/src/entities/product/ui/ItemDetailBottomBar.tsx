@@ -50,9 +50,14 @@ const ItemDetailBottomBar = ({
           </div>
         ) : (
           <>
-            <ChatButton onClick={onChat}>채팅하기</ChatButton>
+            <ChatButton 
+              onClick={onChat} 
+              disabled={product.status === 'SOLD'}
+            >
+              {product.status === 'SOLD' ? '거래완료' : '채팅하기'}
+            </ChatButton>
             {onBuy && (
-              <BuyButton onClick={onBuy}>구매하기</BuyButton>
+              <BuyButton onClick={onBuy} disabled={product.status === 'SOLD'}>구매하기</BuyButton>
             )}
           </>
         )}
@@ -124,6 +129,11 @@ const ChatButton = styled.button`
   font-size: ${typography.size.base};
   font-weight: ${typography.weight.medium};
   cursor: pointer;
+
+  &:disabled {
+    background: ${colors.disabled};
+    cursor: not-allowed;
+  }
 `;
 
 const BuyButton = styled.button`
@@ -136,6 +146,11 @@ const BuyButton = styled.button`
   font-size: ${typography.size.base};
   font-weight: ${typography.weight.medium};
   cursor: pointer;
+
+  &:disabled {
+    background: ${colors.disabled};
+    cursor: not-allowed;
+  }
 `;
 
 const StatusBadge = styled.span`
