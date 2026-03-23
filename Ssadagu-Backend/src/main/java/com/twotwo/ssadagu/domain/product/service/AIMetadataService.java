@@ -207,7 +207,7 @@ public class AIMetadataService {
     static class GmsRequest {
         public String model = "gpt-5.2";
         public Object[] messages;
-        public int max_tokens = 4096;
+        public int max_completion_tokens = 4096;
         public double temperature = 0.3;
 
         GmsRequest(String userContent, List<String> imageUrls) {
