@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -57,7 +58,7 @@ class TransactionServiceTest {
     void requestPayment_success() {
         // given
         User seller = User.builder().id(1L).build();
-        Product product = Product.builder().id(100L).seller(seller).status("ON_SALE").build();
+        Product product = Product.builder().id(100L).seller(seller).price(10000L).status("ON_SALE").build();
         
         given(productRepository.findByIdWithLock(100L)).willReturn(Optional.of(product));
 
@@ -74,7 +75,7 @@ class TransactionServiceTest {
     void requestPayment_fail_not_seller() {
         // given
         User seller = User.builder().id(1L).build();
-        Product product = Product.builder().id(100L).seller(seller).status("ON_SALE").build();
+        Product product = Product.builder().id(100L).seller(seller).price(10000L).status("ON_SALE").build();
         
         given(productRepository.findByIdWithLock(100L)).willReturn(Optional.of(product));
 
@@ -91,7 +92,7 @@ class TransactionServiceTest {
         // given
         User seller = User.builder().id(1L).userKey("seller-key").build();
         User buyer = User.builder().id(2L).userKey("buyer-key").build();
-        Product product = Product.builder().id(100L).seller(seller).status("TRADING").build();
+        Product product = Product.builder().id(100L).seller(seller).price(10000L).status("TRADING").build();
         
         UserAccount buyerAcc = UserAccount.builder().accountNumber("111-222").build();
         UserAccount sellerAcc = UserAccount.builder().accountNumber("333-444").build();
@@ -106,7 +107,7 @@ class TransactionServiceTest {
 
         // API Response mock
         com.twotwo.ssadagu.global.dto.SsafyApiResponse<List<Map<String, Object>>> apiResponse = com.twotwo.ssadagu.global.dto.SsafyApiResponse.<List<Map<String, Object>>>builder()
-                .header(com.twotwo.ssadagu.global.dto.SsafyApiResponse.SsafyHeader.builder().responseCode("0000").build())
+                .header(com.twotwo.ssadagu.global.dto.SsafyApiResponse.SsafyHeader.builder().responseCode("H0000").build())
                 .rec(List.of(Map.of("transactionUniqueNo", "TX12345")))
                 .build();
         
@@ -125,12 +126,52 @@ class TransactionServiceTest {
     }
 
     @Test
+    @DisplayName("결제 승인 성공 - 상품 가격과 다른 금액(네고)으로 결제")
+    void approvePayment_negotiatedPrice_success() {
+        // given
+        User seller = User.builder().id(1L).userKey("seller-key").build();
+        User buyer = User.builder().id(2L).userKey("buyer-key").build();
+        // 상품 가격은 10000원
+        Product product = Product.builder().id(100L).seller(seller).price(10000L).status("TRADING").build();
+        
+        UserAccount buyerAcc = UserAccount.builder().accountNumber("111-222").build();
+        UserAccount sellerAcc = UserAccount.builder().accountNumber("333-444").build();
+
+        // 결제 요청 금액은 8000원 (네고)
+        TransactionRequestDto request = TransactionRequestDto.builder()
+                .productId(100L).buyerId(2L).amount(8000L).build();
+
+        given(productRepository.findByIdWithLock(100L)).willReturn(Optional.of(product));
+        given(userRepository.findById(2L)).willReturn(Optional.of(buyer));
+        given(userAccountRepository.findByUserId(1L)).willReturn(Optional.of(sellerAcc));
+        given(userAccountRepository.findByUserId(2L)).willReturn(Optional.of(buyerAcc));
+
+        com.twotwo.ssadagu.global.dto.SsafyApiResponse<List<Map<String, Object>>> apiResponse = com.twotwo.ssadagu.global.dto.SsafyApiResponse.<List<Map<String, Object>>>builder()
+                .header(com.twotwo.ssadagu.global.dto.SsafyApiResponse.SsafyHeader.builder().responseCode("H0000").build())
+                .rec(List.of(Map.of("transactionUniqueNo", "TX12345")))
+                .build();
+        
+        given(demandDepositService.updateTransfer(any(), any(), any(), any(), eq(8000L), any()))
+                .willReturn(apiResponse);
+
+        given(transactionRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        TransactionResponseDto response = transactionService.approvePayment(request, 2L);
+
+        // then
+        assertThat(product.getStatus()).isEqualTo("SOLD");
+        assertThat(response.getAmount()).isEqualTo(8000L);
+        verify(demandDepositService).updateTransfer(any(), any(), any(), any(), eq(8000L), any());
+    }
+
+    @Test
     @DisplayName("결제 승인 실패 - 계좌 정보 조회 불가")
     void approvePayment_fail_no_account() {
         // given
         User seller = User.builder().id(1L).build();
         User buyer = User.builder().id(2L).build();
-        Product product = Product.builder().id(100L).seller(seller).status("TRADING").build();
+        Product product = Product.builder().id(100L).seller(seller).price(10000L).status("TRADING").build();
         
         TransactionRequestDto request = TransactionRequestDto.builder()
                 .productId(100L).buyerId(2L).amount(10000L).build();
