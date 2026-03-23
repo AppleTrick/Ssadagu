@@ -13,6 +13,7 @@ import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useCreateProduct } from '../model/useCreateProduct';
 import { useUpdateProduct } from '../model/useUpdateProduct';
 import { LocationPicker } from '@/features/location-picker';
+import { MapBase } from '@/shared/ui';
 import type { ProductDetail } from '@/entities/product';
 import { useQuery } from '@tanstack/react-query';
 import type { User } from '@/entities/user';
@@ -586,7 +587,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
       categoryCode: initialData?.categoryCode || '',
       price: initialData?.price?.toString() || '',
       description: initialData?.description || '',
-      regionName: initialData?.regionName || '',
+      regionName: initialData?.regionName || (productId ? '' : '서울특별시 중구 봉래동2가'),
       status: initialData?.status || 'ON_SALE',
     },
   });
@@ -627,6 +628,40 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
       document.body.style.overflow = 'unset';
     };
   }, [isCategorySheetOpen, isLocationPickerOpen]);
+
+  // 신규 등록 시 현재 위치 자동 설정
+  useEffect(() => {
+    // 이미 값이 있거나 수정 모드면 중단 (단, 기본값 '서울역'인 경우 GPS 업데이트 시도 가능)
+    if (isEdit || (selectedRegion && selectedRegion !== '서울특별시 중구 봉래동2가')) return;
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          const tryReverseGeocode = () => {
+            if (window.kakao?.maps?.services) {
+              const geocoder = new window.kakao.maps.services.Geocoder();
+              geocoder.coord2RegionCode(longitude, latitude, (result: any[], status: string) => {
+                if (status === window.kakao.maps.services.Status.OK) {
+                  const region = result.find((r: any) => r.region_type === 'H') ?? result[0];
+                  if (region?.address_name) {
+                    setValue('regionName', region.address_name, { shouldValidate: true });
+                  }
+                }
+              });
+            } else {
+              // SDK 로딩 대기 (MapBase가 백그라운드에서 로드함)
+              setTimeout(tryReverseGeocode, 500);
+            }
+          };
+          tryReverseGeocode();
+        },
+        null, // 실패 시에는 이미 기본값(서울역)이 있으므로 무시
+        { timeout: 10000 }
+      );
+    }
+  }, [isEdit, selectedRegion, setValue]);
 
   const handlePhotoAdd = () => {
     if (imagePreviews.length >= 5) return;
@@ -922,6 +957,11 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           </BottomSheetContent>
         </BottomSheetOverlay>
       )}
+
+      {/* 카카오 맵 SDK 조기 로드를 위한 숨겨진 맵 */}
+      <div style={{ display: 'none' }} aria-hidden="true">
+        <MapBase />
+      </div>
     </Page>
   );
 };
