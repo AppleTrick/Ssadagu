@@ -14,6 +14,7 @@ import { useCreateProduct } from '../model/useCreateProduct';
 import { useUpdateProduct } from '../model/useUpdateProduct';
 import { LocationPicker } from '@/features/location-picker';
 import { MapBase } from '@/shared/ui';
+import { getProxyImageUrl } from '@/shared/utils';
 import type { ProductDetail } from '@/entities/product';
 import { useQuery } from '@tanstack/react-query';
 import type { User } from '@/entities/user';
@@ -611,7 +612,11 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
         setImagePreviews(
           [...initialData.images]
             .sort((a, b) => a.sortOrder - b.sortOrder)
-            .map((img) => ({ id: img.id, url: img.imageUrl }))
+            .map((img) => ({ 
+              id: img.id, 
+              // URL 처리를 위해 getProxyImageUrl 사용
+              url: getProxyImageUrl(img.imageUrl) 
+            }))
         );
       }
     }
