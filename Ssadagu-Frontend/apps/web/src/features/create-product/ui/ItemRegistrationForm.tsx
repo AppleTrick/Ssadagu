@@ -48,6 +48,12 @@ const CATEGORIES = [
   { code: 'ETC', label: '기타' },
 ];
 
+const STATUS_OPTIONS = [
+  { code: 'ON_SALE', label: '판매중' },
+  { code: 'RESERVED', label: '예약중' },
+  { code: 'SOLD', label: '판매완료' },
+];
+
 /* ── Utilities ──────────────────────────────────────────── */
 
 const compressImage = (file: File, maxWidth = 1024, quality = 0.8): Promise<File> => {
@@ -147,10 +153,10 @@ const Content = styled.div`
 `;
 
 const Section = styled.div`
-  padding: 20px 20px 0;
+  padding: 24px 20px 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 `;
 
 /* ── Photo Uploader ─────────────────────────────────────── */
@@ -166,20 +172,20 @@ const PhotoBox = styled.div`
   width: 80px;
   height: 80px;
   flex-shrink: 0;
-  border: 2px dashed ${colors.border};
-  border-radius: ${radius.md};
+  border: 2px dashed ${colors.primaryLight};
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
   cursor: pointer;
-  background: ${colors.bg};
+  background: ${colors.primaryBg};
   transition: border-color 0.15s, background 0.15s;
 
   &:active {
     border-color: ${colors.primary};
-    background: #EBF4FF;
+    background: ${colors.primaryActiveBg};
   }
 `;
 
@@ -193,23 +199,22 @@ const PhotoPreviewBox = styled.div`
   width: 80px;
   height: 80px;
   flex-shrink: 0;
-  border-radius: ${radius.md};
+  border-radius: 10px;
   position: relative;
   background-color: ${colors.bg};
-  overflow: hidden;
-  border: 1px solid ${colors.border};
 `;
 
 const DeleteBtn = styled.button`
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
+  top: -6px;
+  right: -6px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.5);
-  color: white;
-  border: none;
+  background: ${colors.overlayWhite};
+  color: ${colors.primary};
+  border: 1px solid ${colors.border};
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -227,16 +232,15 @@ const DeleteBtn = styled.button`
 const FieldWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  margin-bottom: 8px;
 `;
 
 const Label = styled.label`
   font-family: ${typography.fontFamily};
-  font-size: ${typography.size.sm};
+  font-size: 13px;
   font-weight: ${typography.weight.semibold};
-  color: ${colors.textSecondary};
+  color: ${colors.textTertiary};
 `;
 
 const FieldInput = styled.input<{ hasError?: boolean }>`
@@ -247,10 +251,10 @@ const FieldInput = styled.input<{ hasError?: boolean }>`
   font-size: ${typography.size.md};
   color: ${colors.textPrimary};
   background: ${colors.surface};
-  border: 1px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
-  border-radius: ${radius.sm};
+  border: 1.5px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
+  border-radius: 10px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: all 0.2s;
   box-sizing: border-box;
 
   &::placeholder {
@@ -259,14 +263,42 @@ const FieldInput = styled.input<{ hasError?: boolean }>`
 
   &:focus {
     border-color: ${({ hasError }) => (hasError ? colors.red : colors.primary)};
+    box-shadow: 0 0 0 1px ${({ hasError }) => (hasError ? colors.red : colors.primary)} inset;
     background: ${colors.surface};
   }
 `;
 
-const PriceRow = styled.div`
+const PriceRow = styled.div<{ hasError?: boolean }>`
   display: flex;
   align-items: center;
-  gap: 8px;
+  width: 100%;
+  height: 52px;
+  border: 1.5px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
+  border-radius: 10px;
+  background: ${colors.surface};
+  transition: all 0.2s;
+  box-sizing: border-box;
+
+  &:focus-within {
+    border-color: ${({ hasError }) => (hasError ? colors.red : colors.primary)};
+    box-shadow: 0 0 0 1px ${({ hasError }) => (hasError ? colors.red : colors.primary)} inset;
+  }
+
+  input {
+    flex: 1;
+    height: 100%;
+    padding: 0 16px;
+    font-family: ${typography.fontFamily};
+    font-size: ${typography.size.md};
+    color: ${colors.textPrimary};
+    background: transparent;
+    border: none;
+    outline: none;
+
+    &::placeholder {
+      color: ${colors.textSecondary};
+    }
+  }
 `;
 
 const PriceUnit = styled.span`
@@ -274,7 +306,7 @@ const PriceUnit = styled.span`
   font-size: ${typography.size.md};
   font-weight: ${typography.weight.medium};
   color: ${colors.textPrimary};
-  white-space: nowrap;
+  padding-right: 16px;
 `;
 
 const StyledSelect = styled.select<{ hasError?: boolean }>`
@@ -305,18 +337,19 @@ const StyledSelect = styled.select<{ hasError?: boolean }>`
 
 const TextArea = styled.textarea<{ hasError?: boolean }>`
   width: 100%;
-  min-height: 140px;
+  min-height: 100px;
+  height: auto;
   padding: 14px 16px;
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
   color: ${colors.textPrimary};
   background: ${colors.surface};
-  border: 1px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
-  border-radius: ${radius.sm};
+  border: 1.5px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
+  border-radius: 10px;
   outline: none;
   resize: vertical;
   line-height: 1.6;
-  transition: border-color 0.15s;
+  transition: all 0.2s;
   box-sizing: border-box;
 
   &::placeholder {
@@ -324,7 +357,8 @@ const TextArea = styled.textarea<{ hasError?: boolean }>`
   }
 
   &:focus {
-    border-color: ${colors.primary};
+    border-color: ${({ hasError }) => (hasError ? colors.red : colors.primary)};
+    box-shadow: 0 0 0 1px ${({ hasError }) => (hasError ? colors.red : colors.primary)} inset;
     background: ${colors.surface};
   }
 `;
@@ -356,18 +390,23 @@ const SelectButton = styled.button<{ hasError?: boolean; hasValue?: boolean }>`
   font-size: ${typography.size.md};
   color: ${({ hasValue }) => (hasValue ? colors.textPrimary : colors.textSecondary)};
   background: ${colors.surface};
-  border: 1px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
-  border-radius: ${radius.sm};
+  border: 1.5px solid ${({ hasError }) => (hasError ? colors.red : colors.border)};
+  border-radius: 10px;
   outline: none;
   cursor: pointer;
   text-align: left;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: border-color 0.15s, background 0.15s;
+  transition: all 0.2s;
 
   &:active {
     background: ${colors.bg};
+  }
+  
+  &:focus {
+    border-color: ${({ hasError }) => (hasError ? colors.red : colors.primary)};
+    box-shadow: 0 0 0 1px ${({ hasError }) => (hasError ? colors.red : colors.primary)} inset;
   }
   
   &::after {
@@ -445,7 +484,7 @@ const CategoryItem = styled.button<{ isSelected: boolean }>`
   width: 100%;
   padding: 16px;
   border-radius: ${radius.md};
-  background: ${({ isSelected }) => (isSelected ? '#eef4ff' : colors.surface)};
+  background: ${({ isSelected }) => (isSelected ? colors.primaryActiveBg : colors.surface)};
   color: ${({ isSelected }) => (isSelected ? colors.primary : colors.textPrimary)};
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
@@ -456,7 +495,7 @@ const CategoryItem = styled.button<{ isSelected: boolean }>`
   transition: all 0.2s;
 
   &:active {
-    background: ${({ isSelected }) => (isSelected ? '#e0ecff' : colors.bg)};
+    background: ${({ isSelected }) => (isSelected ? colors.primaryHoverBg : colors.bg)};
   }
 `;
 
@@ -468,16 +507,21 @@ const LocationRow = styled.button`
   gap: 10px;
   padding: 16px;
   background: ${colors.surface};
-  border: 1px solid ${colors.border};
-  border-radius: ${radius.sm};
+  border: 1.5px solid ${colors.border};
+  border-radius: 10px;
   cursor: pointer;
   width: 100%;
   text-align: left;
   margin-top: 8px;
-  transition: background 0.1s;
+  transition: all 0.2s;
 
   &:active {
     background: ${colors.bg};
+  }
+
+  &:focus-visible {
+    border-color: ${colors.primary};
+    box-shadow: 0 0 0 1px ${colors.primary} inset;
   }
 `;
 
@@ -498,15 +542,21 @@ const BottomBar = styled.div`
   background: ${colors.surface};
   border-top: 1px solid ${colors.border};
   z-index: 10;
+
+  & > button {
+    height: 56px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
 `;
 
 /* ── Icons ──────────────────────────────────────────────── */
 
-const CloseIcon = () => (
+const CloseIcon = ({ color = "currentColor" }: { color?: string }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path
       d="M18 6L6 18M6 6l12 12"
-      stroke="currentColor"
+      stroke={color}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -518,7 +568,7 @@ const CameraIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path
       d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
-      stroke={colors.textSecondary}
+      stroke={colors.primary}
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -527,7 +577,7 @@ const CameraIcon = () => (
       cx="12"
       cy="13"
       r="4"
-      stroke={colors.textSecondary}
+      stroke={colors.primary}
       strokeWidth="1.8"
     />
   </svg>
@@ -586,8 +636,10 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
 
   const selectedRegion = watch('regionName');
   const selectedCategoryCode = watch('categoryCode');
+  const selectedStatus = watch('status');
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
+  const [isStatusSheetOpen, setIsStatusSheetOpen] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -615,7 +667,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
 
   // 모달이 열려있을 때 배경 스크롤 방지
   useEffect(() => {
-    if (isCategorySheetOpen || isLocationPickerOpen) {
+    if (isCategorySheetOpen || isLocationPickerOpen || isStatusSheetOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -623,7 +675,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isCategorySheetOpen, isLocationPickerOpen]);
+  }, [isCategorySheetOpen, isLocationPickerOpen, isStatusSheetOpen]);
 
   // 신규 등록 시 현재 위치 자동 설정
   useEffect(() => {
@@ -764,9 +816,9 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           {imagePreviews.map((preview, i) => (
             <PhotoPreviewBox key={preview.url}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={preview.url} alt={`preview-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={preview.url} alt={`preview-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }} />
               <DeleteBtn type="button" onClick={() => handleRemoveImage(i)}>
-                <CloseIcon />
+                <CloseIcon color={colors.primary} />
               </DeleteBtn>
             </PhotoPreviewBox>
           ))}
@@ -783,14 +835,20 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
         <Section>
           {isEdit && (
             <FieldWrapper>
-              <StyledSelect
+              <SelectButton
+                type="button"
                 hasError={!!errors.status}
-                {...register('status', { required: '상태를 선택해주세요' })}
+                hasValue={!!selectedStatus}
+                onClick={() => setIsStatusSheetOpen(true)}
               >
-                <option value="ON_SALE">판매중</option>
-                <option value="RESERVED">예약중</option>
-                <option value="SOLD">판매완료</option>
-              </StyledSelect>
+                {selectedStatus
+                  ? STATUS_OPTIONS.find((s) => s.code === selectedStatus)?.label
+                  : '상태 선택'}
+              </SelectButton>
+              <input
+                type="hidden"
+                {...register('status', { required: '상태를 선택해주세요' })}
+              />
               {errors.status && <FieldError role="alert">{errors.status.message}</FieldError>}
             </FieldWrapper>
           )}
@@ -831,17 +889,17 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           {/* Price */}
           <FieldWrapper>
             <Label>가격 (원)</Label>
-            <PriceRow>
-              <FieldInput
+            <PriceRow hasError={!!errors.price}>
+              <input
                 type="text"
                 inputMode="numeric"
-                hasError={!!errors.price}
-                style={{ flex: 1 }}
+                placeholder="가격을 입력해주세요"
                 {...register('price', {
                   required: '가격을 입력해주세요',
                   pattern: { value: /^[0-9,]+$/, message: '숫자만 입력해주세요' },
                 })}
               />
+              <PriceUnit>원</PriceUnit>
             </PriceRow>
             {errors.price && <FieldError role="alert">{errors.price.message}</FieldError>}
           </FieldWrapper>
@@ -946,6 +1004,41 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
                     }}
                   >
                     {cat.label}
+                  </CategoryItem>
+                ))}
+              </CategoryList>
+            </CategoryScrollArea>
+          </BottomSheetContent>
+        </BottomSheetOverlay>
+      )}
+
+      {/* Status Bottom Sheet */}
+      {isStatusSheetOpen && (
+        <BottomSheetOverlay onClick={() => setIsStatusSheetOpen(false)}>
+          <BottomSheetContent onClick={(e) => e.stopPropagation()}>
+            <SheetHeader>
+              <SheetTitle>상태 선택</SheetTitle>
+              <BackButton
+                type="button"
+                style={{ position: 'static' }}
+                onClick={() => setIsStatusSheetOpen(false)}
+              >
+                <CloseIcon />
+              </BackButton>
+            </SheetHeader>
+            <CategoryScrollArea>
+              <CategoryList>
+                {STATUS_OPTIONS.map((status) => (
+                  <CategoryItem
+                    key={status.code}
+                    type="button"
+                    isSelected={selectedStatus === status.code}
+                    onClick={() => {
+                      setValue('status', status.code, { shouldValidate: true, shouldDirty: true });
+                      setIsStatusSheetOpen(false);
+                    }}
+                  >
+                    {status.label}
                   </CategoryItem>
                 ))}
               </CategoryList>
