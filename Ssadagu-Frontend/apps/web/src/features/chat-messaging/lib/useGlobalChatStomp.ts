@@ -8,6 +8,7 @@ import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { create } from 'zustand';
 import { useQueryClient } from '@tanstack/react-query';
+import { usePathname } from 'next/navigation';
 
 // 전역 알림(안 읽음 배지) 관리를 위한 Zustand 스토어
 interface NotificationStore {
@@ -36,6 +37,13 @@ export function useGlobalChatStomp() {
   const increment = useNotificationStore((s) => s.increment);
   const stompRef = useRef<Client | null>(null);
   const queryClient = useQueryClient();
+  const pathname = usePathname();
+  const currentPathRef = useRef(pathname);
+
+  // 항상 최신 라우트 경로 보장
+  useEffect(() => {
+    currentPathRef.current = pathname;
+  }, [pathname]);
 
   useEffect(() => {
     if (!userId || !accessToken) return;
@@ -70,6 +78,12 @@ export function useGlobalChatStomp() {
                    try {
                      const msg = JSON.parse(frame.body);
                      if (msg && Number(msg.senderId) !== Number(userId)) {
+                        // 현재 사용자가 이 채팅방 화면(뷰)을 보고 있는 중이라면 배지를 올리지 않음 (실시간으로 읽고 있으므로)
+                        const roomPath = `/chat/${roomId}`;
+                        if (currentPathRef.current === roomPath) {
+                           return; // 무시
+                        }
+                        
                         increment();
                         // 🔔 [핵심] 메시지가 오면 채팅 목록 페이지(ChatListPage)의 React Query 캐시를 강제로 파기하여, 
                         // 화면 밖(채팅 목록 등)에 있어도 최신 메시지와 시간, 안 읽음 수가 즉시 UI에 반영되도록 합니다.

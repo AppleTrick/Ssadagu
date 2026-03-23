@@ -64,11 +64,6 @@ export function ChatRoomPage() {
 
   // 2. 읽음 처리 로직 (ID와 토큰 확보 후)
   const { mutate: markAsRead } = useMarkAsRead(accessToken);
-  useEffect(() => {
-    if (roomId > 0 && !isNewRoom) {
-      markAsRead(roomId);
-    }
-  }, [roomId, isNewRoom, markAsRead]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesAreaRef = useRef<HTMLDivElement | null>(null);
@@ -99,6 +94,13 @@ export function ChatRoomPage() {
 
   // 3. Features: 실시간 채팅 핸들링
   const { sessionMessages, isStompConnected, sendMessage, addOptimisticMessage } = useChatMessaging(roomId, accessToken, userId);
+
+  // 채팅방 최초 진입 시 & 채팅방 안에 머무는 중 상대방이 새 메시지를 보냈을 때 모두 읽음 처리
+  useEffect(() => {
+    if (roomId > 0 && !isNewRoom) {
+      markAsRead(roomId);
+    }
+  }, [roomId, isNewRoom, markAsRead, sessionMessages.length]);
 
   // 역할 판별 (타입 불일치 방지 위해 Number 사용)
   const isSeller = room && userId && Number(userId) > 0 && Number(userId) === Number(room.sellerId);

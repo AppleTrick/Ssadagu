@@ -3,6 +3,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
+import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useNotificationStore } from '@/features/chat-messaging/lib/useGlobalChatStomp';
 import type { ChatRoom } from '../model/types';
 
 /**
@@ -201,6 +203,8 @@ export function useNewChatRoomInit(productId: number, userId: number | null, acc
  */
 export function useMarkAsRead(accessToken: string | null) {
   const queryClient = useQueryClient();
+  const setUnreadCount = useNotificationStore((s) => s.setUnreadCount);
+
   return useMutation({
     mutationFn: async (roomId: number | string) => {
       const id = typeof roomId === 'string' ? Number(roomId) : Number(roomId);
@@ -210,11 +214,31 @@ export function useMarkAsRead(accessToken: string | null) {
       if (!res.ok) throw new Error('읽음 처리 실패');
       return res.json();
     },
-    onSuccess: (_, roomId) => {
+    onSuccess: async (_, roomId) => {
       const id = typeof roomId === 'string' ? Number(roomId) : Number(roomId);
       // 채팅 리스트와 특정 채팅방 정보 갱신
       queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
       queryClient.invalidateQueries({ queryKey: ['chatRoom', id] });
+
+      // 탭 바의 글로벌 배지 카운트도 100% 동기화 (Badge 초기화 목적)
+      const userId = useAuthStore.getState().userId;
+      if (userId && accessToken) {
+         try {
+           // 🔔 [백엔드 DB 지연 대응] 읽음 처리 트랜잭션이 DB에 반영될 시간을 살짝 벌어줍니다.
+           await new Promise((resolve) => setTimeout(resolve, 300));
+           
+           const res = await apiClient.get(`${ENDPOINTS.CHATS.USER_ROOMS}?userId=${userId}`, accessToken);
+           if (!res.ok) return;
+           const json: any = await res.json();
+           const rooms = (Array.isArray(json) ? json : (json?.data || json?.content || json?.response)) || [];
+           if (Array.isArray(rooms)) {
+             const sum = rooms.reduce((acc: number, r: any) => acc + (r.unreadCount || 0), 0);
+             setUnreadCount(sum);
+           }
+         } catch (e) {
+           console.warn('글로벌 배지 동기화 실패', e);
+         }
+      }
     },
   });
 }
