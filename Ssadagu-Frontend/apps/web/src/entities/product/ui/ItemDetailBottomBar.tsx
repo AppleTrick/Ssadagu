@@ -52,11 +52,11 @@ const ItemDetailBottomBar = ({
         ) : (
           <>
             <ChatButton 
-              onClick={product.status === 'ON_SALE' ? onChat : undefined} 
-              disabled={isSold || isReserved}
+              onClick={!isSold ? onChat : undefined} 
+              disabled={isSold}
               style={{
-                background: isSold || isReserved ? colors.disabled : colors.primary,
-                cursor: product.status === 'ON_SALE' ? 'pointer' : 'default',
+                background: isSold ? colors.disabled : colors.primary,
+                cursor: !isSold ? 'pointer' : 'default',
               }}
             >
               {isSold ? '거래 완료' : isReserved ? '거래 중' : '채팅하기'}
