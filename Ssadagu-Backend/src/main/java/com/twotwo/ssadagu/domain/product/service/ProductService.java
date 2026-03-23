@@ -43,12 +43,14 @@ public class ProductService {
                 .images(new java.util.ArrayList<>())
                 .build();
 
+        List<String> imageUrls = new java.util.ArrayList<>();
         if (imageFiles != null && !imageFiles.isEmpty()) {
             if (imageFiles.size() > 5) {
                 throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INVALID_INPUT_VALUE);
             }
             for (int i = 0; i < imageFiles.size(); i++) {
                 String imageUrl = s3Service.uploadImage(imageFiles.get(i));
+                imageUrls.add(imageUrl);
                 com.twotwo.ssadagu.domain.product.entity.ProductImage image = com.twotwo.ssadagu.domain.product.entity.ProductImage.builder()
                         .product(product)
                         .imageUrl(imageUrl)
@@ -64,7 +66,8 @@ public class ProductService {
                 request.getDescription(),
                 request.getPrice(),
                 request.getCategoryCode(),
-                request.getRegionName()
+                request.getRegionName(),
+                imageUrls
         );
         if (metadata != null) {
             product.updateMetadata(metadata);
