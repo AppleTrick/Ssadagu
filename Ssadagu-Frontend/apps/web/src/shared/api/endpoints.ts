@@ -34,6 +34,7 @@ export const ENDPOINTS = {
   },
   PRODUCTS: {
     BASE: '/products',
+    AI_SEARCH: '/products/search',
     DETAIL: (id: number) => `/products/${id}`,
     STATUS: (id: number) => `/products/${id}/status`,
     WISH: (id: number) => `/products/${id}/wish`,

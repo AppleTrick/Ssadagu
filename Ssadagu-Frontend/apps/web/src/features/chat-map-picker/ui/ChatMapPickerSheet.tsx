@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
-import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
+import { colors, typography } from '@/shared/styles/theme';
 import { LocationPickerMap } from '@/features/location-picker';
 import Button from '@/shared/ui/Button';
 
@@ -105,9 +105,15 @@ const ChatMapPickerSheet = ({ isOpen, onClose, onSubmit }: ChatMapPickerSheetPro
     onSubmit(lat, lng, regionName || '선택한 위치');
   };
 
+  // slideUp 애니메이션 종료 후 relayout 호출
+  // (CSS transform 안에서 초기화된 카카오 맵의 히트 영역 재계산)
+  const handleAnimationEnd = () => {
+    mapInstance?.relayout();
+  };
+
   return (
     <Overlay onClick={onClose}>
-      <Content onClick={(e) => e.stopPropagation()}>
+      <Content onClick={(e) => e.stopPropagation()} onAnimationEnd={handleAnimationEnd}>
         <Header>
           <Title>지도 공유하기</Title>
           <CloseIconButton onClick={onClose} aria-label="닫기">

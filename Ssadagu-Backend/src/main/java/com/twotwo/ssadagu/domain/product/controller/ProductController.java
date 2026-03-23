@@ -46,6 +46,17 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "AI 상품 검색", description = "검색어를 AI로 확장하여 제목/설명/메타데이터에서 시맨틱 검색을 수행합니다.")
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductResponseDto>> aiSearchProducts(
+            @Parameter(description = "검색어 (필수)") @RequestParam String keyword,
+            @Parameter(description = "동네 필터링 (선택)") @RequestParam(required = false) String regionName,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long currentUserId = (userDetails != null) ? userDetails.getUser().getId() : null;
+        List<ProductResponseDto> response = productService.aiSearchProducts(keyword, regionName, currentUserId);
+        return ResponseEntity.ok(response);
+    }
+
     @Operation(summary = "상품 목록 조회", description = "상품 목록을 조회합니다. regionName 또는 keyword(제목) 파라미터로 필터링이 가능합니다.")
     @GetMapping
     public ResponseEntity<List<ProductResponseDto>> getProducts(
