@@ -94,7 +94,8 @@ export function SecondaryPasswordSetupPage() {
   // 6자리 완성 시 자동 다음 단계
   useEffect(() => {
     if (step === 'enter' && password.length === 6) {
-      setTimeout(() => setStep('confirm'), 100);
+      const timer = setTimeout(() => setStep('confirm'), 100);
+      return () => clearTimeout(timer);
     }
   }, [password, step]);
 
@@ -110,10 +111,10 @@ export function SecondaryPasswordSetupPage() {
 
     if (password !== confirmValue) {
       setError('비밀번호가 일치하지 않습니다. 다시 시도해주세요.');
+      setConfirm('');
       setTimeout(() => {
         setStep('enter');
         setPassword('');
-        setConfirm('');
         setError('');
       }, 1200);
       return;
@@ -169,7 +170,7 @@ export function SecondaryPasswordSetupPage() {
   if (step === 'enter') {
     return (
       <Page>
-        <HeaderBack title="2차 비밀번호 설정" onBack={() => router.back()} />
+        <HeaderBack title="2차 비밀번호 설정" onBack={() => { setPassword(''); setConfirm(''); setError(''); router.back(); }} />
         <ContentArea>
           <PinPad
             title={'비밀번호 6자리 입력'}

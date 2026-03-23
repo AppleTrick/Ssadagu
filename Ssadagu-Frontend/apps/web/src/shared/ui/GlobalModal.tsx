@@ -29,7 +29,7 @@ export function GlobalModal() {
       title={title}
       message={message}
       confirmLabel={confirmLabel}
-      cancelLabel={type === 'confirm' ? cancelLabel : undefined}
+      cancelLabel={type === 'confirm' ? cancelLabel : ''}
       onConfirm={onConfirm}
       variant={variant}
     />

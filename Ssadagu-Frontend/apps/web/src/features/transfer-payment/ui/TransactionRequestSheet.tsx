@@ -133,7 +133,7 @@ const TransactionRequestSheet = ({ isOpen, onClose, roomInfo, onSubmit }: Transa
             <Input value={time} onChange={(e) => setTime(e.target.value)} placeholder="시간을 입력하세요" />
           </InputWrapper>
 
-          <Label>거래 금액</Label>
+          <Label>거래 금액 <NegotiableHint>(에누리 가능 — 직접 수정하세요)</NegotiableHint></Label>
           <InputWrapper>
             <Input value={amount.toLocaleString()} onChange={handleAmountChange} />
             <Currency>원</Currency>
@@ -244,6 +244,15 @@ const Label = styled.div`
   font-size: ${typography.size.xs};
   color: ${colors.textSecondary};
   margin-bottom: -8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const NegotiableHint = styled.span`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.xs};
+  color: ${colors.primary};
 `;
 
 const InputWrapper = styled.div`
