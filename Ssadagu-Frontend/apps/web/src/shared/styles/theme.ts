@@ -29,7 +29,7 @@ export const shadows = {
 export const zIndex = {
   header: 10,
   bottomNav: 20,
-  modal: 50,
+  modal: 100,
 } as const;
 
 export const radius = {

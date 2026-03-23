@@ -91,19 +91,24 @@ public class TransactionService {
         UserAccount sellerAccount = userAccountRepository.findByUserId(seller.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        // 0. 금액 검증: 프론트에서 보낸 금액이 상품 가격과 일치하는지 확인 (보안 강화)
-        if (!product.getPrice().equals(request.getAmount())) {
-            log.error("[Transaction] 결제 금액 불일치 - 상품가격: {}, 요청금액: {}", product.getPrice(), request.getAmount());
+        // 0. 금액 검증: 0원 이하인 경우만 체크 (보안 강화 및 비정상 거래 방지)
+        if (request.getAmount() == null || request.getAmount() <= 0) {
+            log.error("[Transaction] 결제 금액 오류 - 요청금액: {}", request.getAmount());
             throw new BusinessException(ErrorCode.INVALID_TRANSACTION_AMOUNT);
+        }
+
+        if (!product.getPrice().equals(request.getAmount())) {
+            log.info("[Transaction] 상품 가격과 결제 요청 금액이 다름 (네고 적용 가능) - 상품가격: {}, 요청금액: {}", 
+                product.getPrice(), request.getAmount());
         }
 
         Long roomId = chatRoomRepository.findByProductIdAndBuyerId(product.getId(), buyer.getId())
                 .map(room -> room.getId())
                 .orElse(null);
 
-        // 1. SSAFY 금융망 이체 실행 (실제 상품 가격 사용)
+        // 1. SSAFY 금융망 이체 실행 (요청된 결제 금액 사용)
         try {
-            Long transferAmount = product.getPrice();
+            Long transferAmount = request.getAmount();
             log.info("[Transaction Debug] 이체 요청 정보 - 구매자계좌: {}, 판매자계좌: {}, 금액: {}, UserKey: {}", 
                 buyerAccount.getAccountNumber(), sellerAccount.getAccountNumber(), transferAmount, buyer.getUserKey());
 

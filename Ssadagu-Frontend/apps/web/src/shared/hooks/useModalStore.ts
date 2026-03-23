@@ -41,6 +41,10 @@ export const useModalStore = create<ModalState>((set) => ({
           set({ isOpen: false });
           resolve();
         },
+        onCancel: () => {
+          set({ isOpen: false });
+          resolve();
+        },
       });
     });
   },

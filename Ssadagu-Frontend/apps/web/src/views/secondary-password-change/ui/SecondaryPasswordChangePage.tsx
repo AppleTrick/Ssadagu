@@ -59,7 +59,8 @@ export function SecondaryPasswordChangePage() {
   // Step: new - 새 비밀번호 6자리 완성 시
   useEffect(() => {
     if (step === 'new' && newPwd.length === 6) {
-      setTimeout(() => setStep('confirm'), 100);
+      const timer = setTimeout(() => setStep('confirm'), 100);
+      return () => clearTimeout(timer);
     }
   }, [newPwd, step]);
 
@@ -95,12 +96,7 @@ export function SecondaryPasswordChangePage() {
     setError('');
     if (newPwd !== confirmValue) {
       setError('비밀번호가 일치하지 않습니다. 다시 시도해주세요.');
-      setTimeout(() => {
-        setStep('new');
-        setNewPwd('');
-        setConfirm('');
-        setError('');
-      }, 1200);
+      setConfirm('');
       return;
     }
 
@@ -130,7 +126,10 @@ export function SecondaryPasswordChangePage() {
           <PinPad
             title={'기존 비밀번호 입력'}
             value={current}
-            onInput={setCurrent}
+            onInput={(val) => {
+              setCurrent(val);
+              if (error) setError('');
+            }}
             error={error}
             disabled={loading}
           />
@@ -147,7 +146,10 @@ export function SecondaryPasswordChangePage() {
           <PinPad
             title={'새 비밀번호 입력'}
             value={newPwd}
-            onInput={setNewPwd}
+            onInput={(val) => {
+              setNewPwd(val);
+              if (error) setError('');
+            }}
           />
         </ContentArea>
       </Page>
@@ -164,7 +166,10 @@ export function SecondaryPasswordChangePage() {
         <PinPad
           title={'새 비밀번호 한 번 더'}
           value={confirm}
-          onInput={setConfirm}
+          onInput={(val) => {
+            setConfirm(val);
+            if (error) setError('');
+          }}
           error={error}
           disabled={loading}
         />

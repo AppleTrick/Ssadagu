@@ -14,7 +14,8 @@ export const mapToChatRoomDetail = (d: any, userId: number | null, fallbackNickn
 
   const productTitle = product.title || product.productName || d.productTitle || d.title || '상품 정보 없음';
   const productPrice = product.price || product.amount || d.productPrice || d.price || 0;
-  const productThumbnailUrl = product.imageUrl || product.thumbnailUrl || d.productImageUrl || d.thumbnailUrl || null;
+  const finalImageUrl = product.images && product.images.length > 0 ? product.images[0].imageUrl : (d.images && d.images.length > 0 ? d.images[0].imageUrl : null);
+  const productThumbnailUrl = finalImageUrl || product.productThumbnailUrl || product.thumbnailUrl || product.imageUrl || product.image || d.productThumbnailUrl || d.thumbnailUrl || d.productImageUrl || d.imageUrl || d.image || null;
   const productStatus = product.status || d.productStatus || d.status || 'ACTIVE';
 
   const effectivePartnerId = partner.userId || partner.id || d.partnerId || d.targetId || -1;
@@ -108,12 +109,16 @@ export function useChatRoomDetail(roomId: number, userId: number | null, accessT
       if (!res.ok) throw new Error('채팅방 정보를 불러오지 못했습니다.');
       const json: any = await res.json();
       const d = json.data || json.response || json.result || json;
-
-      // 백엔드 채팅방 응답에 명확한 판매자/구매자 정보가 누락되어 있을 수 있으므로 방어 로직 추가
-      // productId가 있다면 상품 정보를 직접 조회하여 병합합니다.
+      // 백엔드 채팅방 응답에 정보가 누락되었을 수 있으므로 방어 로직 추가
+      // productId가 있다면 상품 상세 정보를 직접 조회하여 병합합니다. (역할 판별 및 썸네일 표시용)
       let productInfo = {};
       const targetProductId = d.productId || d.product?.id || d.product?.productId;
-      if (!d.sellerId && !d.productSellerId && targetProductId) {
+      
+      const missingSeller = !d.sellerId && !d.productSellerId;
+      const finalImageUrl = (d.product?.images && d.product?.images.length > 0) ? d.product.images[0].imageUrl : (d.product?.imageUrl || d.product?.thumbnailUrl || d.productThumbnailUrl || d.thumbnailUrl || d.productImageUrl || d.imageUrl);
+      const missingImage = !finalImageUrl;
+
+      if ((missingSeller || missingImage) && targetProductId) {
          try {
            const pRes = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(targetProductId), accessToken ?? undefined);
            if (pRes.ok) {
@@ -121,7 +126,7 @@ export function useChatRoomDetail(roomId: number, userId: number | null, accessT
               productInfo = pJson.data || pJson;
            }
          } catch (e) {
-           console.warn('역할 판별을 위한 상품 정보 추가 조회 실패', e);
+           console.warn('역할/썸네일 판별을 위한 상품 정보 추가 조회 실패', e);
          }
       }
 
@@ -172,7 +177,7 @@ export function useNewChatRoomInit(productId: number, userId: number | null, acc
         id: -1,
         productId: prod.id,
         productTitle: prod.title,
-        productThumbnailUrl: prod.imageUrl || prod.thumbnailUrl,
+        productThumbnailUrl: (prod.images && prod.images.length > 0) ? prod.images[0].imageUrl : (prod.imageUrl || prod.thumbnailUrl || null),
         productPrice: prod.price,
         productStatus: prod.status,
         buyerId: userId ?? -1,
