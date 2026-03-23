@@ -1,5 +1,6 @@
 export * from './model/types';
 export * from './api/getProducts';
+export * from './api/aiSearchProducts';
 export * from './api/getProduct';
 export * from './api/createProduct';
 export * from './api/updateProduct';

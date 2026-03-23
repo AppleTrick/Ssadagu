@@ -168,6 +168,113 @@ public class ProductService {
         return ProductResponseDto.from(product, currentUserId, isLiked);
     }
 
+    public List<ProductResponseDto> aiSearchProducts(String keyword, String regionName, Long currentUserId) {
+        // 1. 가격 조건 추출 후 가격 표현 제거한 순수 키워드 확보
+        PriceRange priceRange = parsePriceRange(keyword);
+        String cleanedKeyword = removePriceTerms(keyword);
+
+        // 2. AI로 키워드 확장 (가격 문구 제거 후)
+        List<String> allKeywords = new java.util.ArrayList<>();
+        if (!cleanedKeyword.isBlank()) {
+            allKeywords.addAll(aiMetadataService.expandKeywords(cleanedKeyword));
+            allKeywords.add(cleanedKeyword.toLowerCase());
+        }
+
+        // 3. 지역 필터링된 상품 목록 조회
+        List<Product> products;
+        if (regionName != null && !regionName.isBlank()) {
+            products = productRepository.findByRegionNameAndStatusNotOrderByCreatedAtDesc(regionName, "DELETED");
+        } else {
+            products = productRepository.findByStatusNotOrderByCreatedAtDesc("DELETED");
+        }
+
+        // 4. 키워드 + 가격 조건 필터링
+        return products.stream()
+                .filter(p -> p.getDeletedAt() == null)
+                .filter(p -> allKeywords.isEmpty() || matchesAnyKeyword(p, allKeywords))
+                .filter(p -> priceRange.matches(p.getPrice()))
+                .map(p -> {
+                    boolean isLiked = currentUserId != null &&
+                            productWishRepository.existsByUserIdAndProductId(currentUserId, p.getId());
+                    return ProductResponseDto.from(p, currentUserId, isLiked);
+                })
+                .collect(Collectors.toList());
+    }
+
+    private boolean matchesAnyKeyword(Product product, List<String> keywords) {
+        String title = product.getTitle() != null ? product.getTitle().toLowerCase() : "";
+        String description = product.getDescription() != null ? product.getDescription().toLowerCase() : "";
+        String metadata = product.getMetadata() != null ? product.getMetadata().toLowerCase() : "";
+
+        return keywords.stream().anyMatch(kw -> {
+            String lowerKw = kw.toLowerCase();
+            return title.contains(lowerKw) || description.contains(lowerKw) || metadata.contains(lowerKw);
+        });
+    }
+
+    /** 검색어에서 가격 범위(최소/최대)를 파싱합니다. */
+    private PriceRange parsePriceRange(String query) {
+        Long min = null;
+        Long max = null;
+
+        // N만원 이하/미만
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(\\d+(?:\\.\\d+)?)\\s*만\\s*원?\\s*(이하|미만)")
+                .matcher(query);
+        if (m.find()) {
+            long price = (long)(Double.parseDouble(m.group(1)) * 10000);
+            max = "미만".equals(m.group(2)) ? price - 1 : price;
+        }
+
+        // N원 이하/미만
+        m = java.util.regex.Pattern
+                .compile("(\\d+)\\s*원\\s*(이하|미만)")
+                .matcher(query);
+        if (m.find() && max == null) {
+            long price = Long.parseLong(m.group(1));
+            max = "미만".equals(m.group(2)) ? price - 1 : price;
+        }
+
+        // N만원 이상/초과
+        m = java.util.regex.Pattern
+                .compile("(\\d+(?:\\.\\d+)?)\\s*만\\s*원?\\s*(이상|초과)")
+                .matcher(query);
+        if (m.find()) {
+            long price = (long)(Double.parseDouble(m.group(1)) * 10000);
+            min = "초과".equals(m.group(2)) ? price + 1 : price;
+        }
+
+        // N원 이상/초과
+        m = java.util.regex.Pattern
+                .compile("(\\d+)\\s*원\\s*(이상|초과)")
+                .matcher(query);
+        if (m.find() && min == null) {
+            long price = Long.parseLong(m.group(1));
+            min = "초과".equals(m.group(2)) ? price + 1 : price;
+        }
+
+        return new PriceRange(min, max);
+    }
+
+    /** 검색어에서 가격 관련 표현을 제거합니다. */
+    private String removePriceTerms(String query) {
+        return query
+                .replaceAll("\\d+(?:\\.\\d+)?\\s*만\\s*원?\\s*(이하|이상|미만|초과|정도)?", "")
+                .replaceAll("\\d+\\s*원\\s*(이하|이상|미만|초과|정도)?", "")
+                .replaceAll("\\s{2,}", " ")
+                .trim();
+    }
+
+    /** 가격 범위 조건 */
+    private record PriceRange(Long min, Long max) {
+        boolean matches(Long price) {
+            if (price == null) return true;
+            if (min != null && price < min) return false;
+            if (max != null && price > max) return false;
+            return true;
+        }
+    }
+
     @Transactional
     public void deleteProduct(Long productId, Long currentUserId) {
         Product product = productRepository.findById(productId)
