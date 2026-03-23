@@ -48,6 +48,12 @@ const CATEGORIES = [
   { code: 'ETC', label: '기타' },
 ];
 
+const STATUS_OPTIONS = [
+  { code: 'ON_SALE', label: '판매중' },
+  { code: 'RESERVED', label: '예약중' },
+  { code: 'SOLD', label: '판매완료' },
+];
+
 /* ── Utilities ──────────────────────────────────────────── */
 
 const compressImage = (file: File, maxWidth = 1024, quality = 0.8): Promise<File> => {
@@ -586,8 +592,10 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
 
   const selectedRegion = watch('regionName');
   const selectedCategoryCode = watch('categoryCode');
+  const selectedStatus = watch('status');
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
+  const [isStatusSheetOpen, setIsStatusSheetOpen] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -615,7 +623,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
 
   // 모달이 열려있을 때 배경 스크롤 방지
   useEffect(() => {
-    if (isCategorySheetOpen || isLocationPickerOpen) {
+    if (isCategorySheetOpen || isLocationPickerOpen || isStatusSheetOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -623,7 +631,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isCategorySheetOpen, isLocationPickerOpen]);
+  }, [isCategorySheetOpen, isLocationPickerOpen, isStatusSheetOpen]);
 
   // 신규 등록 시 현재 위치 자동 설정
   useEffect(() => {
@@ -783,14 +791,20 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
         <Section>
           {isEdit && (
             <FieldWrapper>
-              <StyledSelect
+              <SelectButton
+                type="button"
                 hasError={!!errors.status}
-                {...register('status', { required: '상태를 선택해주세요' })}
+                hasValue={!!selectedStatus}
+                onClick={() => setIsStatusSheetOpen(true)}
               >
-                <option value="ON_SALE">판매중</option>
-                <option value="RESERVED">예약중</option>
-                <option value="SOLD">판매완료</option>
-              </StyledSelect>
+                {selectedStatus
+                  ? STATUS_OPTIONS.find((s) => s.code === selectedStatus)?.label
+                  : '상태 선택'}
+              </SelectButton>
+              <input
+                type="hidden"
+                {...register('status', { required: '상태를 선택해주세요' })}
+              />
               {errors.status && <FieldError role="alert">{errors.status.message}</FieldError>}
             </FieldWrapper>
           )}
@@ -946,6 +960,41 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
                     }}
                   >
                     {cat.label}
+                  </CategoryItem>
+                ))}
+              </CategoryList>
+            </CategoryScrollArea>
+          </BottomSheetContent>
+        </BottomSheetOverlay>
+      )}
+
+      {/* Status Bottom Sheet */}
+      {isStatusSheetOpen && (
+        <BottomSheetOverlay onClick={() => setIsStatusSheetOpen(false)}>
+          <BottomSheetContent onClick={(e) => e.stopPropagation()}>
+            <SheetHeader>
+              <SheetTitle>상태 선택</SheetTitle>
+              <BackButton
+                type="button"
+                style={{ position: 'static' }}
+                onClick={() => setIsStatusSheetOpen(false)}
+              >
+                <CloseIcon />
+              </BackButton>
+            </SheetHeader>
+            <CategoryScrollArea>
+              <CategoryList>
+                {STATUS_OPTIONS.map((status) => (
+                  <CategoryItem
+                    key={status.code}
+                    type="button"
+                    isSelected={selectedStatus === status.code}
+                    onClick={() => {
+                      setValue('status', status.code, { shouldValidate: true, shouldDirty: true });
+                      setIsStatusSheetOpen(false);
+                    }}
+                  >
+                    {status.label}
                   </CategoryItem>
                 ))}
               </CategoryList>
