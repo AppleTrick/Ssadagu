@@ -76,7 +76,7 @@ export function ChatRoomPage() {
   // 1. Entities: 사용자 정보 및 방 정보 초기화
   const { data: currentUser } = useUserProfile(userId, accessToken);
   const { data: newRoomData, isLoading: newRoomLoading } = useNewChatRoomInit(newProductId, userId, accessToken, currentUser?.nickname);
-  const { data: fetchedRoom, isLoading: fetchedRoomLoading } = useChatRoomDetail(roomId, userId, accessToken);
+  const { data: fetchedRoom, isLoading: fetchedRoomLoading } = useChatRoomDetail(roomId, userId, accessToken, currentUser?.nickname);
   const room = isNewRoom ? newRoomData : fetchedRoom;
   const isLoading = isNewRoom ? newRoomLoading : (fetchedRoomLoading || !room);
 
@@ -171,23 +171,7 @@ export function ChatRoomPage() {
     sendMessage('/pub/chat/message', { senderId: userId || -1, content, type: 'TALK' });
   };
 
-  const handleTransactionRequestSubmit = async (location: string, time: string, price: number) => {
-    if (isNewRoom || !room) return;
-    try {
-      // 내가 판매자라면 대상(buyerId)은 상대방임. 아니라면 방의 구매자 정보를 사용.
-      const targetBuyerId = isSeller ? room.partnerId : room.buyerId;
-      const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.REQUEST, { productId: room.productId, buyerId: targetBuyerId, roomId }, accessToken ?? undefined);
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        showAlert({ message: extractCleanErrorMsg(body.message || '결제 요청 실패') });
-        return;
-      }
-      sendMessage('/pub/chat/message', { senderId: userId || -1, content: JSON.stringify({ locationName: location, time, price }), type: 'PAYMENT_REQUEST' });
-      setReqSheetOpen(false);
-    } catch (e) { 
-      showAlert({ message: '요청 중 오류 발생\n잠시 후 다시 시도해 주세요.' }); 
-    }
-  };
+
 
   const handleTransactionAction = async (msg: ChatMessage, actionType: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL') => {
     if (!room) return;
@@ -338,8 +322,41 @@ export function ChatRoomPage() {
         onSelectLocation={() => setMapSheetOpen(true)} 
         onPhotosSelected={handlePhotosSelected} 
       />
-      <TransactionRequestSheet isOpen={reqSheetOpen} onClose={() => setReqSheetOpen(false)} 
-        roomInfo={room ? { productTitle: room.productTitle, productPrice: room.productPrice, productThumbnailUrl: room.productThumbnailUrl } : null} onSubmit={handleTransactionRequestSubmit} />
+      {/* 닉네임 판별 로직: 이제 룸 매퍼에서 처리된 닉네임을 그대로 사용합니다. */}
+      {room && (
+        <TransactionRequestSheet 
+          isOpen={reqSheetOpen} 
+          onClose={() => setReqSheetOpen(false)} 
+          roomInfo={{ productTitle: room.productTitle, productPrice: room.productPrice ?? 0, productThumbnailUrl: room.productThumbnailUrl }} 
+          buyerNickname={room.buyerNickname}
+          sellerNickname={room.sellerNickname}
+          onSubmit={async (locationName, time, price) => {
+            try {
+              const targetBuyerId = isSeller ? room.partnerId : room.buyerId;
+              const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.REQUEST, { productId: room.productId, buyerId: targetBuyerId, roomId }, accessToken ?? undefined);
+              if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                showAlert({ message: extractCleanErrorMsg(body.message || '결제 요청 실패') });
+                return;
+              }
+              sendMessage('/pub/chat/message', { 
+                senderId: userId || -1, 
+                content: JSON.stringify({ 
+                  locationName, 
+                  time, 
+                  price,
+                  buyerNickname: room.buyerNickname,
+                  sellerNickname: room.sellerNickname,
+                }), 
+                type: 'PAYMENT_REQUEST' 
+              });
+              setReqSheetOpen(false);
+            } catch (e) { 
+              showAlert({ message: '요청 중 오류 발생\n잠시 후 다시 시도해 주세요.' }); 
+            }
+          }} 
+        />
+      )}
       <TransactionConfirmSheet isOpen={confirmSheetOpen} onClose={() => setConfirmSheetOpen(false)}
         roomInfo={room ? { productTitle: room.productTitle, productThumbnailUrl: room.productThumbnailUrl } : null} content={selectedConfirmMessage ? JSON.parse(selectedConfirmMessage.content || '{}') : undefined}
         onConfirm={() => {
