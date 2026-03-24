@@ -14,10 +14,10 @@ interface HeaderMainProps {
 
 const HeaderMain = ({ title, onSearchChange, onNotification }: HeaderMainProps) => {
   const router = useRouter();
-  const { data: user } = useMyProfile();
+  const { data: user, isPending } = useMyProfile();
   
   const isRegionHeader = !title;
-  const displayTitle = title || (user?.regionName?.trim() ? user.regionName : '우리동네');
+  const displayTitle = title || (isPending ? '로딩중...' : (user?.regionName?.trim() ? user.regionName : '우리동네'));
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
