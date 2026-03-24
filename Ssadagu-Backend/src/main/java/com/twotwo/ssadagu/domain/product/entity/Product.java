@@ -58,6 +58,29 @@ public class Product extends BaseEntity {
     @Column(columnDefinition = "JSON")
     private String metadata;
 
+    // 검색용 metadata 추출 컬럼 (Phase 2)
+    // metadata JSON의 핵심 필드를 별도 컬럼으로 분리해 필드 기반 정밀 검색에 활용.
+    // 기존 상품(컬럼 null)은 metadata 문자열 LIKE 검색으로 자동 fallback.
+    @Column(name = "metadata_brand", length = 100)
+    private String metadataBrand;
+
+    @Column(name = "metadata_product_name", length = 200)
+    private String metadataProductName;
+
+    @Column(name = "metadata_model_name", length = 200)
+    private String metadataModelName;
+
+    /** 정규화된 색상 목록 (쉼표 구분). 예: "검정,흰색" */
+    @Column(name = "metadata_canonical_colors", length = 500)
+    private String metadataCanonicalColors;
+
+    @Column(name = "metadata_condition", length = 50)
+    private String metadataCondition;
+
+    /** 검색 alias 목록 (공백 구분, LIKE 검색용). 예: "맥북 MacBook 애플 Apple" */
+    @Column(name = "metadata_search_aliases", columnDefinition = "TEXT")
+    private String metadataSearchAliases;
+
     public void update(String title, String description, Long price, String categoryCode, String regionName,
             String status) {
         if (title != null)
@@ -103,5 +126,16 @@ public class Product extends BaseEntity {
 
     public void updateMetadata(String metadata) {
         this.metadata = metadata;
+    }
+
+    /** metadata 추출 필드를 한 번에 업데이트합니다. */
+    public void updateMetadataFields(String brand, String productName, String modelName,
+            String canonicalColors, String condition, String searchAliases) {
+        this.metadataBrand = brand;
+        this.metadataProductName = productName;
+        this.metadataModelName = modelName;
+        this.metadataCanonicalColors = canonicalColors;
+        this.metadataCondition = condition;
+        this.metadataSearchAliases = searchAliases;
     }
 }
