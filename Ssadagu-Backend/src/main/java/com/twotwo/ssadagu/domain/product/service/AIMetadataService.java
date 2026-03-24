@@ -1,7 +1,9 @@
+
 package com.twotwo.ssadagu.domain.product.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.twotwo.ssadagu.domain.product.dto.SearchFilterDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +23,8 @@ import java.util.Map;
 public class AIMetadataService {
 
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    // Bean 주입 - Spring 전역 설정(JavaTimeModule 등)이 반영된 ObjectMapper 사용
+    private final ObjectMapper objectMapper;
 
     @Value("${gms.api.key}")
     private String gmsApiKey;
@@ -29,16 +32,17 @@ public class AIMetadataService {
     @Value("${gms.api.endpoint:https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions}")
     private String gmsEndpoint;
 
-    // 메타데이터 생성 시 AI에 전달할 최대 이미지 수 (토큰 절약)
     private static final int MAX_IMAGES_FOR_METADATA = 3;
 
     /**
-     * 상품 정보를 기반으로 JSON-LD 메타데이터를 생성합니다.
+     * 상품 정보를 기반으로 검색용 구조화 메타데이터를 생성합니다.
+     * 생성된 메타데이터는 DB에 저장되며, 이후 Text-to-Filter 검색에 활용됩니다.
      */
-    public String generateMetadata(String title, String description, Long price, String categoryCode, String regionName, List<String> imageUrls) {
+    public String generateMetadata(String title, String description, Long price, String categoryCode, String regionName,
+            List<String> imageUrls) {
         try {
-            String prompt = buildPrompt(title, description, price, categoryCode, regionName, imageUrls != null ? imageUrls.size() : 0);
-            // 이미지가 많을 경우 앞 3장만 사용 (토큰 과다 소비 방지)
+            String prompt = buildMetadataPrompt(title, description, price, categoryCode, regionName,
+                    imageUrls != null ? imageUrls.size() : 0);
             List<String> limitedImages = (imageUrls != null && imageUrls.size() > MAX_IMAGES_FOR_METADATA)
                     ? imageUrls.subList(0, MAX_IMAGES_FOR_METADATA)
                     : (imageUrls != null ? imageUrls : List.of());
@@ -51,7 +55,28 @@ public class AIMetadataService {
     }
 
     /**
-     * GMS API를 호출하여 메타데이터를 생성합니다.
+     * 자연어 검색어를 분석하여 Text-to-Filter 방식의 구조화된 검색 필터를 생성합니다.
+     * LLM은 SQL을 만들지 않고, 브랜드/제품명/색상 해석과 유사어 확장만 담당합니다.
+     * 서버가 이 필터를 기반으로 안전하게 DB 검색을 수행합니다.
+     *
+     * 실패 시 null 대신 SearchFilterDto.empty()를 반환하여 NPE를 방지합니다.
+     */
+    public SearchFilterDto buildSearchFilter(String query) {
+        try {
+            String prompt = buildSearchFilterPrompt(query);
+            String response = callGmsApi(prompt, List.of());
+            String jsonStr = extractJsonFromResponse(response);
+            // 직접 DTO 역직렬화 대신 JsonNode 경유 → LLM 출력 불안정성 방어
+            JsonNode node = objectMapper.readTree(jsonStr);
+            return normalizeSearchFilter(node);
+        } catch (Exception e) {
+            log.error("Failed to build search filter for query '{}': {}", query, e.getMessage());
+            return SearchFilterDto.empty();
+        }
+    }
+
+    /**
+     * GMS API를 호출합니다.
      */
     private String callGmsApi(String prompt, List<String> imageUrls) throws Exception {
         HttpHeaders headers = new HttpHeaders();
@@ -68,137 +93,241 @@ public class AIMetadataService {
     }
 
     /**
-     * 프롬프트를 구성합니다.
+     * 상품 등록 시 메타데이터 생성용 프롬프트.
+     * condition enum, canonicalColors 화이트리스트, searchAliases 최대 개수를 제한해
+     * LLM 출력 품질과 일관성을 높입니다.
+     * 가격/카테고리/지역도 메타데이터에 포함합니다.
      */
-    private String buildPrompt(String title, String description, Long price, String categoryCode, String regionName, int totalImageCount) {
+    private String buildMetadataPrompt(String title, String description, Long price, String categoryCode,
+            String regionName, int totalImageCount) {
         String imageNote = totalImageCount > MAX_IMAGES_FOR_METADATA
                 ? String.format("(총 %d장 중 앞 %d장 분석)", totalImageCount, MAX_IMAGES_FOR_METADATA)
                 : (totalImageCount > 0 ? String.format("(총 %d장 분석)", totalImageCount) : "(이미지 없음)");
 
-        return String.format("""
-                첨부된 상품 이미지 %s와 아래 상품 정보를 함께 분석하여 JSON-LD 형식의 구조화된 메타데이터를 생성해줘.
-                이미지가 있다면 모든 이미지를 보고 색상, 브랜드, 상태, 결함 등을 직접 확인해줘.
-                한국어로 답변하고, 유추 가능한 정보도 포함해줘.
+        return String.format(
+                """
+                        첨부된 상품 이미지 %s와 아래 상품 정보를 분석하여 검색용 구조화 메타데이터를 JSON으로 생성해줘.
+                        이미지가 있다면 색상, 브랜드, 상태, 결함 등을 직접 확인해줘.
+                        JSON만 반환하고 설명은 생략해줘.
 
-                상품 제목: %s
-                상품 설명: %s
-                가격: %,d원
-                카테고리: %s
-                지역: %s
+                        상품 제목: %s
+                        상품 설명: %s
+                        가격: %d
+                        카테고리: %s
+                        지역: %s
 
-                다음 JSON-LD 스키마로 반환해줘 (JSON만 반환, 설명 없이):
-                {
-                  "색상": "string or null",
-                  "브랜드": "string or null",
-                  "제품명": "string or null",
-                  "모델명": "string or null",
-                  "사이즈": "string or null (의류/신발/가구 등 크기가 있는 경우)",
-                  "소재": "string or null (의류/가구/잡화 등 소재가 있는 경우)",
-                  "출시년도": "number or null",
-                  "상태": "string (신상품/거의새상품/좋음/사용감있음/불량)",
-                  "가격": %d,
-                  "주요특징": ["string (카테고리에 맞는 핵심 특징 나열)"],
-                  "결함": ["string (육안으로 보이는 결함, 없으면 빈 배열)"],
-                  "카테고리": "string",
-                  "지역": "string",
-                  "추가정보": {"key": "value (카테고리 특화 정보: 전자기기면 저장용량/화면크기/배터리상태, 도서면 저자/출판사, 식품이면 유통기한/원산지 등)"}
-                }
-                """, imageNote, title, description, price, categoryCode, regionName, price);
+                        제약 조건:
+                        - condition은 반드시 ["새상품", "거의새상품", "좋음", "사용감있음", "불량"] 중 하나만 사용하라.
+                        - canonicalColors는 반드시 ["검정", "흰색", "회색", "빨강", "파랑", "초록", "노랑", "갈색", "베이지", "핑크", "보라", "은색", "금색"] 중에서만 선택하라.
+                        - 불확실한 정보는 추측하지 말고 null 또는 빈 배열로 반환하라.
+                        - searchAliases는 최대 6개까지만 반환하라.
+
+                        아래 JSON 스키마로 반환 (null 허용):
+                        {
+                          "brand": "string or null (브랜드명, 영문 공식명 우선. 예: Apple, Samsung, Nike)",
+                          "productName": "string or null (제품 종류명. 예: MacBook Pro, 갤럭시 탭)",
+                          "modelName": "string or null (구체적 모델명. 예: M2 13인치, S24 Ultra)",
+                          "colors": ["string (실제 색상명. 예: 미드나이트, 스페이스 블랙)"],
+                          "canonicalColors": ["string (위 화이트리스트에서만 선택)"],
+                          "condition": "string (위 enum 중 하나)",
+                          "features": ["string (핵심 특징. 예: M2 칩, 256GB, 14인치)"],
+                          "defects": ["string (결함 설명, 없으면 빈 배열)"],
+                          "searchAliases": ["string (검색 표현, 한국어/영어 모두. 최대 6개)"],
+                          "price": %d,
+                          "category": "%s",
+                          "region": "%s",
+                          "extra": {%s}
+                        }
+                        """,
+                imageNote, title, description, price, categoryCode, regionName,
+                price, categoryCode, regionName, buildExtraHint(categoryCode));
+    }
+
+    private String buildExtraHint(String categoryCode) {
+        if (categoryCode == null)
+            return "\"key\": \"value\"";
+        return switch (categoryCode.toUpperCase()) {
+            case "DIGITAL", "ELECTRONICS" ->
+                "\"storage\": \"string\", \"memory\": \"string\", \"screenSize\": \"string\"";
+            case "FASHION", "CLOTHING" -> "\"size\": \"string\", \"material\": \"string\"";
+            case "FURNITURE" -> "\"size\": \"string\", \"material\": \"string\"";
+            case "BOOK" -> "\"author\": \"string\", \"publisher\": \"string\"";
+            default -> "\"key\": \"value\"";
+        };
     }
 
     /**
-     * API 응답에서 JSON 메타데이터를 추출합니다.
+     * 검색 시 자연어 → 검색 필터 JSON 변환용 프롬프트.
+     *
+     * LLM 역할:
+     * - brand: 대표 브랜드명 하나 (canonical)
+     * - brandAliases: 검색 확장 표현 (한/영)
+     * - productName: 대표 제품명 하나 (canonical)
+     * - productAliases: 유사 표현 확장 (한/영)
+     * - colorAliases: 색상 유사어 확장
+     * - 가격/정렬/카테고리 등이 검색어에 명시된 경우 filters에 반영
+     */
+    private String buildSearchFilterPrompt(String query) {
+        return String.format("""
+                사용자의 중고거래 상품 검색어를 분석하여 검색 필터 JSON으로 변환하라.
+                JSON만 반환하라. SQL은 만들지 마라.
+                확신이 없는 필드는 null 또는 빈 배열로 반환하라.
+
+                규칙:
+                - brand는 대표 브랜드명 하나만 넣고, 확장 표현은 brandAliases에 넣어라.
+                - productName은 대표 제품명 하나만 넣고, 유사 표현은 productAliases에 넣어라.
+                - colors는 사용자가 의도한 대표색만 넣고, 실제 검색 확장은 colorAliases에 넣어라.
+                - 가격/정렬/카테고리/거래방식이 검색어에 명시된 경우 filters에 반영하라.
+                - brandAliases, productAliases, colorAliases는 한국어/영어 모두 포함하라.
+
+                검색어: %s
+
+                아래 JSON 스키마로 반환:
+                {
+                  "intent": "product_search",
+                  "filters": {
+                    "minPrice": null or number,
+                    "maxPrice": null or number,
+                    "brand": "string or null (대표 브랜드명)",
+                    "productName": "string or null (대표 제품명)",
+                    "modelName": "string or null",
+                    "colors": [] or null,
+                    "condition": "string or null (새상품/거의새상품/좋음/사용감있음/불량)",
+                    "category": "string or null",
+                    "region": "string or null",
+                    "tradeType": "string or null (직거래/택배)"
+                  },
+                  "expanded": {
+                    "brandAliases": ["string"],
+                    "productAliases": ["string"],
+                    "modelAliases": ["string"],
+                    "colorAliases": ["string"],
+                    "featureAliases": ["string"]
+                  },
+                  "sort": "null or LATEST or PRICE_ASC or PRICE_DESC"
+                }
+                """, query);
+    }
+
+    /**
+     * LLM 출력 JsonNode를 안전하게 SearchFilterDto로 변환합니다.
+     * "colors": "검정" 처럼 배열 대신 문자열로 오는 경우나 필드 누락에 대응합니다.
+     */
+    private SearchFilterDto normalizeSearchFilter(JsonNode node) {
+        SearchFilterDto dto = SearchFilterDto.empty();
+
+        if (node.has("intent") && !node.get("intent").isNull()) {
+            dto.setIntent(node.get("intent").asText("product_search"));
+        }
+
+        if (node.has("sort") && !node.get("sort").isNull()) {
+            String sort = node.get("sort").asText();
+            if (!sort.isBlank() && !"null".equalsIgnoreCase(sort)) {
+                dto.setSort(sort);
+            }
+        }
+
+        SearchFilterDto.Filters filters = dto.getFilters();
+        JsonNode f = node.path("filters");
+        if (!f.isMissingNode() && !f.isNull()) {
+            if (f.has("minPrice") && !f.get("minPrice").isNull()) {
+                try {
+                    filters.setMinPrice(f.get("minPrice").asLong());
+                } catch (Exception ignored) {
+                }
+            }
+            if (f.has("maxPrice") && !f.get("maxPrice").isNull()) {
+                try {
+                    filters.setMaxPrice(f.get("maxPrice").asLong());
+                } catch (Exception ignored) {
+                }
+            }
+            filters.setBrand(textOrNull(f, "brand"));
+            filters.setProductName(textOrNull(f, "productName"));
+            filters.setModelName(textOrNull(f, "modelName"));
+            filters.setColors(toStringList(f.path("colors")));
+            filters.setCondition(textOrNull(f, "condition"));
+            filters.setCategory(textOrNull(f, "category"));
+            filters.setRegion(textOrNull(f, "region"));
+            filters.setTradeType(textOrNull(f, "tradeType"));
+        }
+
+        SearchFilterDto.Expanded expanded = dto.getExpanded();
+        JsonNode e = node.path("expanded");
+        if (!e.isMissingNode() && !e.isNull()) {
+            expanded.setBrandAliases(toStringList(e.path("brandAliases")));
+            expanded.setProductAliases(toStringList(e.path("productAliases")));
+            expanded.setModelAliases(toStringList(e.path("modelAliases")));
+            expanded.setColorAliases(toStringList(e.path("colorAliases")));
+            expanded.setFeatureAliases(toStringList(e.path("featureAliases")));
+        }
+
+        return dto;
+    }
+
+    private String textOrNull(JsonNode node, String field) {
+        JsonNode v = node.path(field);
+        if (v.isMissingNode() || v.isNull())
+            return null;
+        String text = v.asText().trim();
+        return text.isEmpty() || "null".equalsIgnoreCase(text) ? null : text;
+    }
+
+    /** 배열 또는 단일 문자열을 List<String>으로 안전하게 변환합니다. */
+    private List<String> toStringList(JsonNode node) {
+        List<String> result = new ArrayList<>();
+        if (node.isMissingNode() || node.isNull())
+            return result;
+        if (node.isArray()) {
+            for (JsonNode el : node) {
+                if (!el.isNull()) {
+                    String text = el.asText().trim();
+                    if (!text.isEmpty())
+                        result.add(text);
+                }
+            }
+        } else if (node.isTextual()) {
+            // "colors": "검정" 처럼 문자열로 온 경우 단일 원소 리스트로 변환
+            String text = node.asText().trim();
+            if (!text.isEmpty())
+                result.add(text);
+        }
+        return result;
+    }
+
+    /**
+     * API 응답에서 JSON 문자열을 추출합니다.
      */
     private String extractJsonFromResponse(String response) throws Exception {
         JsonNode rootNode = objectMapper.readTree(response);
 
-        // choices[0].message.content에서 메타데이터 추출
-        String content = rootNode
-                .path("choices")
-                .get(0)
+        JsonNode choices = rootNode.path("choices");
+        if (!choices.isArray() || choices.isEmpty()) {
+            throw new IllegalStateException("GMS API 응답에 choices가 없습니다: " + response);
+        }
+
+        String content = choices.get(0)
                 .path("message")
                 .path("content")
                 .asText();
 
-        // JSON 블록 추출 (마크다운 형식: ```json ... ``` 또는 ```)
         String jsonContent = extractJsonBlock(content);
-
-        // JSON 유효성 검증
-        objectMapper.readTree(jsonContent);
-
+        objectMapper.readTree(jsonContent); // 유효성 검증
         return jsonContent;
     }
 
-    /**
-     * 마크다운 형식의 JSON 블록을 추출합니다.
-     */
     private String extractJsonBlock(String content) {
-        // ```json ... ``` 형식
         if (content.contains("```json")) {
             int start = content.indexOf("```json") + 7;
             int end = content.indexOf("```", start);
             return content.substring(start, end).trim();
         }
-
-        // ``` ... ``` 형식
         if (content.contains("```")) {
             int start = content.indexOf("```") + 3;
             int end = content.indexOf("```", start);
             return content.substring(start, end).trim();
         }
-
-        // JSON 형식이 그대로 있는 경우
         return content.trim();
-    }
-
-    /**
-     * 검색어를 AI로 확장합니다 (동의어, 유사어, 관련 제품명 등).
-     */
-    public List<String> expandKeywords(String query) {
-        try {
-            String prompt = String.format("""
-                    다음 검색어를 분석하여, 아래 상품 메타데이터 필드에 저장된 값과 매칭될 수 있는 관련 키워드를 최대 6개 생성해줘.
-
-                    [메타데이터 필드 구조]
-                    - 색상: 상품 색상명 (예: "스페이스 블랙", "내추럴 화이트", "미드나이트")
-                    - 브랜드: 제조사/브랜드명 (예: "Apple", "Samsung", "Nike", "나이키")
-                    - 제품명: 상품 종류명 (예: "MacBook Pro", "갤럭시 탭", "에어포스 1")
-                    - 모델명: 구체적인 모델 식별자 (예: "M3 Pro 16인치", "S24 Ultra")
-                    - 주요특징: 핵심 특징 목록 (예: "M3 칩", "AMOLED 화면", "256GB")
-                    - 추가정보: 카테고리 특화 정보 (저장용량, 화면크기, 배터리상태 등)
-
-                    검색어: %s
-
-                    예시) "검정색 맥북" → ["스페이스 블랙", "MacBook", "맥북", "Apple", "애플", "블랙"]
-                    JSON 배열로만 반환 (설명 없이, 원본 검색어 제외):
-                    """, query);
-
-            String response = callGmsApi(prompt, List.of());
-            String jsonArray = extractJsonFromResponse(response);
-            return parseKeywordArray(jsonArray);
-        } catch (Exception e) {
-            log.error("Failed to expand keywords: {}", e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-
-    /**
-     * JSON 배열 문자열을 List<String>으로 파싱합니다.
-     */
-    private List<String> parseKeywordArray(String jsonArray) {
-        try {
-            JsonNode node = objectMapper.readTree(jsonArray);
-            List<String> keywords = new ArrayList<>();
-            if (node.isArray()) {
-                for (JsonNode element : node) {
-                    keywords.add(element.asText());
-                }
-            }
-            return keywords;
-        } catch (Exception e) {
-            log.error("Failed to parse keyword array: {}", e.getMessage());
-            return new ArrayList<>();
-        }
     }
 
     /**
@@ -213,18 +342,18 @@ public class AIMetadataService {
         GmsRequest(String userContent, List<String> imageUrls) {
             Map<String, Object> systemMsg = new java.util.HashMap<>();
             systemMsg.put("role", "developer");
-            systemMsg.put("content", "Answer in Korean. You are an expert at analyzing product information and creating structured metadata.");
+            systemMsg.put("content",
+                    "Answer in Korean. You are an expert at analyzing product information and creating structured metadata.");
 
             Map<String, Object> userMsg = new java.util.HashMap<>();
             userMsg.put("role", "user");
 
             if (imageUrls != null && !imageUrls.isEmpty()) {
-                // 비전 포맷: 이미지 URL + 텍스트
                 List<Map<String, Object>> contentParts = new ArrayList<>();
                 for (String url : imageUrls) {
                     Map<String, Object> imageUrlObj = new java.util.HashMap<>();
                     imageUrlObj.put("url", url);
-                    imageUrlObj.put("detail", "low"); // 저해상도로 처리해 토큰 절약
+                    imageUrlObj.put("detail", "low");
                     Map<String, Object> imagePart = new java.util.HashMap<>();
                     imagePart.put("type", "image_url");
                     imagePart.put("image_url", imageUrlObj);
@@ -236,11 +365,10 @@ public class AIMetadataService {
                 contentParts.add(textPart);
                 userMsg.put("content", contentParts);
             } else {
-                // 텍스트 전용 포맷
                 userMsg.put("content", userContent);
             }
 
-            this.messages = new Object[]{systemMsg, userMsg};
+            this.messages = new Object[] { systemMsg, userMsg };
         }
     }
 }
