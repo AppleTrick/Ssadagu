@@ -141,6 +141,7 @@ public class ProductService {
                 request.getRegionName(),
                 request.getStatus());
 
+        List<String> imageUrls = new ArrayList<>();
         if (imageFiles != null && !imageFiles.isEmpty()) {
             if (imageFiles.size() > 5) {
                 throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INVALID_INPUT_VALUE);
@@ -148,6 +149,7 @@ public class ProductService {
             product.getImages().clear();
             for (int i = 0; i < imageFiles.size(); i++) {
                 String imageUrl = s3Service.uploadImage(imageFiles.get(i));
+                imageUrls.add(imageUrl);
                 com.twotwo.ssadagu.domain.product.entity.ProductImage image = com.twotwo.ssadagu.domain.product.entity.ProductImage.builder()
                         .product(product)
                         .imageUrl(imageUrl)
@@ -155,6 +157,21 @@ public class ProductService {
                         .build();
                 product.getImages().add(image);
             }
+        } else {
+            // 이미지 변경 없으면 기존 이미지 URL 유지
+            product.getImages().forEach(img -> imageUrls.add(img.getImageUrl()));
+        }
+
+        // 제목/설명/가격/카테고리/이미지가 바뀌면 검색 메타데이터도 재생성
+        String metadata = aiMetadataService.generateMetadata(
+                product.getTitle(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getCategoryCode(),
+                product.getRegionName(),
+                imageUrls);
+        if (metadata != null) {
+            product.updateMetadata(metadata);
         }
 
         boolean isLiked = productWishRepository.existsByUserIdAndProductId(currentUserId, productId);
