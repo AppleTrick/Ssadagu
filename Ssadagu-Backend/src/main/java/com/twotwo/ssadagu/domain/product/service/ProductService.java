@@ -174,15 +174,13 @@ public class ProductService {
         String cleanedKeyword = removePriceTerms(keyword);
 
         // 2단계: LLM → filter JSON (브랜드, 제품명, 색상 + 유사어 확장)
-        List<String> searchTerms = new ArrayList<>();
         SearchFilterDto filter = SearchFilterDto.empty();
-        if (!cleanedKeyword.isBlank()) {
+        List<String> coreTerms = new ArrayList<>();
+        List<String> optionalTerms = new ArrayList<>();
+        if (!cleanedKeyword.isBlank() && !isStopword(cleanedKeyword)) {
             filter = aiMetadataService.buildSearchFilter(cleanedKeyword);
-            searchTerms.addAll(filter.collectAllAliases());
-            // LLM 실패 또는 alias가 없으면 원본 키워드로 fallback
-            if (searchTerms.isEmpty()) {
-                searchTerms.add(cleanedKeyword.toLowerCase());
-            }
+            coreTerms = filter.collectCoreTerms();
+            optionalTerms = filter.collectOptionalTerms();
         }
 
         // 3단계: Specification 조합 → DB에서 직접 필터링
@@ -208,8 +206,15 @@ public class ProductService {
         if (llmFilters != null && llmFilters.getCategory() != null) {
             spec = spec.and(ProductSpecification.categoryEquals(llmFilters.getCategory()));
         }
-        if (!searchTerms.isEmpty()) {
-            spec = spec.and(ProductSpecification.keywordsMatch(searchTerms));
+        if (!coreTerms.isEmpty()) {
+            // 브랜드/제품명 계열: 반드시 하나라도 매칭 (AND)
+            spec = spec.and(ProductSpecification.keywordsMatch(coreTerms));
+        } else if (!optionalTerms.isEmpty()) {
+            // 핵심 그룹 없으면 색상/특징으로 fallback
+            spec = spec.and(ProductSpecification.keywordsMatch(optionalTerms));
+        } else if (!cleanedKeyword.isBlank() && !isStopword(cleanedKeyword)) {
+            // LLM alias 결과가 모두 없으면 원본 키워드로 직접 검색
+            spec = spec.and(ProductSpecification.keywordsMatch(List.of(cleanedKeyword.toLowerCase())));
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
@@ -290,6 +295,14 @@ public class ProductService {
 
     /** 가격 범위 조건 */
     private record PriceRange(Long min, Long max) {}
+
+    private static final Set<String> STOPWORDS = Set.of(
+            "제품", "물건", "상품", "중고", "판매", "구매", "급처", "나눔", "삽니다", "팝니다");
+
+    /** 검색어가 의미 없는 일반 단어(stopword)인지 확인합니다. */
+    private boolean isStopword(String keyword) {
+        return STOPWORDS.contains(keyword.trim());
+    }
 
     @Transactional
     public void deleteProduct(Long productId, Long currentUserId) {

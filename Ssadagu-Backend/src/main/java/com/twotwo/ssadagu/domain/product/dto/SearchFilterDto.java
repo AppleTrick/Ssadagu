@@ -6,7 +6,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * LLM이 자연어 검색어를 분석해서 반환하는 구조화된 검색 필터.
@@ -62,24 +64,46 @@ public class SearchFilterDto {
     }
 
     /**
-     * 모든 alias를 하나의 리스트로 합칩니다.
-     * 서버에서 keywordsMatch Specification에 사용합니다.
+     * 브랜드/제품명/모델명 계열 alias (필수 검색 그룹).
+     * 이 그룹이 있으면 반드시 하나 이상 매칭되어야 한다.
      */
-    public List<String> collectAllAliases() {
-        List<String> allTerms = new ArrayList<>();
-        if (expanded != null) {
-            if (expanded.brandAliases != null) allTerms.addAll(expanded.brandAliases);
-            if (expanded.productAliases != null) allTerms.addAll(expanded.productAliases);
-            if (expanded.modelAliases != null) allTerms.addAll(expanded.modelAliases);
-            if (expanded.colorAliases != null) allTerms.addAll(expanded.colorAliases);
-            if (expanded.featureAliases != null) allTerms.addAll(expanded.featureAliases);
-        }
+    public List<String> collectCoreTerms() {
+        Set<String> terms = new LinkedHashSet<>();
         if (filters != null) {
-            if (filters.brand != null) allTerms.add(filters.brand);
-            if (filters.productName != null) allTerms.add(filters.productName);
-            if (filters.modelName != null) allTerms.add(filters.modelName);
-            if (filters.colors != null) allTerms.addAll(filters.colors);
+            addNonBlank(terms, filters.brand);
+            addNonBlank(terms, filters.productName);
+            addNonBlank(terms, filters.modelName);
         }
-        return allTerms;
+        if (expanded != null) {
+            addAllNonBlank(terms, expanded.brandAliases);
+            addAllNonBlank(terms, expanded.productAliases);
+            addAllNonBlank(terms, expanded.modelAliases);
+        }
+        return new ArrayList<>(terms);
+    }
+
+    /**
+     * 색상/특징 계열 alias (선택 검색 그룹).
+     * 핵심 그룹이 없을 때 fallback으로 사용한다.
+     */
+    public List<String> collectOptionalTerms() {
+        Set<String> terms = new LinkedHashSet<>();
+        if (filters != null && filters.colors != null) {
+            addAllNonBlank(terms, filters.colors);
+        }
+        if (expanded != null) {
+            addAllNonBlank(terms, expanded.colorAliases);
+            addAllNonBlank(terms, expanded.featureAliases);
+        }
+        return new ArrayList<>(terms);
+    }
+
+    private void addNonBlank(Set<String> set, String value) {
+        if (value != null && !value.isBlank() && value.length() > 1) set.add(value.trim());
+    }
+
+    private void addAllNonBlank(Set<String> set, List<String> values) {
+        if (values == null) return;
+        for (String v : values) addNonBlank(set, v);
     }
 }
