@@ -14,8 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -167,6 +169,10 @@ public class AIMetadataService {
      * - colorAliases: 색상 유사어 확장
      * - 가격/정렬/카테고리 등이 검색어에 명시된 경우 filters에 반영
      */
+    private static final Set<String> ALLOWED_SORT = Set.of("LATEST", "PRICE_ASC", "PRICE_DESC");
+    private static final Set<String> ALLOWED_CONDITION = Set.of("새상품", "거의새상품", "좋음", "사용감있음", "불량");
+    private static final Set<String> ALLOWED_TRADE_TYPE = Set.of("직거래", "택배");
+
     private String buildSearchFilterPrompt(String query) {
         return String.format("""
                 사용자의 중고거래 상품 검색어를 분석하여 검색 필터 JSON으로 변환하라.
@@ -179,6 +185,10 @@ public class AIMetadataService {
                 - colors는 사용자가 의도한 대표색만 넣고, 실제 검색 확장은 colorAliases에 넣어라.
                 - 가격/정렬/카테고리/거래방식이 검색어에 명시된 경우 filters에 반영하라.
                 - brandAliases, productAliases, colorAliases는 한국어/영어 모두 포함하라.
+                - filters의 대표값은 정규화된 값으로, expanded는 검색 확장 표현만 포함하라. 동일 의미 중복 표현은 제거하라.
+                - sort는 반드시 [LATEST, PRICE_ASC, PRICE_DESC] 중 하나 또는 null.
+                - condition은 반드시 [새상품, 거의새상품, 좋음, 사용감있음, 불량] 중 하나 또는 null.
+                - tradeType은 반드시 [직거래, 택배] 중 하나 또는 null.
 
                 검색어: %s
 
@@ -192,10 +202,10 @@ public class AIMetadataService {
                     "productName": "string or null (대표 제품명)",
                     "modelName": "string or null",
                     "colors": [] or null,
-                    "condition": "string or null (새상품/거의새상품/좋음/사용감있음/불량)",
+                    "condition": "string or null (새상품/거의새상품/좋음/사용감있음/불량 중 하나)",
                     "category": "string or null",
                     "region": "string or null",
-                    "tradeType": "string or null (직거래/택배)"
+                    "tradeType": "string or null (직거래/택배 중 하나)"
                   },
                   "expanded": {
                     "brandAliases": ["string"],
@@ -221,8 +231,8 @@ public class AIMetadataService {
         }
 
         if (node.has("sort") && !node.get("sort").isNull()) {
-            String sort = node.get("sort").asText();
-            if (!sort.isBlank() && !"null".equalsIgnoreCase(sort)) {
+            String sort = node.get("sort").asText().trim().toUpperCase();
+            if (ALLOWED_SORT.contains(sort)) {
                 dto.setSort(sort);
             }
         }
@@ -246,20 +256,20 @@ public class AIMetadataService {
             filters.setProductName(textOrNull(f, "productName"));
             filters.setModelName(textOrNull(f, "modelName"));
             filters.setColors(toStringList(f.path("colors")));
-            filters.setCondition(textOrNull(f, "condition"));
+            filters.setCondition(whitelistedOrNull(f, "condition", ALLOWED_CONDITION));
             filters.setCategory(textOrNull(f, "category"));
             filters.setRegion(textOrNull(f, "region"));
-            filters.setTradeType(textOrNull(f, "tradeType"));
+            filters.setTradeType(whitelistedOrNull(f, "tradeType", ALLOWED_TRADE_TYPE));
         }
 
         SearchFilterDto.Expanded expanded = dto.getExpanded();
         JsonNode e = node.path("expanded");
         if (!e.isMissingNode() && !e.isNull()) {
-            expanded.setBrandAliases(toStringList(e.path("brandAliases")));
-            expanded.setProductAliases(toStringList(e.path("productAliases")));
-            expanded.setModelAliases(toStringList(e.path("modelAliases")));
-            expanded.setColorAliases(toStringList(e.path("colorAliases")));
-            expanded.setFeatureAliases(toStringList(e.path("featureAliases")));
+            expanded.setBrandAliases(toDeduplicatedStringList(e.path("brandAliases")));
+            expanded.setProductAliases(toDeduplicatedStringList(e.path("productAliases")));
+            expanded.setModelAliases(toDeduplicatedStringList(e.path("modelAliases")));
+            expanded.setColorAliases(toDeduplicatedStringList(e.path("colorAliases")));
+            expanded.setFeatureAliases(toDeduplicatedStringList(e.path("featureAliases")));
         }
 
         return dto;
@@ -271,6 +281,18 @@ public class AIMetadataService {
             return null;
         String text = v.asText().trim();
         return text.isEmpty() || "null".equalsIgnoreCase(text) ? null : text;
+    }
+
+    /** whitelist에 포함된 값만 반환하고, 그 외는 null 처리합니다. */
+    private String whitelistedOrNull(JsonNode node, String field, Set<String> allowed) {
+        String value = textOrNull(node, field);
+        return (value != null && allowed.contains(value)) ? value : null;
+    }
+
+    /** toStringList 결과에서 중복 제거한 리스트를 반환합니다. */
+    private List<String> toDeduplicatedStringList(JsonNode node) {
+        List<String> raw = toStringList(node);
+        return new ArrayList<>(new LinkedHashSet<>(raw));
     }
 
     /** 배열 또는 단일 문자열을 List<String>으로 안전하게 변환합니다. */
