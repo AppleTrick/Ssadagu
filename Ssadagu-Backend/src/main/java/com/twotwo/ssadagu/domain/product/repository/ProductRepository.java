@@ -2,10 +2,11 @@ package com.twotwo.ssadagu.domain.product.repository;
 
 import com.twotwo.ssadagu.domain.product.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
     // 동네별 조회 (DELETED 상태 상품 제외)
     List<Product> findByRegionNameAndStatusNotOrderByCreatedAtDesc(String regionName, String status);

@@ -2,15 +2,11 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { getProducts } from '@/entities/product/api/getProducts';
 import { aiSearchProducts } from '@/entities/product/api/aiSearchProducts';
-import type { ProductSummary } from '@/entities/product/model/types';
+import type { ProductPageData } from '@/entities/product/api/aiSearchProducts';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { useMyProfile } from '@/entities/user';
 
-interface PageData {
-  content: ProductSummary[];
-  hasNext: boolean;
-  page: number;
-}
+const SERVER_PAGE_SIZE = 20;
 
 export const useInfiniteProducts = (searchQuery: string) => {
   const accessToken = useAuthStore((s: { accessToken: string | null }) => s.accessToken);
@@ -22,32 +18,16 @@ export const useInfiniteProducts = (searchQuery: string) => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  return useInfiniteQuery<PageData, Error>({
+  return useInfiniteQuery<ProductPageData, Error>({
     queryKey: ['products', debouncedQuery, accessToken, user?.regionName],
     queryFn: async ({ pageParam }) => {
       const page = pageParam as number;
-      let allItems: ProductSummary[];
 
       if (debouncedQuery.trim()) {
-        // AI 키워드 확장 검색
-        allItems = await aiSearchProducts(accessToken ?? undefined, debouncedQuery, user?.regionName);
+        return aiSearchProducts(accessToken ?? undefined, debouncedQuery, user?.regionName, page, SERVER_PAGE_SIZE);
       } else {
-        // 일반 목록 조회 (지역 필터링)
-        const rawItems = await getProducts(accessToken ?? undefined, user?.regionName);
-        allItems = user?.regionName?.trim()
-          ? rawItems.filter(item => item.regionName === user.regionName)
-          : rawItems;
+        return getProducts(accessToken ?? undefined, user?.regionName, undefined, page, SERVER_PAGE_SIZE);
       }
-
-      const PAGE_SIZE = 10;
-      const start = page * PAGE_SIZE;
-      const end = start + PAGE_SIZE;
-
-      return {
-        content: allItems.slice(start, end),
-        hasNext: end < allItems.length,
-        page,
-      };
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.page + 1 : undefined),

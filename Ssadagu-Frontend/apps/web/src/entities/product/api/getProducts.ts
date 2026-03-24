@@ -1,16 +1,22 @@
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
-import type { ProductSummary } from '../model/types';
+import type { ProductPageData } from './aiSearchProducts';
 
-export const getProducts = async (accessToken?: string, regionName?: string): Promise<ProductSummary[]> => {
+export const getProducts = async (
+  accessToken?: string,
+  regionName?: string,
+  keyword?: string,
+  page = 0,
+  size = 20,
+): Promise<ProductPageData> => {
   const params = new URLSearchParams();
-  if (regionName) {
-    params.append('regionName', regionName);
-  }
-  const endpoint = regionName ? `${ENDPOINTS.PRODUCTS.BASE}?${params.toString()}` : ENDPOINTS.PRODUCTS.BASE;
-  
+  if (regionName) params.append('regionName', regionName);
+  if (keyword) params.append('keyword', keyword);
+  params.append('page', String(page));
+  params.append('size', String(size));
+
   const res = await apiClient.get(
-    endpoint,
+    `${ENDPOINTS.PRODUCTS.BASE}?${params.toString()}`,
     accessToken,
   );
 
@@ -19,15 +25,10 @@ export const getProducts = async (accessToken?: string, regionName?: string): Pr
   }
 
   const json = await res.json();
-  const allItems = (Array.isArray(json) ? json : (json.data ?? [])) as any[];
-  
-  return allItems.map((item) => {
-    // 상품 응답에서 첫 번째 이미지를 찾아 썸네일로 사용
-    const thumbnail = item.images && item.images.length > 0
-      ? item.images[0].imageUrl
-      : null;
+  const items = (Array.isArray(json.content) ? json.content : []) as any[];
 
-    return {
+  return {
+    content: items.map((item) => ({
       id: item.id,
       sellerId: item.sellerId,
       sellerNickname: item.sellerNickname,
@@ -43,7 +44,10 @@ export const getProducts = async (accessToken?: string, regionName?: string): Pr
       updatedAt: item.updatedAt ?? '',
       isMine: item.isMine,
       isLiked: item.isLiked,
-      thumbnailUrl: thumbnail,
-    };
-  });
+      thumbnailUrl: item.images?.[0]?.imageUrl ?? null,
+    })),
+    hasNext: json.hasNext ?? false,
+    page: json.page ?? page,
+    size: json.size ?? size,
+  };
 };
