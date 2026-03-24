@@ -1,6 +1,7 @@
 package com.twotwo.ssadagu.domain.product.controller;
 
 import com.twotwo.ssadagu.domain.product.dto.ProductCreateRequestDto;
+import com.twotwo.ssadagu.domain.product.dto.ProductPageResponse;
 import com.twotwo.ssadagu.domain.product.dto.ProductResponseDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductUpdateRequestDto;
 import com.twotwo.ssadagu.domain.product.service.ProductService;
@@ -46,25 +47,29 @@ public class ProductController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "AI 상품 검색", description = "검색어를 AI로 확장하여 제목/설명/메타데이터에서 시맨틱 검색을 수행합니다.")
+    @Operation(summary = "AI 상품 검색", description = "자연어 검색어를 Text-to-Filter 방식으로 분석하여 DB에서 직접 검색합니다.")
     @GetMapping("/search")
-    public ResponseEntity<List<ProductResponseDto>> aiSearchProducts(
+    public ResponseEntity<ProductPageResponse> aiSearchProducts(
             @Parameter(description = "검색어 (필수)") @RequestParam String keyword,
             @Parameter(description = "동네 필터링 (선택)") @RequestParam(required = false) String regionName,
+            @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long currentUserId = (userDetails != null) ? userDetails.getUser().getId() : null;
-        List<ProductResponseDto> response = productService.aiSearchProducts(keyword, regionName, currentUserId);
+        ProductPageResponse response = productService.aiSearchProducts(keyword, regionName, page, size, currentUserId);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "상품 목록 조회", description = "상품 목록을 조회합니다. regionName 또는 keyword(제목) 파라미터로 필터링이 가능합니다.")
+    @Operation(summary = "상품 목록 조회", description = "상품 목록을 페이지네이션으로 조회합니다.")
     @GetMapping
-    public ResponseEntity<List<ProductResponseDto>> getProducts(
+    public ResponseEntity<ProductPageResponse> getProducts(
             @Parameter(description = "동네 필터링 (선택)") @RequestParam(required = false) String regionName,
             @Parameter(description = "제목 검색어 (선택)") @RequestParam(required = false) String keyword,
+            @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long currentUserId = (userDetails != null) ? userDetails.getUser().getId() : null;
-        List<ProductResponseDto> response = productService.getProducts(regionName, keyword, currentUserId);
+        ProductPageResponse response = productService.getProducts(regionName, keyword, page, size, currentUserId);
         return ResponseEntity.ok(response);
     }
 
@@ -76,7 +81,7 @@ public class ProductController {
             @RequestPart(value = "images", required = false) List<org.springframework.web.multipart.MultipartFile> images,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails == null) {
-            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INTERNAL_SERVER_ERROR); // 실제로는 Security에서 걸러지나 NPE 방지 차원
+            throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INTERNAL_SERVER_ERROR);
         }
         ProductResponseDto response = productService.updateProduct(productId, request, images, userDetails.getUser().getId());
         return ResponseEntity.ok(response);

@@ -1,16 +1,24 @@
 package com.twotwo.ssadagu.domain.product.service;
 
 import com.twotwo.ssadagu.domain.product.dto.ProductCreateRequestDto;
+import com.twotwo.ssadagu.domain.product.dto.ProductPageResponse;
 import com.twotwo.ssadagu.domain.product.dto.ProductResponseDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductUpdateRequestDto;
+import com.twotwo.ssadagu.domain.product.dto.SearchFilterDto;
 import com.twotwo.ssadagu.domain.product.entity.Product;
 import com.twotwo.ssadagu.domain.product.repository.ProductRepository;
+import com.twotwo.ssadagu.domain.product.repository.ProductSpecification;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -60,7 +68,7 @@ public class ProductService {
             }
         }
 
-        // AI를 통해 JSON-LD 메타데이터 생성
+        // AI를 통해 검색용 구조화 메타데이터 생성
         String metadata = aiMetadataService.generateMetadata(
                 request.getTitle(),
                 request.getDescription(),
@@ -93,35 +101,28 @@ public class ProductService {
         return ProductResponseDto.from(product, currentUserId, isLiked);
     }
 
-    public List<ProductResponseDto> getProducts(String regionName, String title, Long currentUserId) {
-        List<Product> products;
-        if (regionName != null && !regionName.isBlank() && title != null && !title.isBlank()) {
-            // 둘 다 있는 경우 (현재 Repository에는 없으므로 서비스 레벨 필터링 또는 Repository 추가 필요)
-            // 여기서는 단순함을 위해 Repository 메서드를 추가하지 않고 필터링으로 처리하거나, 
-            // 우선 순위에 따라 하나만 처리할 수 있음. 하지만 사용자 요구사항은 "지역 기반 검색 있지 않나?" 였으므로
-            // 둘 다 동작하게 하는 것이 좋음.
-            products = productRepository.findByRegionNameAndStatusNotOrderByCreatedAtDesc(regionName, "DELETED");
-            products = products.stream()
-                    .filter(p -> p.getTitle().contains(title))
-                    .collect(Collectors.toList());
-        } else if (regionName != null && !regionName.isBlank()) {
-            products = productRepository.findByRegionNameAndStatusNotOrderByCreatedAtDesc(regionName, "DELETED");
-        } else if (title != null && !title.isBlank()) {
-            products = productRepository.findByTitleContainingAndStatusNotOrderByCreatedAtDesc(title, "DELETED");
-        } else {
-            products = productRepository.findByStatusNotOrderByCreatedAtDesc("DELETED");
+    public ProductPageResponse getProducts(String regionName, String keyword, int page, int size, Long currentUserId) {
+        Specification<Product> spec = Specification.where(ProductSpecification.notDeleted());
+
+        if (regionName != null && !regionName.isBlank()) {
+            spec = spec.and(ProductSpecification.regionEquals(regionName));
         }
-        
-        return products.stream()
-                .filter(p -> p.getDeletedAt() == null)
+        if (keyword != null && !keyword.isBlank()) {
+            spec = spec.and(ProductSpecification.titleContains(keyword));
+        }
+
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Product> productPage = productRepository.findAll(spec, pageRequest);
+
+        List<ProductResponseDto> content = productPage.getContent().stream()
                 .map(p -> {
-                    boolean isLiked = false;
-                    if (currentUserId != null) {
-                        isLiked = productWishRepository.existsByUserIdAndProductId(currentUserId, p.getId());
-                    }
+                    boolean isLiked = currentUserId != null &&
+                            productWishRepository.existsByUserIdAndProductId(currentUserId, p.getId());
                     return ProductResponseDto.from(p, currentUserId, isLiked);
                 })
                 .collect(Collectors.toList());
+
+        return new ProductPageResponse(content, productPage.hasNext(), page, size);
     }
 
     @Transactional
@@ -129,12 +130,10 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.PRODUCT_NOT_FOUND));
 
-        // 삭제 확인
         if ("DELETED".equals(product.getStatus()) || product.getDeletedAt() != null) {
             throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.PRODUCT_NOT_FOUND);
         }
 
-        // 권한 확인
         if (!product.getSeller().getId().equals(currentUserId)) {
             throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.NOT_PRODUCT_SELLER);
         }
@@ -151,7 +150,6 @@ public class ProductService {
             if (imageFiles.size() > 5) {
                 throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INVALID_INPUT_VALUE);
             }
-            // 기존 이미지 삭제 (S3에서도 삭제 연동 시 여기에 추가 가능)
             product.getImages().clear();
             for (int i = 0; i < imageFiles.size(); i++) {
                 String imageUrl = s3Service.uploadImage(imageFiles.get(i));
@@ -168,48 +166,69 @@ public class ProductService {
         return ProductResponseDto.from(product, currentUserId, isLiked);
     }
 
-    public List<ProductResponseDto> aiSearchProducts(String keyword, String regionName, Long currentUserId) {
-        // 1. 가격 조건 추출 후 가격 표현 제거한 순수 키워드 확보
+    /**
+     * Text-to-Filter 기반 AI 검색.
+     *
+     * 1단계: 규칙 기반 전처리 - 가격 조건 추출
+     * 2단계: LLM → filter JSON (브랜드/제품명/색상 해석 + 유사어 확장)
+     * 3단계: Specification으로 DB 레벨에서 직접 필터링 + 페이지네이션
+     */
+    public ProductPageResponse aiSearchProducts(String keyword, String regionName, int page, int size, Long currentUserId) {
+        // 1단계: 규칙 기반 전처리 - 가격 조건 추출
         PriceRange priceRange = parsePriceRange(keyword);
         String cleanedKeyword = removePriceTerms(keyword);
 
-        // 2. AI로 키워드 확장 (가격 문구 제거 후)
-        List<String> allKeywords = new java.util.ArrayList<>();
+        // 2단계: LLM → filter JSON (브랜드, 제품명, 색상 + 유사어 확장)
+        List<String> searchTerms = new ArrayList<>();
+        SearchFilterDto filter = SearchFilterDto.empty();
         if (!cleanedKeyword.isBlank()) {
-            allKeywords.addAll(aiMetadataService.expandKeywords(cleanedKeyword));
-            allKeywords.add(cleanedKeyword.toLowerCase());
+            filter = aiMetadataService.buildSearchFilter(cleanedKeyword);
+            searchTerms.addAll(filter.collectAllAliases());
+            // LLM 실패 또는 alias가 없으면 원본 키워드로 fallback
+            if (searchTerms.isEmpty()) {
+                searchTerms.add(cleanedKeyword.toLowerCase());
+            }
         }
 
-        // 3. 지역 필터링된 상품 목록 조회
-        List<Product> products;
+        // 3단계: Specification 조합 → DB에서 직접 필터링
+        // 가격: rule-based 우선, 없으면 LLM 필터 값 fallback
+        SearchFilterDto.Filters llmFilters = filter.getFilters();
+        Long effectiveMin = priceRange.min() != null ? priceRange.min()
+                : (llmFilters != null ? llmFilters.getMinPrice() : null);
+        Long effectiveMax = priceRange.max() != null ? priceRange.max()
+                : (llmFilters != null ? llmFilters.getMaxPrice() : null);
+
+        Specification<Product> spec = Specification.where(ProductSpecification.notDeleted());
+
         if (regionName != null && !regionName.isBlank()) {
-            products = productRepository.findByRegionNameAndStatusNotOrderByCreatedAtDesc(regionName, "DELETED");
-        } else {
-            products = productRepository.findByStatusNotOrderByCreatedAtDesc("DELETED");
+            spec = spec.and(ProductSpecification.regionEquals(regionName));
+        }
+        if (effectiveMin != null) {
+            spec = spec.and(ProductSpecification.minPrice(effectiveMin));
+        }
+        if (effectiveMax != null) {
+            spec = spec.and(ProductSpecification.maxPrice(effectiveMax));
+        }
+        // LLM이 카테고리를 추출한 경우 DB 레벨에서 필터링
+        if (llmFilters != null && llmFilters.getCategory() != null) {
+            spec = spec.and(ProductSpecification.categoryEquals(llmFilters.getCategory()));
+        }
+        if (!searchTerms.isEmpty()) {
+            spec = spec.and(ProductSpecification.keywordsMatch(searchTerms));
         }
 
-        // 4. 키워드 + 가격 조건 필터링
-        return products.stream()
-                .filter(p -> p.getDeletedAt() == null)
-                .filter(p -> allKeywords.isEmpty() || matchesAnyKeyword(p, allKeywords))
-                .filter(p -> priceRange.matches(p.getPrice()))
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Product> productPage = productRepository.findAll(spec, pageRequest);
+
+        List<ProductResponseDto> content = productPage.getContent().stream()
                 .map(p -> {
                     boolean isLiked = currentUserId != null &&
                             productWishRepository.existsByUserIdAndProductId(currentUserId, p.getId());
                     return ProductResponseDto.from(p, currentUserId, isLiked);
                 })
                 .collect(Collectors.toList());
-    }
 
-    private boolean matchesAnyKeyword(Product product, List<String> keywords) {
-        String title = product.getTitle() != null ? product.getTitle().toLowerCase() : "";
-        String description = product.getDescription() != null ? product.getDescription().toLowerCase() : "";
-        String metadata = product.getMetadata() != null ? product.getMetadata().toLowerCase() : "";
-
-        return keywords.stream().anyMatch(kw -> {
-            String lowerKw = kw.toLowerCase();
-            return title.contains(lowerKw) || description.contains(lowerKw) || metadata.contains(lowerKw);
-        });
+        return new ProductPageResponse(content, productPage.hasNext(), page, size);
     }
 
     /** 검색어에서 가격 범위(최소/최대)를 파싱합니다. */
@@ -266,21 +285,13 @@ public class ProductService {
     }
 
     /** 가격 범위 조건 */
-    private record PriceRange(Long min, Long max) {
-        boolean matches(Long price) {
-            if (price == null) return true;
-            if (min != null && price < min) return false;
-            if (max != null && price > max) return false;
-            return true;
-        }
-    }
+    private record PriceRange(Long min, Long max) {}
 
     @Transactional
     public void deleteProduct(Long productId, Long currentUserId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.PRODUCT_NOT_FOUND));
 
-        // 권한 확인
         if (!product.getSeller().getId().equals(currentUserId)) {
             throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.NOT_PRODUCT_SELLER);
         }
