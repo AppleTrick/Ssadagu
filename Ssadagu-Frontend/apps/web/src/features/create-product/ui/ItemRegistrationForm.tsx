@@ -622,7 +622,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
     reset,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
       title: initialData?.title || '',
@@ -754,6 +754,9 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   const currentMutation = isEdit ? updateMutation : createMutation;
 
   const onSubmit = async (data: FormValues) => {
+    // React Query의 mutation 진행 여부만 부가적으로 체크
+    if (currentMutation.isPending) return;
+    
     setServerError(null);
     const imagesToUpload = imagePreviews.filter((p) => p.file).map((p) => p.file as File);
     try {
@@ -798,9 +801,9 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   };
 
   return (
-    <Page>
+    <Page as="form" onSubmit={handleSubmit(onSubmit)}>
       <Header>
-        <BackButton onClick={() => router.back()} aria-label="뒤로가기">
+        <BackButton type="button" onClick={() => router.back()} aria-label="뒤로가기">
           <CloseIcon />
         </BackButton>
         <HeaderTitle>{isEdit ? '게시글 수정' : '내 물품 팔기'}</HeaderTitle>
@@ -933,13 +936,12 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
 
       <BottomBar>
         <Button
-          type="button"
+          type="submit"
           variant="primary"
           size="lg"
           fullWidth
-          loading={currentMutation.isPending}
-          disabled={currentMutation.isPending}
-          onClick={handleSubmit(onSubmit)}
+          loading={currentMutation.isPending || isSubmitting}
+          disabled={currentMutation.isPending || isSubmitting}
         >
           등록하기
         </Button>
