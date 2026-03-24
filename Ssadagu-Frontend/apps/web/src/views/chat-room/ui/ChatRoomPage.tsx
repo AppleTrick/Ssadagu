@@ -382,6 +382,7 @@ export function ChatRoomPage() {
               sendMessage('/pub/chat/message', { 
                 senderId: userId || -1, 
                 content: JSON.stringify({ 
+                  productTitle: room.productTitle,
                   locationName, 
                   time, 
                   price,

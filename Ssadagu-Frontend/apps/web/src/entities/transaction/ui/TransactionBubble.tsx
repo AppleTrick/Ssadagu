@@ -57,8 +57,18 @@ const TransactionBubble = ({ message, isMyMessage, productThumbnailUrl, onCancel
         </ThumbnailWrapper>
         <Info>
           <ItemTitle $isMyMessage={isMyMessage}>
-           {message.senderNickname ? `${message.senderNickname}님의 상품` : '거래 상품 정보'}
+            {message.senderNickname ? `${message.senderNickname}님의 상품` : '거래 상품 정보'}
           </ItemTitle>
+          {contentData.productTitle && (
+            <div style={{ 
+              fontSize: '14px', 
+              fontWeight: 700, 
+              color: isMyMessage ? 'white' : colors.textPrimary,
+              marginTop: '2px'
+            }}>
+              {contentData.productTitle}
+            </div>
+          )}
           <Price $isMyMessage={isMyMessage}>{price?.toLocaleString() || 0}원</Price>
           <Details $isMyMessage={isMyMessage}>
             {locationName} · {time}

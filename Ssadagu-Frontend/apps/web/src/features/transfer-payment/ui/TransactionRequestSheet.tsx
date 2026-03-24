@@ -179,7 +179,10 @@ const TransactionRequestSheet = ({
             />
           </InputWrapper>
 
-          <Label>거래 금액 <NegotiableHint>(에누리 가능 — 직접 수정하세요)</NegotiableHint></Label>
+          <Label>
+            거래 금액
+            <NegotiableHint>(에누리 가능 — 직접 수정하세요)</NegotiableHint>
+          </Label>
           <InputWrapper>
             <Input
               value={amount.toLocaleString()}
@@ -189,7 +192,7 @@ const TransactionRequestSheet = ({
           </InputWrapper>
         </FormSection>
 
-        <SubmitButton onClick={handleSubmit}>거래 증빙 보내기</SubmitButton>
+        <SubmitButton onClick={handleSubmit}>거래 요청 보내기</SubmitButton>
       </SheetContainer>
     </>
   );
