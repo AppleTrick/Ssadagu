@@ -4,6 +4,7 @@ import com.twotwo.ssadagu.domain.product.dto.ProductCreateRequestDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductPageResponse;
 import com.twotwo.ssadagu.domain.product.dto.ProductResponseDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductUpdateRequestDto;
+import com.twotwo.ssadagu.domain.product.service.AIMetadataService;
 import com.twotwo.ssadagu.domain.product.service.ProductService;
 import com.twotwo.ssadagu.domain.product.service.ProductWishService;
 import com.twotwo.ssadagu.global.security.CustomUserDetails;
@@ -26,6 +27,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final ProductWishService productWishService;
+    private final AIMetadataService aiMetadataService;
 
     @Operation(summary = "상품 등록", description = "새로운 상품을 등록합니다.")
     @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -106,5 +108,17 @@ public class ProductController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         productWishService.toggleWish(userDetails.getUser().getId(), productId);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "[Phase 5] 이미지 분석 검증",
+        description = "이미지 URL 목록을 텍스트 없이 GMS 모델에 전달하여 비전/OCR 분석이 실제로 동작하는지 검증합니다. " +
+                      "generateMetadata() 결과와 비교해 이미지 기여도를 확인하세요.")
+    @PostMapping("/debug/analyze-images")
+    public ResponseEntity<String> analyzeImages(
+            @Parameter(description = "분석할 이미지 URL 목록 (최대 3장)") @RequestBody List<String> imageUrls) {
+        String result = aiMetadataService.analyzeImagesOnly(imageUrls);
+        if (result == null) return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("분석 실패");
+        return ResponseEntity.ok(result);
     }
 }

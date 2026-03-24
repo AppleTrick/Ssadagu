@@ -70,7 +70,7 @@ public class ProductService {
             }
         }
 
-        // AI를 통해 검색용 구조화 메타데이터 생성
+        // AI를 통해 검색용 구조화 메타데이터 생성 + 핵심 필드 컬럼에 저장
         String metadata = aiMetadataService.generateMetadata(
                 request.getTitle(),
                 request.getDescription(),
@@ -81,6 +81,7 @@ public class ProductService {
         );
         if (metadata != null) {
             product.updateMetadata(metadata);
+            applyMetadataFields(product, metadata);
         }
 
         Product savedProduct = productRepository.save(product);
@@ -172,6 +173,7 @@ public class ProductService {
                 imageUrls);
         if (metadata != null) {
             product.updateMetadata(metadata);
+            applyMetadataFields(product, metadata);
         }
 
         boolean isLiked = productWishRepository.existsByUserIdAndProductId(currentUserId, productId);
@@ -181,28 +183,26 @@ public class ProductService {
     /**
      * Text-to-Filter 기반 AI 검색.
      *
-     * 1단계: 규칙 기반 전처리 - 가격 조건 추출
-     * 2단계: LLM → filter JSON (브랜드/제품명/색상 해석 + 유사어 확장)
-     * 3단계: Specification으로 DB 레벨에서 직접 필터링 + 페이지네이션
+     * 1단계: 규칙 기반 전처리 - 가격 조건 추출 + stopword 제거
+     * 2단계: LLM → SearchFilterDto (브랜드/제품명/색상 + 유사어 확장)
+     * 3단계: 필드 기반 정밀 검색 Specification 조합 → DB 직접 필터링 + 페이지네이션
      */
     public ProductPageResponse aiSearchProducts(String keyword, String regionName, int page, int size, Long currentUserId) {
-        // 1단계: 규칙 기반 전처리 - 가격 조건 추출
+        // 1단계: 가격 추출 + stopword 토큰 제거
         PriceRange priceRange = parsePriceRange(keyword);
-        String cleanedKeyword = removePriceTerms(keyword);
+        String cleanedKeyword = removeStopwords(removePriceTerms(keyword));
 
-        // 2단계: LLM → filter JSON (브랜드, 제품명, 색상 + 유사어 확장)
+        // 2단계: LLM → SearchFilterDto
         SearchFilterDto filter = SearchFilterDto.empty();
-        List<String> coreTerms = new ArrayList<>();
-        List<String> optionalTerms = new ArrayList<>();
-        if (!cleanedKeyword.isBlank() && !isStopword(cleanedKeyword)) {
+        if (!cleanedKeyword.isBlank()) {
             filter = aiMetadataService.buildSearchFilter(cleanedKeyword);
-            coreTerms = filter.collectCoreTerms();
-            optionalTerms = filter.collectOptionalTerms();
         }
 
-        // 3단계: Specification 조합 → DB에서 직접 필터링
-        // 가격: rule-based 우선, 없으면 LLM 필터 값 fallback
         SearchFilterDto.Filters llmFilters = filter.getFilters();
+        SearchFilterDto.Expanded llmExpanded = filter.getExpanded();
+
+        // 3단계: Specification 조합
+        // 가격: rule-based 우선, 없으면 LLM 필터 값 fallback
         Long effectiveMin = priceRange.min() != null ? priceRange.min()
                 : (llmFilters != null ? llmFilters.getMinPrice() : null);
         Long effectiveMax = priceRange.max() != null ? priceRange.max()
@@ -210,35 +210,87 @@ public class ProductService {
 
         Specification<Product> spec = Specification.where(ProductSpecification.notDeleted());
 
+        // 하드 필터: 지역/가격/카테고리/상태
         if (regionName != null && !regionName.isBlank()) {
             spec = spec.and(ProductSpecification.regionEquals(regionName));
         }
-        if (effectiveMin != null) {
-            spec = spec.and(ProductSpecification.minPrice(effectiveMin));
-        }
-        if (effectiveMax != null) {
-            spec = spec.and(ProductSpecification.maxPrice(effectiveMax));
-        }
-        // LLM이 카테고리를 추출한 경우 DB 레벨에서 필터링
+        if (effectiveMin != null) spec = spec.and(ProductSpecification.minPrice(effectiveMin));
+        if (effectiveMax != null) spec = spec.and(ProductSpecification.maxPrice(effectiveMax));
         if (llmFilters != null && llmFilters.getCategory() != null) {
             spec = spec.and(ProductSpecification.categoryEquals(llmFilters.getCategory()));
         }
-        if (!coreTerms.isEmpty()) {
-            // 브랜드/제품명 계열: 반드시 하나라도 매칭 (AND)
-            spec = spec.and(ProductSpecification.keywordsMatch(coreTerms));
-        } else if (!optionalTerms.isEmpty()) {
-            // 핵심 그룹 없으면 색상/특징으로 fallback
-            spec = spec.and(ProductSpecification.keywordsMatch(optionalTerms));
-        } else if (!cleanedKeyword.isBlank() && !isStopword(cleanedKeyword)) {
-            // LLM alias 결과가 모두 없으면 원본 키워드로 직접 검색
-            spec = spec.and(ProductSpecification.keywordsMatch(List.of(cleanedKeyword.toLowerCase())));
+        if (llmFilters != null && llmFilters.getCondition() != null) {
+            spec = spec.and(ProductSpecification.conditionEquals(llmFilters.getCondition()));
         }
 
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        // 필드 기반 정밀 검색: 브랜드/제품명 (기존 상품은 metadata LIKE fallback)
+        List<String> brandTerms = collectTerms(llmFilters != null ? llmFilters.getBrand() : null,
+                llmExpanded != null ? llmExpanded.getBrandAliases() : null);
+        List<String> productTerms = collectTerms(llmFilters != null ? llmFilters.getProductName() : null,
+                llmExpanded != null ? llmExpanded.getProductAliases() : null);
+        List<String> colorTerms = collectTerms(null,
+                llmExpanded != null ? llmExpanded.getColorAliases() : null);
+        if (llmFilters != null && llmFilters.getColors() != null) colorTerms.addAll(llmFilters.getColors());
+
+        if (!brandTerms.isEmpty()) {
+            spec = spec.and(ProductSpecification.brandFieldMatch(brandTerms));
+        }
+        if (!productTerms.isEmpty()) {
+            spec = spec.and(ProductSpecification.productNameFieldMatch(productTerms));
+        }
+        if (!colorTerms.isEmpty()) {
+            spec = spec.and(ProductSpecification.colorFieldMatch(colorTerms));
+        }
+
+        // 브랜드/제품명 필드 검색이 모두 없을 때 keywordsMatch fallback
+        if (brandTerms.isEmpty() && productTerms.isEmpty()) {
+            List<String> coreTerms = filter.collectCoreTerms();
+            List<String> optionalTerms = filter.collectOptionalTerms();
+            if (!coreTerms.isEmpty()) {
+                spec = spec.and(ProductSpecification.keywordsMatch(coreTerms));
+            } else if (!optionalTerms.isEmpty()) {
+                spec = spec.and(ProductSpecification.keywordsMatch(optionalTerms));
+            } else if (!cleanedKeyword.isBlank()) {
+                spec = spec.and(ProductSpecification.keywordsMatch(List.of(cleanedKeyword.toLowerCase())));
+            }
+        }
+
+        // Phase 3: sort 실제 반영
+        Sort sortOrder = resolveSort(filter.getSort());
+        PageRequest pageRequest = PageRequest.of(page, size, sortOrder);
         Page<Product> productPage = productRepository.findAll(spec, pageRequest);
 
         List<ProductResponseDto> content = toResponseList(productPage.getContent(), currentUserId);
         return new ProductPageResponse(content, productPage.hasNext(), page, size);
+    }
+
+    /** LLM sort 값을 Spring Sort로 변환합니다. */
+    private Sort resolveSort(String sort) {
+        if (sort == null) return Sort.by("createdAt").descending();
+        return switch (sort) {
+            case "PRICE_ASC"  -> Sort.by("price").ascending();
+            case "PRICE_DESC" -> Sort.by("price").descending();
+            default           -> Sort.by("createdAt").descending();
+        };
+    }
+
+    /** canonical값 + alias 리스트를 합쳐 dedup된 term 리스트를 반환합니다. */
+    private List<String> collectTerms(String canonical, List<String> aliases) {
+        java.util.LinkedHashSet<String> set = new java.util.LinkedHashSet<>();
+        if (canonical != null && !canonical.isBlank()) set.add(canonical.trim());
+        if (aliases != null) aliases.stream().filter(a -> a != null && !a.isBlank()).forEach(set::add);
+        return new ArrayList<>(set);
+    }
+
+    /**
+     * metadata JSON을 파싱해 Product의 검색용 컬럼 필드를 업데이트합니다.
+     * createProduct/updateProduct 공통으로 사용합니다.
+     */
+    private void applyMetadataFields(Product product, String metadataJson) {
+        AIMetadataService.MetadataFields fields = aiMetadataService.extractMetadataFields(metadataJson);
+        product.updateMetadataFields(
+                fields.brand(), fields.productName(), fields.modelName(),
+                fields.canonicalColors(), fields.condition(), fields.searchAliases());
     }
 
     /**
@@ -314,11 +366,21 @@ public class ProductService {
     private record PriceRange(Long min, Long max) {}
 
     private static final Set<String> STOPWORDS = Set.of(
-            "제품", "물건", "상품", "중고", "판매", "구매", "급처", "나눔", "삽니다", "팝니다");
+            "제품", "물건", "상품", "중고", "판매", "구매", "급처", "나눔", "삽니다", "팝니다",
+            "거래", "직거래", "택배", "팔아요", "삼", "팜", "구함");
 
-    /** 검색어가 의미 없는 일반 단어(stopword)인지 확인합니다. */
-    private boolean isStopword(String keyword) {
-        return STOPWORDS.contains(keyword.trim());
+    /**
+     * 검색어를 토큰으로 분리한 뒤 stopword 토큰을 제거하고 재조합합니다.
+     * 기존 전체 문자열 비교 방식 대신 토큰 단위로 처리해 부분 제거가 가능합니다.
+     * 예) "중고 맥북 팝니다" → "맥북"
+     */
+    private String removeStopwords(String keyword) {
+        if (keyword == null || keyword.isBlank()) return "";
+        String[] tokens = keyword.trim().split("\\s+");
+        String result = java.util.Arrays.stream(tokens)
+                .filter(t -> !STOPWORDS.contains(t.toLowerCase()))
+                .collect(Collectors.joining(" "));
+        return result.trim();
     }
 
     @Transactional

@@ -57,6 +57,89 @@ public class AIMetadataService {
     }
 
     /**
+     * metadata JSON 문자열에서 검색용 핵심 필드를 추출합니다.
+     * Product 엔티티의 메타데이터 컬럼 업데이트에 사용됩니다.
+     */
+    public record MetadataFields(
+            String brand, String productName, String modelName,
+            String canonicalColors, String condition, String searchAliases) {}
+
+    public MetadataFields extractMetadataFields(String metadataJson) {
+        if (metadataJson == null || metadataJson.isBlank()) {
+            return new MetadataFields(null, null, null, null, null, null);
+        }
+        try {
+            JsonNode node = objectMapper.readTree(metadataJson);
+            String brand = textOrNull(node, "brand");
+            String productName = textOrNull(node, "productName");
+            String modelName = textOrNull(node, "modelName");
+            String condition = textOrNull(node, "condition");
+
+            // canonicalColors: ["검정","흰색"] → "검정,흰색"
+            String canonicalColors = null;
+            JsonNode colorsNode = node.path("canonicalColors");
+            if (colorsNode.isArray() && !colorsNode.isEmpty()) {
+                List<String> colorList = toStringList(colorsNode);
+                if (!colorList.isEmpty()) canonicalColors = String.join(",", colorList);
+            }
+
+            // searchAliases: ["맥북","MacBook","애플"] → "맥북 MacBook 애플"
+            String searchAliases = null;
+            JsonNode aliasNode = node.path("searchAliases");
+            if (aliasNode.isArray() && !aliasNode.isEmpty()) {
+                List<String> aliasList = toStringList(aliasNode);
+                if (!aliasList.isEmpty()) searchAliases = String.join(" ", aliasList);
+            }
+
+            return new MetadataFields(brand, productName, modelName, canonicalColors, condition, searchAliases);
+        } catch (Exception e) {
+            log.warn("Failed to extract metadata fields: {}", e.getMessage());
+            return new MetadataFields(null, null, null, null, null, null);
+        }
+    }
+
+    /**
+     * [Phase 5] 이미지 분석 검증용 메서드.
+     * 텍스트 없이 이미지 URL만 GMS에 전달해 실제 비전/OCR 분석이 작동하는지 확인합니다.
+     *
+     * 검증 방법:
+     * 1) 이 메서드 결과와 generateMetadata() 결과를 비교해 이미지가 실제로 분석에 기여하는지 판단
+     * 2) detail=low vs detail=high 비교 시 imageUrls를 동일하게 하되 이 메서드를 두 번 호출
+     *
+     * @param imageUrls 분석할 이미지 URL 목록 (최대 3장)
+     * @return GMS 모델이 이미지에서 추출한 텍스트/정보 (JSON 또는 자유 텍스트)
+     */
+    public String analyzeImagesOnly(List<String> imageUrls) {
+        try {
+            List<String> limitedImages = imageUrls.size() > MAX_IMAGES_FOR_METADATA
+                    ? imageUrls.subList(0, MAX_IMAGES_FOR_METADATA)
+                    : imageUrls;
+
+            String prompt = """
+                    첨부된 이미지들을 분석하여 아래 항목을 JSON으로 추출하라.
+                    텍스트 설명 없이 이미지만 보고 판단하라.
+                    확신이 없는 항목은 null로 반환하라.
+
+                    {
+                      "detectedText": ["string (OCR로 감지된 텍스트. 예: 모델명, 브랜드 로고, 책 제목)"],
+                      "brand": "string or null (로고/텍스트로 감지된 브랜드)",
+                      "productType": "string or null (상품 종류 추정. 예: 노트북, 운동화, 소설책)",
+                      "colors": ["string (주요 색상)"],
+                      "condition": "string or null (새상품/거의새상품/좋음/사용감있음/불량)",
+                      "visibleDefects": ["string (육안으로 보이는 결함. 없으면 빈 배열)"],
+                      "imageAnalysisConfidence": "high or medium or low (분석 신뢰도)"
+                    }
+                    """;
+
+            String response = callGmsApi(prompt, limitedImages);
+            return extractJsonFromResponse(response);
+        } catch (Exception e) {
+            log.error("Image analysis failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * 자연어 검색어를 분석하여 Text-to-Filter 방식의 구조화된 검색 필터를 생성합니다.
      * LLM은 SQL을 만들지 않고, 브랜드/제품명/색상 해석과 유사어 확장만 담당합니다.
      * 서버가 이 필터를 기반으로 안전하게 DB 검색을 수행합니다.
