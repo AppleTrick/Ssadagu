@@ -19,7 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -114,14 +116,7 @@ public class ProductService {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Product> productPage = productRepository.findAll(spec, pageRequest);
 
-        List<ProductResponseDto> content = productPage.getContent().stream()
-                .map(p -> {
-                    boolean isLiked = currentUserId != null &&
-                            productWishRepository.existsByUserIdAndProductId(currentUserId, p.getId());
-                    return ProductResponseDto.from(p, currentUserId, isLiked);
-                })
-                .collect(Collectors.toList());
-
+        List<ProductResponseDto> content = toResponseList(productPage.getContent(), currentUserId);
         return new ProductPageResponse(content, productPage.hasNext(), page, size);
     }
 
@@ -220,15 +215,24 @@ public class ProductService {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Product> productPage = productRepository.findAll(spec, pageRequest);
 
-        List<ProductResponseDto> content = productPage.getContent().stream()
-                .map(p -> {
-                    boolean isLiked = currentUserId != null &&
-                            productWishRepository.existsByUserIdAndProductId(currentUserId, p.getId());
-                    return ProductResponseDto.from(p, currentUserId, isLiked);
-                })
-                .collect(Collectors.toList());
-
+        List<ProductResponseDto> content = toResponseList(productPage.getContent(), currentUserId);
         return new ProductPageResponse(content, productPage.hasNext(), page, size);
+    }
+
+    /**
+     * 상품 목록 → DTO 변환. 찜 여부를 한 번의 쿼리로 일괄 조회해 N+1을 방지합니다.
+     * currentUserId가 없으면 모두 isLiked=false 처리합니다.
+     */
+    private List<ProductResponseDto> toResponseList(List<Product> products, Long currentUserId) {
+        Set<Long> likedIds = (currentUserId != null && !products.isEmpty())
+                ? productWishRepository.findLikedProductIds(
+                        currentUserId,
+                        products.stream().map(Product::getId).collect(Collectors.toList()))
+                : Collections.emptySet();
+
+        return products.stream()
+                .map(p -> ProductResponseDto.from(p, currentUserId, likedIds.contains(p.getId())))
+                .collect(Collectors.toList());
     }
 
     /** 검색어에서 가격 범위(최소/최대)를 파싱합니다. */
