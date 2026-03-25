@@ -23,7 +23,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -45,6 +45,9 @@ class ProductServiceTest {
     @Mock
     private com.twotwo.ssadagu.global.service.S3Service s3Service;
 
+    @Mock
+    private AIMetadataService aiMetadataService;
+
     @Test
     @DisplayName("상품을 성공적으로 생성한다.")
     void createProduct() {
@@ -52,7 +55,7 @@ class ProductServiceTest {
         User seller = User.builder().build();
         ReflectionTestUtils.setField(seller, "id", 1L);
 
-        ProductCreateRequestDto request = new ProductCreateRequestDto(
+        com.twotwo.ssadagu.domain.product.dto.ProductCreateRequestDto request = new com.twotwo.ssadagu.domain.product.dto.ProductCreateRequestDto(
                 1L, "테스트 상품", "명품 시계입니다.", 100000L, "FASHION", "강남구", java.util.List.of("url1", "url2"));
 
         Product product = Product.builder()
@@ -60,11 +63,13 @@ class ProductServiceTest {
                 .title(request.getTitle())
                 .price(request.getPrice())
                 .status("ON_SALE")
+                .images(new java.util.ArrayList<>())
                 .build();
         ReflectionTestUtils.setField(product, "id", 100L);
 
         given(userRepository.findById(1L)).willReturn(Optional.of(seller));
         given(productRepository.save(any(Product.class))).willReturn(product);
+        given(aiMetadataService.generateMetadata(any(), any(), any(), any(), any(), any())).willReturn(null);
 
         // when
         ProductResponseDto response = productService.createProduct(request, null);
@@ -121,6 +126,7 @@ class ProductServiceTest {
 
     @Test
     @DisplayName("regionName 없으면 삭제되지 않은 상품 전체를 조회한다.")
+    @SuppressWarnings("unchecked")
     void getProducts_noRegion() {
         // given
         User seller = User.builder().build();
@@ -129,16 +135,24 @@ class ProductServiceTest {
         Product p1 = Product.builder().seller(seller).title("p1").status("ON_SALE").regionName("강남구").build();
         ReflectionTestUtils.setField(p1, "id", 10L);
 
-        given(productRepository.findByStatusNotOrderByCreatedAtDesc("DELETED")).willReturn(List.of(p1));
-        given(productWishRepository.existsByUserIdAndProductId(1L, 10L)).willReturn(false);
+        org.springframework.data.domain.Page<Product> productPage = new org.springframework.data.domain.PageImpl<>(
+                List.of(p1), 
+                org.springframework.data.domain.PageRequest.of(0, 20), 
+                1);
+
+        given(productRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(productPage);
+        given(productWishRepository.findLikedProductIds(anyLong(), anyList()))
+                .willReturn(java.util.Collections.emptySet());
 
         // when
-        List<ProductResponseDto> responseDtos = productService.getProducts(null, null, 1L); // 1번 유저가 조회
+        com.twotwo.ssadagu.domain.product.dto.ProductPageResponse response = productService.getProducts(null, null, 0, 20, 1L); // 1번 유저가 조회
 
         // then
-        assertThat(responseDtos).hasSize(1);
-        assertThat(responseDtos.get(0).getTitle()).isEqualTo("p1");
-        assertThat(responseDtos.get(0).getIsMine()).isFalse();
+        assertThat(response.content()).hasSize(1);
+        assertThat(response.content().get(0).getTitle()).isEqualTo("p1");
+        assertThat(response.content().get(0).getIsMine()).isFalse();
+        assertThat(response.hasNext()).isFalse();
     }
 
     @Test
@@ -157,6 +171,8 @@ class ProductServiceTest {
         ReflectionTestUtils.setField(product, "id", 1L);
 
         given(productRepository.findById(1L)).willReturn(Optional.of(product));
+        given(aiMetadataService.generateMetadata(any(), any(), any(), any(), any(), any())).willReturn(null);
+        given(productWishRepository.existsByUserIdAndProductId(1L, 1L)).willReturn(false);
 
         ProductUpdateRequestDto request = new ProductUpdateRequestDto(
                 "수정된 이름", "내용수정", 2000L, "CATEGORY", "SEOUL", "RESERVED", java.util.List.of("newUrl1"));
