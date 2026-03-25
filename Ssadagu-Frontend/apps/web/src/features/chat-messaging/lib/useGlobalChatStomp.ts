@@ -77,11 +77,15 @@ export function useGlobalChatStomp() {
 
               if (msg && Number(msg.senderId) !== Number(userId)) {
                  const roomPath = `/chat/${roomId}`;
-                 if (currentPathRef.current === roomPath) {
-                    return; // 현재 보고 있는 채팅방이면 배지 증가 안함
+                 const isInRoom = currentPathRef.current === roomPath;
+
+                 // 채팅방 안에 있으면 배지는 올리지 않음
+                 if (!isInRoom) {
+                    increment();
                  }
-                 
-                 increment();
+
+                 // 채팅방 안/밖 관계없이 캐시 무효화는 항상 실행 (새 메시지 즉시 반영)
+                 queryClient.invalidateQueries({ queryKey: ['chatMessages', roomId, userId] });
                  queryClient.invalidateQueries({ queryKey: ['chatRooms', userId] });
               }
             } catch (e) {
