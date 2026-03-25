@@ -317,7 +317,7 @@ export function MyPage() {
           )}
         </ProfileSection>
 
-        {accessToken && <BalanceCardSection accessToken={accessToken} userId={user?.id} />}
+        {/* {accessToken && <BalanceCardSection accessToken={accessToken} userId={user?.id} />} */}
 
         <QuickMenuRow>
           <QuickMenuItem
