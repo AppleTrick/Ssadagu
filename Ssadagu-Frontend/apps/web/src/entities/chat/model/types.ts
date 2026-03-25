@@ -17,6 +17,7 @@ export interface ChatRoom {
   roomStatus: RoomStatus;
   partnerId: number;
   partnerNickname: string;
+  partnerProfileImageUrl?: string | null;
 }
 
 export type MessageType = 'TALK' | 'ENTER' | 'LEAVE' | 'SYSTEM' | 'PAYMENT_REQUEST' | 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' | 'IMAGE' | 'MAP';

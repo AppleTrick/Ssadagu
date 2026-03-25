@@ -41,6 +41,7 @@ public class ChatRoomService {
                 .partner(ChatRoomDetailResponse.UserSummary.builder()
                         .userId(partner.getId())
                         .nickname(partner.getNickname())
+                        .profileImageUrl(partner.getProfileImageUrl())
                         .build())
                 .lastMessage(chatRoom.getLastMessage())
                 .lastSentAt(chatRoom.getLastSentAt())
