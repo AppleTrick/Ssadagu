@@ -137,7 +137,7 @@ export function ChatListPage() {
         <TabContainer>
           <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
         </TabContainer>
-        {isLoading && (
+        {(!currentUser || isLoading) && (
           <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
         )}
         {isError && (
@@ -146,7 +146,7 @@ export function ChatListPage() {
             <RetryButton onClick={() => refetch()}>다시 시도</RetryButton>
           </ErrorWrapper>
         )}
-        {!isLoading && !isError && (
+        {currentUser && !isLoading && !isError && (
           <>
             {filteredRooms.length > 0 ? (
               <ListWrapper>

@@ -112,7 +112,12 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) {
+  if (isLoading || isFetchingNextPage && !data) {
+    return <ProductListSkeleton count={8} />;
+  }
+  
+  // 데이터가 로딩 중도 아닌데 캐시가 비어있고 에러가 없다면 아직 queryKey 조건(user?.regionName) 때문에 멈춰있는 상태임
+  if (!isLoading && !data && !isError) {
     return <ProductListSkeleton count={8} />;
   }
 

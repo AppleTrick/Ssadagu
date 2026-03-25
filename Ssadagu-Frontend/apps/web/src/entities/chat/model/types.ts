@@ -22,6 +22,7 @@ export interface ChatRoom {
 export type MessageType = 'TALK' | 'ENTER' | 'LEAVE' | 'SYSTEM' | 'PAYMENT_REQUEST' | 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' | 'IMAGE' | 'MAP';
 
 export interface TransactionContent {
+  productTitle?: string;
   price?: number;
   time?: string;
   locationName?: string;

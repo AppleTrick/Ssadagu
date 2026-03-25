@@ -180,7 +180,7 @@ const TransactionRequestSheet = ({
           </InputWrapper>
 
           <Label>
-            거래 금액{" "}
+            거래 금액
             <NegotiableHint>(에누리 가능 — 직접 수정하세요)</NegotiableHint>
           </Label>
           <InputWrapper>

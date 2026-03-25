@@ -50,64 +50,50 @@ export function useGlobalChatStomp() {
 
     let isActive = true;
 
-    const setupGlobalWebsocket = async () => {
-      try {
-        // 1. 초기 안 읽음 개수 파악 & 내 모든 채팅방 roomId 수집
-        const res = await apiClient.get(`${ENDPOINTS.CHATS.USER_ROOMS}?userId=${userId}`, accessToken);
-        if (!res.ok) return;
-        const json: any = await res.json();
-        const rooms = (Array.isArray(json) ? json : (json?.data || json?.content || json?.response)) || [];
-        if (!Array.isArray(rooms) || !isActive) return;
+    // 1. 초기 안 읽음 개수 파악 (소켓과 별개로 비동기 실행)
+    apiClient.get(`${ENDPOINTS.CHATS.USER_ROOMS}?userId=${userId}`, accessToken)
+      .then(async (res) => {
+         if (!res.ok) return;
+         const json: any = await res.json();
+         const rooms = (Array.isArray(json) ? json : (json?.data || json?.content || json?.response)) || [];
+         if (!Array.isArray(rooms) || !isActive) return;
+         
+         const initialUnread = rooms.reduce((sum, r) => sum + (r.unreadCount || 0), 0);
+         setUnreadCount(initialUnread);
+      })
+      .catch(console.error);
 
-        // 초기 상태 주입
-        const initialUnread = rooms.reduce((sum, r) => sum + (r.unreadCount || 0), 0);
-        setUnreadCount(initialUnread);
+    // 2. 즉시 소켓 접속 및 유저 전용 채널 구독 (API 대기 안함)
+    const client = new Client({
+      webSocketFactory: () => new SockJS(SOCKET_URL),
+      connectHeaders: { Authorization: `Bearer ${accessToken}` },
+      onConnect: () => {
+         if (!isActive) return;
+         
+         client.subscribe(`/sub/chat/user/${userId}`, (frame) => {
+            try {
+              const msg = JSON.parse(frame.body);
+              const roomId = msg.roomId;
 
-        // 2. 다중 채팅방 글로벌 소켓 연결 (STOMP)
-        const client = new Client({
-          webSocketFactory: () => new SockJS(SOCKET_URL),
-          connectHeaders: { Authorization: `Bearer ${accessToken}` },
-          // debug: (str) => console.log('[GLOBAL STOMP]', str),
-          onConnect: () => {
-             if (!isActive) return;
-             // 참여 중인 모든 방을 순회하며 채널 구독
-             rooms.forEach((room: any) => {
-                const roomId = room.roomId || room.id;
-                if (!roomId) return;
-                client.subscribe(`/sub/chat/room/${roomId}`, (frame) => {
-                   try {
-                     const msg = JSON.parse(frame.body);
-                     if (msg && Number(msg.senderId) !== Number(userId)) {
-                        // 현재 사용자가 이 채팅방 화면(뷰)을 보고 있는 중이라면 배지를 올리지 않음 (실시간으로 읽고 있으므로)
-                        const roomPath = `/chat/${roomId}`;
-                        if (currentPathRef.current === roomPath) {
-                           return; // 무시
-                        }
-                        
-                        increment();
-                        // 🔔 [핵심] 메시지가 오면 채팅 목록 페이지(ChatListPage)의 React Query 캐시를 강제로 파기하여, 
-                        // 화면 밖(채팅 목록 등)에 있어도 최신 메시지와 시간, 안 읽음 수가 즉시 UI에 반영되도록 합니다.
-                        queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
-                     }
-                   } catch (e) {
-                     console.warn('STOMP 메시지 파싱 오류', e);
-                   }
-                });
-             });
-          },
-          // 백엔드의 소켓 부담을 줄이기 위해 재접속은 보수적으로 10초
-          reconnectDelay: 10000, 
-        });
+              if (msg && Number(msg.senderId) !== Number(userId)) {
+                 const roomPath = `/chat/${roomId}`;
+                 if (currentPathRef.current === roomPath) {
+                    return; // 현재 보고 있는 채팅방이면 배지 증가 안함
+                 }
+                 
+                 increment();
+                 queryClient.invalidateQueries({ queryKey: ['chatRooms', userId] });
+              }
+            } catch (e) {
+              console.warn('STOMP 메시지 파싱 오류', e);
+            }
+         });
+      },
+      reconnectDelay: 10000, 
+    });
 
-        client.activate();
-        stompRef.current = client;
-
-      } catch (err) {
-        console.error('글로벌 소켓 설정 실패', err);
-      }
-    };
-
-    setupGlobalWebsocket();
+    client.activate();
+    stompRef.current = client;
 
     return () => {
       isActive = false;
@@ -116,5 +102,5 @@ export function useGlobalChatStomp() {
         stompRef.current = null;
       }
     };
-  }, [userId, accessToken, setUnreadCount, increment]);
+  }, [userId, accessToken, setUnreadCount, increment, queryClient]);
 }

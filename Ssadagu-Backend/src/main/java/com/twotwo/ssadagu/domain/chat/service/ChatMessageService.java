@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatMessageService {
@@ -19,6 +21,7 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatRoomService chatRoomService;
     private final ChatRoomRepository chatRoomRepository;
+    private final org.springframework.messaging.simp.SimpMessageSendingOperations messagingTemplate;
 
     private static final int DEFAULT_PAGE_SIZE = 30;
 
@@ -55,6 +58,24 @@ public class ChatMessageService {
         }
 
         chatRoomService.updateLastMessage(incomingMessage.getRoomId(), lastMessageContent, isBuyer);
+
+        // [핵심] 메시지를 해당 방의 구독자 및 관련된 두 명(구매자, 판매자)의 개인 채널로 모두 전송
+        try {
+            messagingTemplate.convertAndSend("/sub/chat/room/" + savedMessage.getRoomId(), savedMessage);
+            
+            chatRoomRepository.findById(savedMessage.getRoomId()).ifPresent(room -> {
+                Long buyerId = room.getBuyer().getId();
+                Long sellerId = room.getSeller().getId();
+                
+                messagingTemplate.convertAndSend("/sub/chat/user/" + buyerId, savedMessage);
+                messagingTemplate.convertAndSend("/sub/chat/user/" + sellerId, savedMessage);
+                
+                log.info("[WebSocket] Sent to Room: {}, Buyer User: {}, Seller User: {}, Message Type: {}", 
+                        savedMessage.getRoomId(), buyerId, sellerId, savedMessage.getType());
+            });
+        } catch (Exception e) {
+            log.error("[WebSocket] Failed to broadcast message", e);
+        }
 
         return savedMessage;
     }

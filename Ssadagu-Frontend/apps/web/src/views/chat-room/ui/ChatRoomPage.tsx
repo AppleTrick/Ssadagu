@@ -144,7 +144,7 @@ export function ChatRoomPage() {
 
       if (['PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
         for (let i = result.length - 1; i >= 0; i--) {
-          if ((result[i].type || result[i].messageType) === 'PAYMENT_REQUEST' && result[i].content === msg.content && !result[i].resolvedType) {
+          if ((result[i].type || result[i].messageType) === 'PAYMENT_REQUEST' && !result[i].resolvedType) {
             result[i].resolvedType = msgType as any;
             break;
           }
@@ -382,6 +382,7 @@ export function ChatRoomPage() {
               sendMessage('/pub/chat/message', { 
                 senderId: userId || -1, 
                 content: JSON.stringify({ 
+                  productTitle: room.productTitle,
                   locationName, 
                   time, 
                   price,
