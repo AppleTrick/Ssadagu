@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { getProducts } from '@/entities/product/api/getProducts';
 import { aiSearchProducts } from '@/entities/product/api/aiSearchProducts';
@@ -32,5 +32,9 @@ export const useInfiniteProducts = (searchQuery: string) => {
     initialPageParam: 0,
     getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.page + 1 : undefined),
     enabled: !!accessToken,
+    // AI 검색 결과는 5분간 캐시 — 같은 검색어 재입력 시 즉시 표시
+    staleTime: 5 * 60 * 1000,
+    // 검색어 바뀌는 동안 이전 결과를 흐릿하게 유지 (빈 화면 방지)
+    placeholderData: keepPreviousData,
   });
 };

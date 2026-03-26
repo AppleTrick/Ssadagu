@@ -66,6 +66,41 @@ const FetchMoreIndicator = styled.div`
   color: ${colors.textSecondary};
 `;
 
+const AiSearchingBanner = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: ${colors.primaryBg};
+  border-bottom: 1px solid ${colors.primaryLight};
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.sm};
+  color: ${colors.primary};
+  font-weight: ${typography.weight.medium};
+`;
+
+const Dot = styled.span`
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: ${colors.primary};
+  animation: ai-dot 1.2s infinite ease-in-out;
+  &:nth-of-type(2) { animation-delay: 0.2s; }
+  &:nth-of-type(3) { animation-delay: 0.4s; }
+  @keyframes ai-dot {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.2); }
+  }
+`;
+
+const StaleOverlay = styled.div<{ $active: boolean }>`
+  opacity: ${({ $active }) => ($active ? 0.4 : 1)};
+  transition: opacity 0.2s ease;
+  pointer-events: ${({ $active }) => ($active ? 'none' : 'auto')};
+`;
+
 export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -76,7 +111,7 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
 
 
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isLoading, isFetching, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteProducts(searchQuery);
 
   const wishMutation = useMutation({
@@ -122,12 +157,8 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading || isFetchingNextPage && !data) {
-    return <ProductListSkeleton count={8} />;
-  }
-  
-  // 데이터가 로딩 중도 아닌데 캐시가 비어있고 에러가 없다면 아직 queryKey 조건(user?.regionName) 때문에 멈춰있는 상태임
-  if (!isLoading && !data && !isError) {
+  // 첫 로딩 (캐시 없음)
+  if (isLoading || (!data && !isError)) {
     return <ProductListSkeleton count={8} />;
   }
 
@@ -137,7 +168,10 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
 
   const allProducts = data?.pages.flatMap((page) => page.content) || [];
 
-  if (allProducts.length === 0) {
+  // AI 검색 중인지 (새 검색어로 fetch 진행 중, 이전 데이터는 있음)
+  const isAiSearching = isFetching && !isFetchingNextPage && !!searchQuery;
+
+  if (allProducts.length === 0 && !isFetching) {
     return (
       <EmptyWrapper>
         {searchQuery ? `'${searchQuery}' 검색 결과가 없습니다.` : '등록된 상품이 없습니다.'}
@@ -146,19 +180,29 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   }
 
   return (
-    <FadeIn>
-      <ListWrapper>
-        {allProducts.map((product) => (
-          <MemoizedItem
-            key={product.id}
-            product={product}
-            onNavigate={router.push}
-            onLikeClick={handleLikeClick}
-          />
-        ))}
-      </ListWrapper>
-      <div ref={sentinelRef} style={{ height: 1 }} />
-      {isFetchingNextPage && <FetchMoreIndicator>더 불러오는 중...</FetchMoreIndicator>}
-    </FadeIn>
+    <>
+      {isAiSearching && (
+        <AiSearchingBanner>
+          <Dot /><Dot /><Dot />
+          AI가 검색 중입니다
+        </AiSearchingBanner>
+      )}
+      <StaleOverlay $active={isAiSearching}>
+        <FadeIn>
+          <ListWrapper>
+            {allProducts.map((product) => (
+              <MemoizedItem
+                key={product.id}
+                product={product}
+                onNavigate={router.push}
+                onLikeClick={handleLikeClick}
+              />
+            ))}
+          </ListWrapper>
+          <div ref={sentinelRef} style={{ height: 1 }} />
+          {isFetchingNextPage && <FetchMoreIndicator>더 불러오는 중...</FetchMoreIndicator>}
+        </FadeIn>
+      </StaleOverlay>
+    </>
   );
 };
