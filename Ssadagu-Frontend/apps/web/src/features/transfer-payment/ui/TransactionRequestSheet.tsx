@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import { keyframes } from "@emotion/react";
 import { colors, typography } from "@/shared/styles/theme";
 import type { ChatRoom } from "@/entities/chat/model/types";
+import { useModalStore } from "@/shared/hooks/useModalStore";
 
 interface TransactionRequestSheetProps {
   isOpen: boolean;
@@ -27,6 +28,8 @@ const fadeIn = keyframes`
   to { opacity: 1; }
 `;
 
+const MAX_PRICE = 10000000000; // 100억
+
 const TransactionRequestSheet = ({
   isOpen,
   onClose,
@@ -40,6 +43,7 @@ const TransactionRequestSheet = ({
   const startY = useRef<number | null>(null);
 
   const [amount, setAmount] = useState(roomInfo?.productPrice || 0);
+  const { alert: modalAlert } = useModalStore();
 
   useEffect(() => {
     if (isOpen && roomInfo?.productPrice) {
@@ -75,10 +79,15 @@ const TransactionRequestSheet = ({
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value.replace(/[^0-9]/g, ""));
+    if (val > MAX_PRICE) return; // 100억 초과 입력 방지
     setAmount(val);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (amount > MAX_PRICE) {
+      await modalAlert({ message: "거래 금액은 100억 원을 초과할 수 없습니다." });
+      return;
+    }
     onSubmit("", "", amount);
   };
 
