@@ -84,8 +84,8 @@ export async function requestBiometricAuth(): Promise<{
 
   try {
     const result = await waitForNativeMessage('biometricResult');
-    if (result.success && result.token) {
-      return { success: true, token: result.token as string };
+    if (result.success) {
+      return { success: true };
     }
     return { success: false, error: result.error as string };
   } catch (e) {
