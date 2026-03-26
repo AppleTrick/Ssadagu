@@ -413,7 +413,11 @@ export function ProductDetailPage() {
               </div>
             )}
             <SellerSection>
-              <SellerCard sellerId={product.sellerId} sellerNickname={product.sellerNickname || `판매자 ${product.sellerId}`} />
+              <SellerCard 
+                sellerId={product.sellerId} 
+                sellerNickname={product.sellerNickname || `판매자 ${product.sellerId}`} 
+                sellerProfileImageUrl={product.sellerProfileImageUrl}
+              />
               <StatusBadge $status={product.status}>
                 {statusLabel[product.status] ?? product.status}
               </StatusBadge>

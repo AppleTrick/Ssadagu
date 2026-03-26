@@ -47,6 +47,7 @@ export interface ProductDetail {
   id: number;
   sellerId: number;
   sellerNickname?: string;
+  sellerProfileImageUrl?: string;
   title: string;
   description: string;
   price: number;

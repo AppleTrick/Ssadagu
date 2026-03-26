@@ -624,12 +624,12 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
     reset,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isSubmitSuccessful },
   } = useForm<FormValues>({
     defaultValues: {
       title: initialData?.title || '',
       categoryCode: initialData?.categoryCode || '',
-      price: initialData?.price?.toString() || '',
+      price: initialData?.price ? initialData.price.toLocaleString() : '',
       description: initialData?.description || '',
       regionName: initialData?.regionName || (productId ? '' : '서울특별시 중구 봉래동2가'),
       status: initialData?.status || 'ON_SALE',
@@ -648,7 +648,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
       reset({
         title: initialData.title,
         categoryCode: initialData.categoryCode,
-        price: initialData.price?.toString() || '',
+        price: initialData.price ? initialData.price.toLocaleString() : '',
         description: initialData.description,
         regionName: initialData.regionName,
         status: initialData.status,
@@ -902,6 +902,10 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
                 {...register('price', {
                   required: '가격을 입력해주세요',
                   pattern: { value: /^[0-9,]+$/, message: '숫자만 입력해주세요' },
+                  onChange: (e) => {
+                    const rawValue = e.target.value.replace(/[^0-9]/g, '');
+                    e.target.value = rawValue ? Number(rawValue).toLocaleString() : '';
+                  },
                   validate: (value) => {
                     const numericValue = Number(value.replace(/[^0-9]/g, ''));
                     if (numericValue > MAX_PRICE) {
@@ -949,8 +953,8 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           variant="primary"
           size="lg"
           fullWidth
-          loading={currentMutation.isPending || isSubmitting}
-          disabled={currentMutation.isPending || isSubmitting}
+          loading={currentMutation.isPending || isSubmitting || isSubmitSuccessful}
+          disabled={currentMutation.isPending || isSubmitting || isSubmitSuccessful}
         >
           등록하기
         </Button>
