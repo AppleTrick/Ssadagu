@@ -243,8 +243,7 @@ function BalanceCardSection({ accessToken, userId }: { accessToken: string; user
 
 export function MyPage() {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const clearToken = useAuthStore((s) => s.clearToken);
+  const { accessToken, userId, clearToken } = useAuthStore();
   const { confirm: modalConfirm } = useModalStore();
 
   const {
@@ -281,15 +280,15 @@ export function MyPage() {
       variant: "danger",
     });
 
-    if (!isConfirmed) return;
+    if (!isConfirmed || !userId) return;
 
     try {
-      await apiClient.post("/users/me/withdraw", {}, accessToken ?? undefined);
+      await apiClient.delete(ENDPOINTS.USERS.PROFILE(userId), accessToken ?? undefined);
     } catch {
       // ignore
     } finally {
       clearToken();
-      router.push("/");
+      window.location.href = "/goodbye";
     }
   };
 

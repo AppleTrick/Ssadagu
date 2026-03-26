@@ -13,7 +13,7 @@ import { useModalStore } from "@/shared/hooks/useModalStore";
 /**
  * 로그인 없이 접근 가능한 공개 경로
  */
-const PUBLIC_ROUTES = ["/", "/signup", "/verify-account", "/test"];
+const PUBLIC_ROUTES = ["/", "/signup", "/verify-account", "/test", "/goodbye"];
 
 /**
  * 회원가입 후 반드시 거쳐야 하는 온보딩 경로

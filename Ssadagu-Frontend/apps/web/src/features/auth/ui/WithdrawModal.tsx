@@ -2,6 +2,7 @@
 
 import { ConfirmDialog } from '@/shared/ui';
 import { apiClient } from '@/shared/api/client';
+import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 
 interface WithdrawModalProps {
@@ -11,11 +12,12 @@ interface WithdrawModalProps {
 }
 
 const WithdrawModal = ({ isOpen, onConfirm, onClose }: WithdrawModalProps) => {
-  const { accessToken, clearToken } = useAuthStore();
+  const { accessToken, userId, clearToken } = useAuthStore();
 
   const handleConfirm = async () => {
     try {
-      await apiClient.post('/users/me/withdraw', {}, accessToken ?? undefined);
+      if (!userId) return;
+      await apiClient.delete(ENDPOINTS.USERS.PROFILE(userId), accessToken ?? undefined);
     } catch {
       // 서버 오류와 무관하게 로컬 토큰 삭제
     } finally {
