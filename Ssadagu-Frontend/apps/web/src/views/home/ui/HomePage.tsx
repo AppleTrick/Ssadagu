@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { useQueryClient } from '@tanstack/react-query';
-import { HeaderMain } from '@/widgets/header';
+import { HeaderMain, type SearchMode } from '@/widgets/header';
 import { BottomNav } from '@/widgets/bottom-nav';
 import { ProductList } from '@/widgets/product-list';
 import { FABWrite } from '@/shared/ui';
@@ -62,6 +62,7 @@ export function HomePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchMode, setSearchMode] = useState<SearchMode>('sql');
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -71,7 +72,7 @@ export function HomePage() {
 
   return (
     <Page>
-      <HeaderMain onSearchChange={setSearchQuery} />
+      <HeaderMain onSearchChange={(q, mode) => { setSearchQuery(q); setSearchMode(mode); }} />
       <ContentArea ref={scrollRef as React.RefObject<HTMLDivElement>}>
         <PullIndicator pullY={pullY} refreshing={refreshing}>
             <SpinnerSvg
@@ -94,7 +95,7 @@ export function HomePage() {
               )}
             </SpinnerSvg>
         </PullIndicator>
-        <ProductList searchQuery={searchQuery} />
+        <ProductList searchQuery={searchQuery} searchMode={searchMode} />
       </ContentArea>
       <FABWrite onClick={() => router.push('/products/new')} />
       <BottomNav />
