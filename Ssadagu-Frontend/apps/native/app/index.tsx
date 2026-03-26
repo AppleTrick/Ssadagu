@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
+import * as ImagePicker from 'expo-image-picker';
 
 // 배포 URL
 // const NEXTJS_URL = 'https://j14a202.p.ssafy.io';
@@ -68,6 +69,11 @@ export default function AppScreen() {
         // Keychain에서 디바이스 토큰 삭제
         case 'clearBiometricToken':
           await SecureStore.deleteItemAsync(DEVICE_TOKEN_KEY);
+          break;
+
+        // 네이티브 카메라 앱 호출 → 촬영 결과를 base64로 웹에 전달
+        case 'requestCamera':
+          await handleCameraCapture();
           break;
       }
     } catch (e) {
@@ -142,6 +148,43 @@ export default function AppScreen() {
     } catch (err) {
       console.error('생체인증 오류:', err);
       sendToWeb({ type: 'biometricResult', success: false, error: 'error' });
+    }
+  };
+
+  /**
+   * 네이티브 카메라 앱을 열고 촬영된 이미지를 base64 data URL로 변환해 웹에 전달.
+   */
+  const handleCameraCapture = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        sendToWeb({ type: 'cameraResult', success: false, error: 'permission_denied' });
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'images',
+        quality: 0.8,
+        base64: true,
+        allowsEditing: false,
+      });
+
+      if (result.canceled || !result.assets?.[0]) {
+        sendToWeb({ type: 'cameraResult', success: false, error: 'cancelled' });
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        sendToWeb({ type: 'cameraResult', success: false, error: 'no_base64' });
+        return;
+      }
+
+      const dataUrl = `data:image/jpeg;base64,${asset.base64}`;
+      sendToWeb({ type: 'cameraResult', success: true, dataUrl });
+    } catch (err) {
+      console.error('카메라 오류:', err);
+      sendToWeb({ type: 'cameraResult', success: false, error: 'error' });
     }
   };
 
