@@ -49,6 +49,10 @@ public class ProductResponseDto {
     }
 
     public static ProductResponseDto from(Product entity, Long currentUserId, boolean isLiked) {
+        return from(entity, currentUserId, isLiked, entity.getChatCount());
+    }
+
+    public static ProductResponseDto from(Product entity, Long currentUserId, boolean isLiked, int chatCount) {
         return ProductResponseDto.builder()
                 .id(entity.getId())
                 .sellerId(entity.getSeller().getId())
@@ -61,7 +65,7 @@ public class ProductResponseDto {
                 .regionName(entity.getRegionName())
                 .status(entity.getStatus())
                 .wishCount(entity.getWishCount())
-                .chatCount(entity.getChatCount())
+                .chatCount(chatCount)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .images(entity.getImages().stream()

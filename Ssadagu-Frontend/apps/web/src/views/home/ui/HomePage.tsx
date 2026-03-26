@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useState, useCallback } from 'react';
 import styled from '@emotion/styled';
-import { keyframes } from '@emotion/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { HeaderMain } from '@/widgets/header';
 import { BottomNav } from '@/widgets/bottom-nav';
@@ -26,53 +25,75 @@ const ContentArea = styled.main`
   margin-top: ${HEADER_HEIGHT}px;
   margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
-`;
-
-const spin = keyframes`
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  position: relative;
 `;
 
 const PullIndicator = styled.div<{ pullY: number; refreshing: boolean }>`
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(${({ pullY, refreshing }) => refreshing ? 8 : pullY - 36}px);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: ${colors.surface};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  height: ${({ pullY }) => pullY}px;
-  overflow: hidden;
-  color: ${colors.primary};
+  transition: ${({ refreshing }) => refreshing ? 'transform 0.2s' : 'none'};
+  z-index: 10;
+  pointer-events: none;
+`;
 
-  svg {
-    opacity: ${({ pullY }) => Math.min(pullY / 70, 1)};
-    animation: ${({ refreshing }) => (refreshing ? `${spin} 0.8s linear infinite` : 'none')};
+const SpinnerSvg = styled.svg<{ spin: boolean }>`
+  animation: ${({ spin }) => spin ? 'ptr-spin 0.7s linear infinite' : 'none'};
+  @keyframes ptr-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 `;
 
 export function HomePage() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['products'] });
-  }, [queryClient]);
+  };
 
-  const { scrollRef, pullY, refreshing, onTouchStart, onTouchMove, onTouchEnd } =
-    usePullToRefresh(handleRefresh);
+  const { scrollRef, pullY, progress, refreshing } = usePullToRefresh({ onRefresh: handleRefresh });
+
+  const showIndicator = pullY > 4 || refreshing;
 
   return (
     <Page>
       <HeaderMain onSearchChange={setSearchQuery} />
-      <ContentArea
-        ref={scrollRef as React.RefObject<HTMLElement>}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        <PullIndicator pullY={pullY} refreshing={refreshing}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" d="M21 12a9 9 0 11-6.219-8.56" />
-          </svg>
-        </PullIndicator>
+      <ContentArea ref={scrollRef as React.RefObject<HTMLDivElement>}>
+        {showIndicator && (
+          <PullIndicator pullY={pullY} refreshing={refreshing}>
+            <SpinnerSvg
+              spin={refreshing}
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={colors.primary}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
+              {refreshing ? (
+                <path d="M12 2a10 10 0 1 0 10 10" />
+              ) : (
+                <path
+                  d="M12 5v14M5 12l7-7 7 7"
+                  strokeOpacity={Math.max(0.2, progress)}
+                />
+              )}
+            </SpinnerSvg>
+          </PullIndicator>
+        )}
         <ProductList searchQuery={searchQuery} />
       </ContentArea>
       <FABWrite onClick={() => router.push('/products/new')} />

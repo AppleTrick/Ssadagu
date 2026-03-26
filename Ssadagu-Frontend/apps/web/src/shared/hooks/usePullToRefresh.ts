@@ -1,37 +1,94 @@
-import { useRef, useState, useCallback } from 'react';
+'use client';
 
-const THRESHOLD = 70;
+import { useRef, useState, useEffect, useCallback } from 'react';
 
-export function usePullToRefresh(onRefresh: () => Promise<void>) {
-  const startY = useRef(0);
+interface UsePullToRefreshOptions {
+  onRefresh: () => Promise<void> | void;
+  threshold?: number; // pull distance to trigger refresh (px)
+}
+
+interface UsePullToRefreshReturn {
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+  pullY: number;       // current pull distance (0 ~ threshold)
+  progress: number;   // 0 ~ 1
+  refreshing: boolean;
+}
+
+export function usePullToRefresh({ onRefresh, threshold = 70 }: UsePullToRefreshOptions): UsePullToRefreshReturn {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const startYRef = useRef(0);
+  const pullYRef = useRef(0);
+  const isPullingRef = useRef(false);
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
+
   const [pullY, setPullY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const scrollRef = useRef<HTMLElement | null>(null);
 
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if ((scrollRef.current?.scrollTop ?? 0) !== 0) return;
-    startY.current = e.touches[0].clientY;
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    const el = scrollRef.current;
+    if (!el || el.scrollTop > 0) return;
+    startYRef.current = e.touches[0].clientY;
+    isPullingRef.current = true;
   }, []);
 
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if ((scrollRef.current?.scrollTop ?? 0) !== 0) return;
-    const delta = e.touches[0].clientY - startY.current;
-    if (delta > 0) setPullY(Math.min(delta, THRESHOLD * 1.5));
-  }, []);
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isPullingRef.current) return;
+    const el = scrollRef.current;
+    if (!el || el.scrollTop > 0) {
+      isPullingRef.current = false;
+      setPullY(0);
+      return;
+    }
+    const dy = e.touches[0].clientY - startYRef.current;
+    if (dy <= 0) {
+      setPullY(0);
+      return;
+    }
+    // Rubber-band: slow down pull beyond threshold
+    const clamped = Math.min(dy * 0.5, threshold);
+    pullYRef.current = clamped;
+    setPullY(clamped);
+    if (clamped > 0) {
+      e.preventDefault();
+    }
+  }, [threshold]);
 
-  const onTouchEnd = useCallback(async () => {
-    if (pullY >= THRESHOLD) {
+  const handleTouchEnd = useCallback(async () => {
+    if (!isPullingRef.current) return;
+    isPullingRef.current = false;
+    const pulled = pullYRef.current;
+    setPullY(0);
+    pullYRef.current = 0;
+    if (pulled >= threshold * 0.85) {
       setRefreshing(true);
       try {
-        await onRefresh();
+        await onRefreshRef.current();
       } finally {
         setRefreshing(false);
       }
     }
-    setPullY(0);
-  }, [pullY, onRefresh]);
+  }, [threshold]);
 
-  const progress = Math.min(pullY / THRESHOLD, 1);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('touchstart', handleTouchStart, { passive: true });
+    el.addEventListener('touchmove', handleTouchMove, { passive: false });
+    el.addEventListener('touchend', handleTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', handleTouchStart);
+      el.removeEventListener('touchmove', handleTouchMove);
+      el.removeEventListener('touchend', handleTouchEnd);
+      el.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-  return { scrollRef, pullY, progress, refreshing, onTouchStart, onTouchMove, onTouchEnd };
+  return {
+    scrollRef,
+    pullY,
+    progress: Math.min(pullY / threshold, 1),
+    refreshing,
+  };
 }

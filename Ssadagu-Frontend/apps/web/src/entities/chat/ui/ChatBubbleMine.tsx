@@ -2,14 +2,15 @@
 
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
-
 import { MessageType } from '../model/types';
+import { getProxyImageUrl } from '@/shared/utils';
 
 interface ChatBubbleMineProps {
   type?: MessageType;
   message: string;
   sentAt: string | null;
   imageUrl?: string | null;
+  onImageClick?: (url: string) => void;
 }
 
 const formatTime = (dateStr: string | null) => {
@@ -23,14 +24,16 @@ const formatTime = (dateStr: string | null) => {
   return `${ampm} ${h}:${m}`;
 };
 
-import { getProxyImageUrl } from '@/shared/utils';
-
-const ChatBubbleMine = ({ type = 'TALK', message, sentAt, imageUrl }: ChatBubbleMineProps) => {
+const ChatBubbleMine = ({ type = 'TALK', message, sentAt, imageUrl, onImageClick }: ChatBubbleMineProps) => {
   return (
     <Row>
       <TimeText>{formatTime(sentAt)}</TimeText>
       {type === 'IMAGE' && imageUrl ? (
-        <ImageBubble src={getProxyImageUrl(imageUrl)} alt="전송한 이미지" />
+        <ImageBubble
+          src={getProxyImageUrl(imageUrl)}
+          alt="전송한 이미지"
+          onClick={() => onImageClick?.(getProxyImageUrl(imageUrl))}
+        />
       ) : (
         <Bubble>{message}</Bubble>
       )}
@@ -70,8 +73,10 @@ const TimeText = styled.span`
 `;
 
 const ImageBubble = styled.img`
-  max-width: 200px;
-  max-height: 260px;
-  border-radius: 18px 4px 18px 18px;
+  width: 200px;
+  height: 200px;
   object-fit: cover;
+  display: block;
+  border-radius: 18px 4px 18px 18px;
+  cursor: pointer;
 `;

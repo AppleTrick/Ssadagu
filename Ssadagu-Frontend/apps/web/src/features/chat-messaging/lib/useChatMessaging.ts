@@ -46,6 +46,31 @@ export function useChatMessaging(roomId: number, accessToken: string | null, use
           });
           sessionStorage.removeItem('pendingChatMsg');
         }
+
+        // 펜딩 이미지 처리
+        const pendingImage = sessionStorage.getItem('pendingChatImage');
+        if (pendingImage && userId) {
+          client.publish({
+            destination: `/pub/chat/message`,
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: JSON.stringify({ roomId, senderId: userId, content: '사진', type: 'IMAGE', imageUrl: pendingImage, isRead: false }),
+          });
+          sessionStorage.removeItem('pendingChatImage');
+        }
+
+        // 펜딩 지도 처리
+        const pendingMap = sessionStorage.getItem('pendingChatMap');
+        if (pendingMap && userId) {
+          try {
+            const { lat, lng, locationName } = JSON.parse(pendingMap);
+            client.publish({
+              destination: `/pub/chat/message`,
+              headers: { Authorization: `Bearer ${accessToken}` },
+              body: JSON.stringify({ roomId, senderId: userId, content: locationName, type: 'MAP', latitude: lat, longitude: lng, locationName, isRead: false }),
+            });
+          } catch (_) {}
+          sessionStorage.removeItem('pendingChatMap');
+        }
       },
       onDisconnect: () => setIsStompConnected(false),
       reconnectDelay: 5000,

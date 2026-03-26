@@ -52,6 +52,7 @@ export function ChatRoomPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [mapSheetOpen, setMapSheetOpen] = useState(false);
   const [selectedConfirmMessage, setSelectedConfirmMessage] = useState<ChatMessage | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // 1. 공통 데이터 및 상태 추출 (상단 배치)
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -68,20 +69,12 @@ export function ChatRoomPage() {
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesAreaRef = useRef<HTMLDivElement | null>(null);
+  const prevScrollHeightRef = useRef(0);
+  const isLoadingOlderRef = useRef(false);
+  const hasInitialScrolledRef = useRef(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-
-  const handleScroll = () => {
-    if (!messagesAreaRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = messagesAreaRef.current;
-    // 오차 범위 150px 이내면 맨 아래로 간주
-    const atBottom = scrollHeight - scrollTop - clientHeight < 150;
-    setIsAtBottom(atBottom);
-    if (atBottom && unreadCount > 0) {
-      setUnreadCount(0);
-    }
-  };
 
   // 1. Entities: 사용자 정보 및 방 정보 초기화
   const { data: currentUser } = useUserProfile(userId, accessToken);
@@ -90,8 +83,55 @@ export function ChatRoomPage() {
   const room = isNewRoom ? newRoomData : fetchedRoom;
   const isLoading = isNewRoom ? newRoomLoading : (fetchedRoomLoading || !room);
 
-  // 2. Entities: 대화 내역 조회
-  const { data: historyMessages, isLoading: messagesLoading } = useChatHistory(roomId, userId, accessToken);
+  // 2. Entities: 대화 내역 조회 (커서 기반 무한 스크롤)
+  const {
+    data: chatHistoryData,
+    isLoading: messagesLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useChatHistory(roomId, userId, accessToken);
+
+  // 채팅방 이탈 시 캐시 제거 → 재진입 시 항상 최신 메시지부터 fetch
+  useEffect(() => {
+    return () => {
+      if (roomId > 0) {
+        queryClient.removeQueries({ queryKey: ['chatMessages', roomId, userId] });
+      }
+    };
+  }, [roomId, userId, queryClient]);
+
+  const historyMessages = useMemo(
+    () => chatHistoryData?.pages.flatMap(p => p).sort((a, b) => Number(a.id) - Number(b.id)) ?? [],
+    [chatHistoryData],
+  );
+
+  // 오래된 메시지 로드 후 스크롤 위치 복원
+  useEffect(() => {
+    if (!prevScrollHeightRef.current || !messagesAreaRef.current) return;
+    messagesAreaRef.current.scrollTop =
+      messagesAreaRef.current.scrollHeight - prevScrollHeightRef.current;
+    prevScrollHeightRef.current = 0;
+  }, [chatHistoryData?.pages.length]);
+
+  const handleScroll = () => {
+    if (!messagesAreaRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesAreaRef.current;
+
+    // 상단 80px 이내 + 이전 메시지 있으면 로드
+    if (scrollTop < 80 && hasNextPage && !isFetchingNextPage) {
+      prevScrollHeightRef.current = scrollHeight;
+      isLoadingOlderRef.current = true;
+      fetchNextPage();
+    }
+
+    // 오차 범위 150px 이내면 맨 아래로 간주
+    const atBottom = scrollHeight - scrollTop - clientHeight < 150;
+    setIsAtBottom(atBottom);
+    if (atBottom && unreadCount > 0) {
+      setUnreadCount(0);
+    }
+  };
 
   // 3. Features: 실시간 채팅 핸들링
   const { sessionMessages, isStompConnected, sendMessage, addOptimisticMessage } = useChatMessaging(roomId, accessToken, userId);
@@ -159,9 +199,23 @@ export function ChatRoomPage() {
 
   useEffect(() => {
     if (displayMessages.length === 0) return;
+
+    // 이전 메시지 로드 시 → 스크롤 복원으로 처리, 여기선 skip
+    if (isLoadingOlderRef.current) {
+      isLoadingOlderRef.current = false;
+      return;
+    }
+
+    // 최초 입장 시 한 번만 맨 아래로
+    if (!hasInitialScrolledRef.current) {
+      hasInitialScrolledRef.current = true;
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+      return;
+    }
+
+    // 새 메시지 도착 시: 내 메시지거나 이미 맨 아래면 스크롤
     const latestMsg = displayMessages[displayMessages.length - 1];
     const isMine = userId !== null && Number(latestMsg.senderId) === Number(userId);
-
     if (isMine || isAtBottom) {
       setTimeout(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -197,7 +251,7 @@ export function ChatRoomPage() {
             { ...newRoomData, id: Number(id) }
           );
         }
-        queryClient.setQueryData(['chatMessages', Number(id), userId], []);
+        queryClient.setQueryData(['chatMessages', Number(id), userId], { pages: [], pageParams: [null] });
 
         sessionStorage.setItem('pendingChatMsg', content);
         router.replace(`/chat/${id}`);
@@ -254,7 +308,20 @@ export function ChatRoomPage() {
     }
   };
 
-  const handleMapSubmit = (lat: number, lng: number, locationName: string) => {
+  const handleMapSubmit = async (lat: number, lng: number, locationName: string) => {
+    if (isNewRoom) {
+      sessionStorage.setItem('pendingChatMap', JSON.stringify({ lat, lng, locationName }));
+      const id = await createChatMutation.mutateAsync().catch(() => null);
+      if (id) {
+        if (newRoomData) {
+          queryClient.setQueryData(['chatRoom', Number(id), userId, currentUser?.nickname || ''], { ...newRoomData, id: Number(id) });
+        }
+        queryClient.setQueryData(['chatMessages', Number(id), userId], { pages: [], pageParams: [null] });
+        router.replace(`/chat/${id}`);
+      }
+      setMapSheetOpen(false);
+      return;
+    }
     sendMessage('/pub/chat/message', { senderId: userId || -1, content: locationName, type: 'MAP', latitude: lat, longitude: lng, locationName });
     setMapSheetOpen(false);
   };
@@ -279,9 +346,24 @@ export function ChatRoomPage() {
 
       if (!uploadRes.ok) throw new Error('업로드 실패');
       const imageUrls: string[] = await uploadRes.json();
+
+      if (isNewRoom) {
+        // 첫 번째 이미지를 pending으로 저장 후 채팅방 생성
+        if (imageUrls[0]) sessionStorage.setItem('pendingChatImage', imageUrls[0]);
+        const id = await createChatMutation.mutateAsync().catch(() => null);
+        if (id) {
+          if (newRoomData) {
+            queryClient.setQueryData(['chatRoom', Number(id), userId, currentUser?.nickname || ''], { ...newRoomData, id: Number(id) });
+          }
+          queryClient.setQueryData(['chatMessages', Number(id), userId], { pages: [], pageParams: [null] });
+          router.replace(`/chat/${id}`);
+        }
+        return;
+      }
+
       imageUrls.forEach(url => sendMessage('/pub/chat/message', { senderId: userId || -1, content: '사진', type: 'IMAGE', imageUrl: url }));
-    } catch (e) { 
-      showAlert({ message: '사진 전송 중 오류가 발생했습니다.' }); 
+    } catch (e) {
+      showAlert({ message: '사진 전송 중 오류가 발생했습니다.' });
     }
     finally { setIsUploading(false); }
   };
@@ -303,6 +385,7 @@ export function ChatRoomPage() {
         </ItemSummaryBar>
       )}
       <MessagesArea ref={messagesAreaRef} onScroll={handleScroll}>
+        {isFetchingNextPage && <OlderLoadingBadge>이전 메시지 불러오는 중...</OlderLoadingBadge>}
         {isLoading && displayMessages.length === 0 && <LoadingWrapper>불러오는 중...</LoadingWrapper>}
         {!isLoading && !messagesLoading && displayMessages.length === 0 && <EmptyMessages>아직 메시지가 없습니다.</EmptyMessages>}
         {displayMessages.map((msg) => {
@@ -348,9 +431,9 @@ export function ChatRoomPage() {
             );
           }
           
-          return isMine 
-            ? <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />
-            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={resolvedNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />;
+          return isMine
+            ? <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} onImageClick={setLightboxUrl} />
+            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={resolvedNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} onImageClick={setLightboxUrl} />;
         })}
         {isUploading && <UploadStatus>사진 전송 중...</UploadStatus>}
         <div ref={bottomRef} style={{ height: '1px' }} />
@@ -438,6 +521,23 @@ export function ChatRoomPage() {
         onClose={() => setAuthModalOpen(false)}
       />
       <ChatMapPickerSheet isOpen={mapSheetOpen} onClose={() => setMapSheetOpen(false)} onSubmit={handleMapSubmit} />
+
+      {/* 이미지 라이트박스 */}
+      {lightboxUrl && (
+        <Lightbox onClick={() => setLightboxUrl(null)}>
+          <LightboxImage
+            src={lightboxUrl}
+            alt="이미지 보기"
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          />
+          <LightboxClose onClick={() => setLightboxUrl(null)}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </LightboxClose>
+        </Lightbox>
+      )}
     </Page>
   );
 }
@@ -484,6 +584,13 @@ const FloatingBadge = styled.button`
   }
 `;
 
+const OlderLoadingBadge = styled.div`
+  text-align: center;
+  padding: 8px;
+  font-size: ${typography.size.xs};
+  color: ${colors.textSecondary};
+`;
+
 const LoadingWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -512,4 +619,37 @@ const UploadStatus = styled.div`
   text-align: right;
   font-size: 13px;
   color: ${colors.textSecondary};
+`;
+
+const Lightbox = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+`;
+
+const LightboxImage = styled.img`
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+`;
+
+const LightboxClose = styled.button`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
 `;
