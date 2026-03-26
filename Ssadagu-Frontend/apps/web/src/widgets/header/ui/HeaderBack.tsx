@@ -52,6 +52,9 @@ const Header = styled.header`
   align-items: center;
   padding: 0 8px;
   z-index: ${zIndex.header};
+  /* GPU 합성 레이어 */
+  transform: translateZ(0);
+  will-change: transform;
 `;
 
 const BackButton = styled.button`

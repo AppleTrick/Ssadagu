@@ -36,6 +36,8 @@ const ContentArea = styled.main`
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const TabContainer = styled.div`
@@ -90,8 +92,8 @@ export function MySalesPage() {
       return getUserProducts(userId, accessToken ?? undefined);
     },
     enabled: !!accessToken && !!userId,
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 30_000,
+    gcTime: 300_000,
   });
 
 

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { useQueryClient } from '@tanstack/react-query';
-import { HeaderMain } from '@/widgets/header';
+import { HeaderMain, type SearchMode } from '@/widgets/header';
 import { BottomNav } from '@/widgets/bottom-nav';
 import { ProductList } from '@/widgets/product-list';
 import { FABWrite } from '@/shared/ui';
@@ -26,6 +26,9 @@ const ContentArea = styled.main`
   margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
   position: relative;
+  /* GPU 스크롤 레이어 */
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const PullIndicator = styled.div<{ pullY: number; refreshing: boolean }>`
@@ -44,6 +47,7 @@ const PullIndicator = styled.div<{ pullY: number; refreshing: boolean }>`
   transition: ${({ refreshing }) => refreshing ? 'transform 0.2s' : 'none'};
   z-index: 10;
   pointer-events: none;
+  visibility: ${({ pullY, refreshing }) => (pullY > 4 || refreshing) ? 'visible' : 'hidden'};
 `;
 
 const SpinnerSvg = styled.svg<{ spin: boolean }>`
@@ -58,6 +62,7 @@ export function HomePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchMode, setSearchMode] = useState<SearchMode>('sql');
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -65,14 +70,11 @@ export function HomePage() {
 
   const { scrollRef, pullY, progress, refreshing } = usePullToRefresh({ onRefresh: handleRefresh });
 
-  const showIndicator = pullY > 4 || refreshing;
-
   return (
     <Page>
-      <HeaderMain onSearchChange={setSearchQuery} />
+      <HeaderMain onSearchChange={(q, mode) => { setSearchQuery(q); setSearchMode(mode); }} />
       <ContentArea ref={scrollRef as React.RefObject<HTMLDivElement>}>
-        {showIndicator && (
-          <PullIndicator pullY={pullY} refreshing={refreshing}>
+        <PullIndicator pullY={pullY} refreshing={refreshing}>
             <SpinnerSvg
               spin={refreshing}
               width="20"
@@ -92,9 +94,8 @@ export function HomePage() {
                 />
               )}
             </SpinnerSvg>
-          </PullIndicator>
-        )}
-        <ProductList searchQuery={searchQuery} />
+        </PullIndicator>
+        <ProductList searchQuery={searchQuery} searchMode={searchMode} />
       </ContentArea>
       <FABWrite onClick={() => router.push('/products/new')} />
       <BottomNav />

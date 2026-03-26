@@ -4,12 +4,12 @@ import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 
 const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 `;
 
 const Wrapper = styled.div<{ duration?: number }>`
-  animation: ${fadeIn} ${({ duration }) => duration || 0.4}s ease-out forwards;
+  animation: ${fadeIn} ${({ duration }) => duration || 0.2}s ease-out forwards;
 `;
 
 interface FadeInProps {

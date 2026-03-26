@@ -39,6 +39,8 @@ const ContentArea = styled.main`
   min-height: 0;
   margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const TabContainer = styled.div`
@@ -120,8 +122,7 @@ export function ChatListPage() {
       return [];
     },
     enabled: !!currentUser?.id,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 30_000,
   });
 
   const handleRoomClick = useCallback(

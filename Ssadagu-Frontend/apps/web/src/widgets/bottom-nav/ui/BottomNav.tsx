@@ -3,7 +3,12 @@
 import styled from "@emotion/styled";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGlobalChatStomp, useNotificationStore } from "@/features/chat-messaging/lib/useGlobalChatStomp";
+import { useMyProfile } from "@/entities/user";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { apiClient } from "@/shared/api/client";
+import { ENDPOINTS } from "@/shared/api/endpoints";
 import {
   colors,
   typography,
@@ -72,11 +77,34 @@ const navItems = [
 
 const BottomNav = () => {
   const pathname = usePathname();
-  
+  const queryClient = useQueryClient();
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const { data: currentUser } = useMyProfile();
+
   // 프론트 단독 다중 STOMP 구독 활성화
   useGlobalChatStomp();
   // 실시간으로 변동하는 배지 개수 불러오기 (Zustand)
   const unreadCount = useNotificationStore((s) => s.unreadCount);
+
+  // 채팅 탭 누르는 순간 데이터 미리 fetch (페이지 이동 전에 시작)
+  const prefetchChatRooms = () => {
+    if (!currentUser?.id || !accessToken) return;
+    queryClient.prefetchQuery({
+      queryKey: ['chatRooms', currentUser.id],
+      queryFn: async () => {
+        const res = await apiClient.get(
+          `${ENDPOINTS.CHATS.USER_ROOMS}?userId=${currentUser.id}`,
+          accessToken,
+        );
+        if (!res.ok) throw new Error('채팅 목록을 불러오지 못했습니다.');
+        const json = await res.json();
+        if (Array.isArray(json)) return json;
+        if (json?.data && Array.isArray(json.data)) return json.data;
+        return [];
+      },
+      staleTime: 30_000,
+    });
+  };
 
   return (
     <Nav>
@@ -87,7 +115,12 @@ const BottomNav = () => {
             : pathname.startsWith(item.path)
           : false;
         return (
-          <NavItem key={item.path} href={item.path}>
+          <NavItem
+            key={item.path}
+            href={item.path}
+            onMouseEnter={item.path === '/chat' ? prefetchChatRooms : undefined}
+            onTouchStart={item.path === '/chat' ? prefetchChatRooms : undefined}
+          >
             <IconWrapper>
               {item.icon(isActive)}
               {item.path === "/chat" && unreadCount > 0 && (
@@ -115,6 +148,9 @@ const Nav = styled.nav`
   display: flex;
   flex-direction: row;
   z-index: ${zIndex.bottomNav};
+  /* GPU 합성 레이어 - 스크롤 시 repaint 방지 */
+  transform: translateZ(0);
+  will-change: transform;
 `;
 
 const NavItem = styled(Link)`

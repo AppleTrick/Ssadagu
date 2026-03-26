@@ -27,6 +27,8 @@ const ContentArea = styled.main`
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const ListWrapper = styled.ul`

@@ -35,6 +35,8 @@ const ContentArea = styled.main`
   padding-bottom: 90px;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const InfoSection = styled.div`
