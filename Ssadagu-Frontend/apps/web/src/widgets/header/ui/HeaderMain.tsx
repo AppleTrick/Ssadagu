@@ -11,9 +11,11 @@ import {
 } from "@/shared/styles/theme";
 import { useMyProfile } from "@/entities/user";
 
+export type SearchMode = 'ai' | 'sql';
+
 interface HeaderMainProps {
   title?: string;
-  onSearchChange?: (query: string) => void;
+  onSearchChange?: (query: string, mode: SearchMode) => void;
   onNotification?: () => void;
 }
 
@@ -35,6 +37,7 @@ const HeaderMain = ({
         : "우리동네");
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchMode, setSearchMode] = useState<SearchMode>('sql');
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -44,7 +47,8 @@ const HeaderMain = ({
     }
   };
 
-  const openSearch = () => {
+  const openSearch = (mode: SearchMode) => {
+    setSearchMode(mode);
     setSearchOpen(true);
   };
 
@@ -57,12 +61,12 @@ const HeaderMain = ({
   const closeSearch = () => {
     setSearchOpen(false);
     setQuery("");
-    onSearchChange?.("");
+    onSearchChange?.("", searchMode);
   };
 
   const handleChange = (v: string) => {
     setQuery(v);
-    onSearchChange?.(v);
+    onSearchChange?.(v, searchMode);
   };
 
   useEffect(() => {
@@ -78,11 +82,14 @@ const HeaderMain = ({
     <Header>
       {searchOpen ? (
         <SearchBar>
+          <SearchModeTag $mode={searchMode}>
+            {searchMode === 'ai' ? 'AI' : '검색'}
+          </SearchModeTag>
           <SearchInput
             ref={inputRef}
             value={query}
             onChange={(e) => handleChange(e.target.value)}
-            placeholder="상품명을 검색하세요"
+            placeholder={searchMode === 'ai' ? 'AI에게 자연어로 검색하세요' : '상품명을 검색하세요'}
             aria-label="상품 검색"
           />
           <CloseButton onClick={closeSearch} aria-label="검색 닫기">
@@ -126,27 +133,39 @@ const HeaderMain = ({
           </TitleWrapper>
           <IconGroup>
             {onSearchChange && (
-              <IconButton onClick={openSearch} aria-label="검색">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke={colors.textPrimary}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </IconButton>
+              <>
+                <IconButton onClick={() => openSearch('ai')} aria-label="AI 검색">
+                  {/* AI 스파클 아이콘 */}
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={colors.primary}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 2l2.4 7.2H22l-6.2 4.5 2.4 7.3L12 17l-6.2 4 2.4-7.3L2 9.2h7.6z" />
+                  </svg>
+                </IconButton>
+                <IconButton onClick={() => openSearch('sql')} aria-label="검색">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={colors.textPrimary}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </IconButton>
+              </>
             )}
-            {/* <IconButton onClick={onNotification} aria-label="알림">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </IconButton> */}
           </IconGroup>
         </>
       )}
@@ -215,6 +234,19 @@ const SearchBar = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+`;
+
+const SearchModeTag = styled.span<{ $mode: SearchMode }>`
+  flex-shrink: 0;
+  font-size: ${typography.size.xs};
+  font-weight: ${typography.weight.bold};
+  font-family: ${typography.fontFamily};
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: ${({ $mode }) => ($mode === 'ai' ? colors.primary : colors.bg)};
+  color: ${({ $mode }) => ($mode === 'ai' ? '#fff' : colors.textSecondary)};
+  border: 1.5px solid ${({ $mode }) => ($mode === 'ai' ? colors.primary : colors.border)};
+  user-select: none;
 `;
 
 const SearchInput = styled.input`
