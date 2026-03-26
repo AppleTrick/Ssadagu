@@ -17,6 +17,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +36,7 @@ public class ProductService {
     private final com.twotwo.ssadagu.domain.product.repository.ProductWishRepository productWishRepository;
     private final com.twotwo.ssadagu.global.service.S3Service s3Service;
     private final AIMetadataService aiMetadataService;
+    private final ProductMetadataAsyncService metadataAsyncService;
 
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequestDto request, List<org.springframework.web.multipart.MultipartFile> imageFiles) {
@@ -70,21 +73,22 @@ public class ProductService {
             }
         }
 
-        // AI를 통해 검색용 구조화 메타데이터 생성 + 핵심 필드 컬럼에 저장
-        String metadata = aiMetadataService.generateMetadata(
-                request.getTitle(),
-                request.getDescription(),
-                request.getPrice(),
-                request.getCategoryCode(),
-                request.getRegionName(),
-                imageUrls
-        );
-        if (metadata != null) {
-            product.updateMetadata(metadata);
-            applyMetadataFields(product, metadata);
-        }
-
         Product savedProduct = productRepository.save(product);
+
+        // 트랜잭션 커밋 후 AI 메타데이터를 백그라운드에서 생성 (응답 지연 없음)
+        final Long savedId = savedProduct.getId();
+        final List<String> finalImageUrls = new ArrayList<>(imageUrls);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                metadataAsyncService.generateAndApply(
+                        savedId,
+                        request.getTitle(), request.getDescription(),
+                        request.getPrice(), request.getCategoryCode(),
+                        request.getRegionName(), finalImageUrls);
+            }
+        });
+
         return ProductResponseDto.from(savedProduct, seller.getId(), false);
     }
 
@@ -163,18 +167,22 @@ public class ProductService {
             product.getImages().forEach(img -> imageUrls.add(img.getImageUrl()));
         }
 
-        // 제목/설명/가격/카테고리/이미지가 바뀌면 검색 메타데이터도 재생성
-        String metadata = aiMetadataService.generateMetadata(
-                product.getTitle(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getCategoryCode(),
-                product.getRegionName(),
-                imageUrls);
-        if (metadata != null) {
-            product.updateMetadata(metadata);
-            applyMetadataFields(product, metadata);
-        }
+        // 트랜잭션 커밋 후 AI 메타데이터를 백그라운드에서 재생성 (응답 지연 없음)
+        final Long asyncProductId = product.getId();
+        final String asyncTitle = product.getTitle();
+        final String asyncDesc = product.getDescription();
+        final Long asyncPrice = product.getPrice();
+        final String asyncCategory = product.getCategoryCode();
+        final String asyncRegion = product.getRegionName();
+        final List<String> finalImageUrls = new ArrayList<>(imageUrls);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                metadataAsyncService.generateAndApply(
+                        asyncProductId, asyncTitle, asyncDesc,
+                        asyncPrice, asyncCategory, asyncRegion, finalImageUrls);
+            }
+        });
 
         boolean isLiked = productWishRepository.existsByUserIdAndProductId(currentUserId, productId);
         return ProductResponseDto.from(product, currentUserId, isLiked);
@@ -233,10 +241,19 @@ public class ProductService {
         if (llmFilters != null && llmFilters.getColors() != null) colorTerms.addAll(llmFilters.getColors());
 
         if (!brandTerms.isEmpty()) {
-            spec = spec.and(ProductSpecification.brandFieldMatch(brandTerms));
+            // 브랜드 필드 매칭 OR searchAliases 매칭 (title/description은 제외해 false positive 방지)
+            spec = spec.and(
+                ProductSpecification.brandFieldMatch(brandTerms)
+                    .or(ProductSpecification.searchAliasesMatch(brandTerms))
+            );
         }
         if (!productTerms.isEmpty()) {
-            spec = spec.and(ProductSpecification.productNameFieldMatch(productTerms));
+            // 제품명 필드 매칭 OR searchAliases 매칭
+            // "크루넥"처럼 LLM이 productName으로 분류했지만 searchAliases에만 있는 경우도 검색되도록
+            spec = spec.and(
+                ProductSpecification.productNameFieldMatch(productTerms)
+                    .or(ProductSpecification.searchAliasesMatch(productTerms))
+            );
         }
         if (!colorTerms.isEmpty()) {
             spec = spec.and(ProductSpecification.colorFieldMatch(colorTerms));
@@ -280,17 +297,6 @@ public class ProductService {
         if (canonical != null && !canonical.isBlank()) set.add(canonical.trim());
         if (aliases != null) aliases.stream().filter(a -> a != null && !a.isBlank()).forEach(set::add);
         return new ArrayList<>(set);
-    }
-
-    /**
-     * metadata JSON을 파싱해 Product의 검색용 컬럼 필드를 업데이트합니다.
-     * createProduct/updateProduct 공통으로 사용합니다.
-     */
-    private void applyMetadataFields(Product product, String metadataJson) {
-        AIMetadataService.MetadataFields fields = aiMetadataService.extractMetadataFields(metadataJson);
-        product.updateMetadataFields(
-                fields.brand(), fields.productName(), fields.modelName(),
-                fields.canonicalColors(), fields.condition(), fields.searchAliases());
     }
 
     /**

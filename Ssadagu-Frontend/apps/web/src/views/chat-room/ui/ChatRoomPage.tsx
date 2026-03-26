@@ -190,6 +190,15 @@ export function ChatRoomPage() {
     if (isNewRoom) {
       const id = await createChatMutation.mutateAsync();
       if (id) {
+        // 프리패칭: 라우터 이동 시점의 '로딩 중' 깜빡임 화면을 방지하고자 미리 임시 캐시를 심습니다.
+        if (newRoomData) {
+          queryClient.setQueryData(
+            ['chatRoom', Number(id), userId, currentUser?.nickname || ''],
+            { ...newRoomData, id: Number(id) }
+          );
+        }
+        queryClient.setQueryData(['chatMessages', Number(id), userId], []);
+
         sessionStorage.setItem('pendingChatMsg', content);
         router.replace(`/chat/${id}`);
       }
