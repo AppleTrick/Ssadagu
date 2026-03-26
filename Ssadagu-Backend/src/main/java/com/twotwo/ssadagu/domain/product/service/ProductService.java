@@ -1,5 +1,6 @@
 package com.twotwo.ssadagu.domain.product.service;
 
+import com.twotwo.ssadagu.domain.chat.repository.ChatRoomRepository;
 import com.twotwo.ssadagu.domain.product.dto.ProductCreateRequestDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductPageResponse;
 import com.twotwo.ssadagu.domain.product.dto.ProductResponseDto;
@@ -22,7 +23,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,6 +40,7 @@ public class ProductService {
     private final com.twotwo.ssadagu.global.service.S3Service s3Service;
     private final AIMetadataService aiMetadataService;
     private final ProductMetadataAsyncService metadataAsyncService;
+    private final ChatRoomRepository chatRoomRepository;
 
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequestDto request, List<org.springframework.web.multipart.MultipartFile> imageFiles) {
@@ -105,7 +109,8 @@ public class ProductService {
             isLiked = productWishRepository.existsByUserIdAndProductId(currentUserId, productId);
         }
 
-        return ProductResponseDto.from(product, currentUserId, isLiked);
+        int chatCount = chatRoomRepository.countByProductId(productId);
+        return ProductResponseDto.from(product, currentUserId, isLiked, chatCount);
     }
 
     public ProductPageResponse getProducts(String regionName, String keyword, int page, int size, Long currentUserId) {
@@ -304,14 +309,25 @@ public class ProductService {
      * currentUserId가 없으면 모두 isLiked=false 처리합니다.
      */
     private List<ProductResponseDto> toResponseList(List<Product> products, Long currentUserId) {
-        Set<Long> likedIds = (currentUserId != null && !products.isEmpty())
-                ? productWishRepository.findLikedProductIds(
-                        currentUserId,
-                        products.stream().map(Product::getId).collect(Collectors.toList()))
+        if (products.isEmpty()) return Collections.emptyList();
+
+        List<Long> productIds = products.stream().map(Product::getId).collect(Collectors.toList());
+
+        Set<Long> likedIds = currentUserId != null
+                ? productWishRepository.findLikedProductIds(currentUserId, productIds)
                 : Collections.emptySet();
 
+        // 채팅 수 배치 조회 (N+1 방지)
+        Map<Long, Integer> chatCountMap = new HashMap<>();
+        chatRoomRepository.countByProductIds(productIds)
+                .forEach(row -> chatCountMap.put((Long) row[0], ((Number) row[1]).intValue()));
+
         return products.stream()
-                .map(p -> ProductResponseDto.from(p, currentUserId, likedIds.contains(p.getId())))
+                .map(p -> ProductResponseDto.from(
+                        p,
+                        currentUserId,
+                        likedIds.contains(p.getId()),
+                        chatCountMap.getOrDefault(p.getId(), 0)))
                 .collect(Collectors.toList());
     }
 

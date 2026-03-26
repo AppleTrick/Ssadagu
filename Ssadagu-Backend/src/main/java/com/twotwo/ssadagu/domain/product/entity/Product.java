@@ -112,6 +112,10 @@ public class Product extends BaseEntity {
         }
     }
 
+    public void increaseChatCount() {
+        this.chatCount++;
+    }
+
     public void reserve() {
         this.status = "TRADING";
     }

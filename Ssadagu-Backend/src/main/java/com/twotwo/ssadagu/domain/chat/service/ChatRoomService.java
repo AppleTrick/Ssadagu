@@ -66,7 +66,8 @@ public class ChatRoomService {
                             .unreadCountSeller(0)
                             .roomStatus("ACTIVE")
                             .build();
-                    
+
+                    product.increaseChatCount();
                     return chatRoomRepository.save(chatRoom);
                 });
     }
