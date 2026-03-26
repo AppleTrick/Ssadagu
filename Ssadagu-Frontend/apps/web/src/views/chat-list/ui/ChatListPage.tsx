@@ -7,7 +7,7 @@ import styled from '@emotion/styled';
 import { HeaderMain } from '@/widgets/header';
 import { BottomNav } from '@/widgets/bottom-nav';
 import { TabBar } from '@/widgets/tab-bar';
-import { ChatListItem } from '@/entities/chat';
+import { ChatListItem, ChatListSkeleton } from '@/entities/chat';
 import type { ChatRoom } from '@/entities/chat';
 import { apiClient } from '@/shared/api/client';
 import { useQuery } from '@tanstack/react-query';
@@ -172,7 +172,9 @@ export function ChatListPage() {
       </TabContainer>
       <ContentArea>
         {(!currentUser || isLoading) && (
-          <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
+          <ListWrapper aria-live="polite" aria-busy="true">
+            <ChatListSkeleton />
+          </ListWrapper>
         )}
         {isError && (
           <ErrorWrapper>
