@@ -2,8 +2,8 @@
 
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
-
 import { MessageType } from '../model/types';
+import { getProxyImageUrl } from '@/shared/utils';
 
 interface ChatBubbleOtherProps {
   type?: MessageType;
@@ -11,6 +11,7 @@ interface ChatBubbleOtherProps {
   message: string;
   sentAt: string | null;
   imageUrl?: string | null;
+  onImageClick?: (url: string) => void;
 }
 
 const formatTime = (dateStr: string | null) => {
@@ -24,9 +25,7 @@ const formatTime = (dateStr: string | null) => {
   return `${ampm} ${h}:${m}`;
 };
 
-import { getProxyImageUrl } from '@/shared/utils';
-
-const ChatBubbleOther = ({ type = 'TALK', senderNickname, message, sentAt, imageUrl }: ChatBubbleOtherProps) => {
+const ChatBubbleOther = ({ type = 'TALK', senderNickname, message, sentAt, imageUrl, onImageClick }: ChatBubbleOtherProps) => {
   return (
     <Row>
       <Avatar>
@@ -38,7 +37,11 @@ const ChatBubbleOther = ({ type = 'TALK', senderNickname, message, sentAt, image
         <Nickname>{senderNickname}</Nickname>
         <BubbleRow>
           {type === 'IMAGE' && imageUrl ? (
-            <ImageBubble src={getProxyImageUrl(imageUrl)} alt="전송받은 이미지" />
+            <ImageBubble
+              src={getProxyImageUrl(imageUrl)}
+              alt="전송받은 이미지"
+              onClick={() => onImageClick?.(getProxyImageUrl(imageUrl))}
+            />
           ) : (
             <Bubble>{message}</Bubble>
           )}
@@ -111,10 +114,10 @@ const TimeText = styled.span`
 `;
 
 const ImageBubble = styled.img`
-  max-width: 200px;
-  max-height: 260px;
-  width: auto;
-  height: auto;
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
   display: block;
   border-radius: 4px 18px 18px 18px;
+  cursor: pointer;
 `;

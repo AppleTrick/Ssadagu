@@ -52,6 +52,7 @@ export function ChatRoomPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [mapSheetOpen, setMapSheetOpen] = useState(false);
   const [selectedConfirmMessage, setSelectedConfirmMessage] = useState<ChatMessage | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // 1. 공통 데이터 및 상태 추출 (상단 배치)
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -376,9 +377,9 @@ export function ChatRoomPage() {
             );
           }
           
-          return isMine 
-            ? <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />
-            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={resolvedNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} />;
+          return isMine
+            ? <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} onImageClick={setLightboxUrl} />
+            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={resolvedNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} onImageClick={setLightboxUrl} />;
         })}
         {isUploading && <UploadStatus>사진 전송 중...</UploadStatus>}
         <div ref={bottomRef} style={{ height: '1px' }} />
@@ -466,6 +467,23 @@ export function ChatRoomPage() {
         onClose={() => setAuthModalOpen(false)}
       />
       <ChatMapPickerSheet isOpen={mapSheetOpen} onClose={() => setMapSheetOpen(false)} onSubmit={handleMapSubmit} />
+
+      {/* 이미지 라이트박스 */}
+      {lightboxUrl && (
+        <Lightbox onClick={() => setLightboxUrl(null)}>
+          <LightboxImage
+            src={lightboxUrl}
+            alt="이미지 보기"
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          />
+          <LightboxClose onClick={() => setLightboxUrl(null)}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </LightboxClose>
+        </Lightbox>
+      )}
     </Page>
   );
 }
@@ -547,4 +565,37 @@ const UploadStatus = styled.div`
   text-align: right;
   font-size: 13px;
   color: ${colors.textSecondary};
+`;
+
+const Lightbox = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+`;
+
+const LightboxImage = styled.img`
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+`;
+
+const LightboxClose = styled.button`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
 `;
