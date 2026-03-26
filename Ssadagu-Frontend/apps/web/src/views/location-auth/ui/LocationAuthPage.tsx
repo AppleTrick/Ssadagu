@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
@@ -11,6 +11,7 @@ import { useCurrentLocation } from '@/features/location-picker/model/useCurrentL
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useMyProfile } from '@/entities/user';
 import {
   colors,
   typography,
@@ -196,6 +197,9 @@ export function LocationAuthPage() {
   const userId = useAuthStore((s) => s.userId);
   const queryClient = useQueryClient();
   const [mapInstance, setMapInstance] = useState<any>(null);
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams ? searchParams.get('redirect') : null;
+  const { data: myProfile } = useMyProfile();
 
   const [regionName, setRegionName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -219,7 +223,17 @@ export function LocationAuthPage() {
         throw new Error(d.message || d.error || 'API 응답 에러');
       }
       await queryClient.invalidateQueries({ queryKey: ['myProfile', userId] });
-      router.push('/secondary-password-setup');
+      
+      // 이미 동네 정보가 있던 유저(재인증)거나 수동으로 redirectUrl이 들어온 경우 그곳으로 이동
+      if (myProfile?.regionName || redirectUrl) {
+        router.replace(redirectUrl || '/home');
+      } else {
+        // 완전 신규 가입 온보딩 시퀀스라면 다음 단계(2차 비번)로 안내
+        const nextPath = redirectUrl 
+          ? `/secondary-password-setup?redirect=${encodeURIComponent(redirectUrl)}`
+          : '/secondary-password-setup';
+        router.push(nextPath);
+      }
     } catch (err: any) {
       setError(err?.message || '저장에 실패했습니다. 다시 시도해주세요.');
       setSubmitting(false);

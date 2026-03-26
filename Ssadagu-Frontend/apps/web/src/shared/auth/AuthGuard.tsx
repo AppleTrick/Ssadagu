@@ -81,7 +81,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
 
       // 2-2. 동네 인증이 안 된 상태 (VERIFIED 또는 동네 정보 누락)
       if (!user.regionName) {
-        router.replace("/location-auth");
+        router.replace(`/location-auth?redirect=${encodeURIComponent(pathname)}`);
         return;
       }
     }
