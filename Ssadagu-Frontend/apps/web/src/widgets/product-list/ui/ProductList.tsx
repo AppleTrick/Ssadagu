@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { ItemCard, type ProductSummary, useInfiniteProducts, ProductListSkeleton } from '@/entities/product';
+import type { SearchMode } from '@/widgets/header';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { typography, colors } from '@/shared/styles/theme';
 import { useModalStore } from '@/shared/hooks/useModalStore';
@@ -14,6 +15,7 @@ import { FadeIn } from '@/shared/ui';
 
 interface ProductListProps {
   searchQuery?: string;
+  searchMode?: SearchMode;
 }
 
 const MemoizedItem = memo(({ product, onNavigate, onLikeClick }: {
@@ -101,7 +103,7 @@ const StaleOverlay = styled.div<{ $active: boolean }>`
   pointer-events: ${({ $active }) => ($active ? 'none' : 'auto')};
 `;
 
-export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
+export const ProductList = ({ searchQuery = '', searchMode = 'sql' }: ProductListProps) => {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);
@@ -112,7 +114,7 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
 
 
   const { data, isLoading, isFetching, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteProducts(searchQuery);
+    useInfiniteProducts(searchQuery, searchMode);
 
   const wishMutation = useMutation({
     mutationFn: async ({ productId, isWished }: { productId: number; isWished: boolean }) => {
@@ -168,8 +170,8 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
 
   const allProducts = data?.pages.flatMap((page) => page.content) || [];
 
-  // AI 검색 중인지 (새 검색어로 fetch 진행 중, 이전 데이터는 있음)
-  const isAiSearching = isFetching && !isFetchingNextPage && !!searchQuery;
+  // 검색 중인지 (새 검색어로 fetch 진행 중, 이전 데이터는 있음)
+  const isSearching = isFetching && !isFetchingNextPage && !!searchQuery;
 
   if (allProducts.length === 0 && !isFetching) {
     return (
@@ -181,13 +183,13 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
 
   return (
     <>
-      {isAiSearching && (
+      {isSearching && (
         <AiSearchingBanner>
           <Dot /><Dot /><Dot />
-          AI가 검색 중입니다
+          {searchMode === 'ai' ? 'AI가 검색 중입니다' : '검색 중입니다'}
         </AiSearchingBanner>
       )}
-      <StaleOverlay $active={isAiSearching}>
+      <StaleOverlay $active={isSearching}>
         <FadeIn>
           <ListWrapper>
             {allProducts.map((product) => (
