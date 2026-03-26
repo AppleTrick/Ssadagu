@@ -15,6 +15,8 @@ public class ProductResponseDto {
     private Long sellerId;
     @Schema(description = "판매자 닉네임", example = "판매왕")
     private String sellerNickname;
+    @Schema(description = "판매자 프로필 이미지 URL")
+    private String sellerProfileImageUrl;
     @Schema(description = "상품 제목", example = "맥북 프로 팝니다")
     private String title;
     @Schema(description = "상품 설명", example = "상태 A급 맥북 프로입니다.")
@@ -51,6 +53,7 @@ public class ProductResponseDto {
                 .id(entity.getId())
                 .sellerId(entity.getSeller().getId())
                 .sellerNickname(entity.getSeller().getNickname())
+                .sellerProfileImageUrl(entity.getSeller().getProfileImageUrl())
                 .title(entity.getTitle())
                 .description(entity.getDescription())
                 .price(entity.getPrice())
