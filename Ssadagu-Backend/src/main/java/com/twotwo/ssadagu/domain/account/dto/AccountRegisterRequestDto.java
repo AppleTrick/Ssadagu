@@ -2,6 +2,7 @@ package com.twotwo.ssadagu.domain.account.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -23,5 +24,6 @@ public class AccountRegisterRequestDto {
 
     @Schema(description = "예금주 명", example = "홍길동")
     @NotBlank(message = "예금주 명은 필수 입력값입니다.")
+    @Size(max = 20, message = "예금주 명은 20자를 초과할 수 없습니다.")
     private String accountHolderName;
 }
