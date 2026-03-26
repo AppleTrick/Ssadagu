@@ -29,7 +29,7 @@ import { TransactionRequestSheet, TransactionConfirmSheet } from '@/features/tra
 import TransactionAuthModal from '@/features/transfer-payment/ui/TransactionAuthModal';
 import { ChatMapPickerSheet } from '@/features/chat-map-picker';
 import { useChatMessaging } from '@/features/chat-messaging/lib/useChatMessaging';
-import { useChatCamera } from '@/features/chat-camera';
+import { useChatCamera, CameraModal } from '@/features/chat-camera';
 
 // Shared
 import { apiClient } from '@/shared/api/client';
@@ -250,7 +250,7 @@ export function ChatRoomPage() {
     setMapSheetOpen(false);
   };
 
-  const { openCamera, inputRef: cameraInputRef, handleInputChange: handleCameraInputChange } = useChatCamera({
+  const { openCamera, cameraOpen, handleModalCapture, handleModalClose } = useChatCamera({
     onCapture: (files) => handlePhotosSelected(files),
     onError: (msg) => showAlert({ message: msg }),
   });
@@ -360,13 +360,11 @@ export function ChatRoomPage() {
           </FloatingBadge>
         )}
       </MessagesArea>
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: 'none' }}
-        onChange={handleCameraInputChange}
+      <CameraModal
+        isOpen={cameraOpen}
+        onCapture={handleModalCapture}
+        onClose={handleModalClose}
+        onError={(msg) => showAlert({ message: msg })}
       />
       <ChatInputArea
         onSend={handleSend}
