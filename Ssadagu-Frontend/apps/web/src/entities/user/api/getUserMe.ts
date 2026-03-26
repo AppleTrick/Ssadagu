@@ -11,5 +11,12 @@ export const getUserMe = async (userId: number, accessToken?: string): Promise<U
     throw new Error('사용자 정보를 불러오는데 실패했습니다.');
   }
   const json = await res.json();
-  return json.data || json;
+  const user = json.data || json;
+
+  // Backend returns 'region', frontend expects 'regionName'
+  if (user && user.region && !user.regionName) {
+    user.regionName = user.region;
+  }
+
+  return user;
 };

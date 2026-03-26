@@ -240,7 +240,15 @@ export function RegionSelectPage() {
         queryClient.invalidateQueries({ queryKey: ["myProfile"] }),
         queryClient.invalidateQueries({ queryKey: ["products"] }),
       ]);
-      router.push("/home");
+
+      const redirectUrl = searchParams?.get("redirect");
+      if (redirectUrl) {
+        router.replace(redirectUrl);
+      } else if (isReauth) {
+        router.back();
+      } else {
+        router.push("/home");
+      }
     } catch (err: any) {
       setError(err?.message || "변경에 실패했습니다. 다시 시도해주세요.");
       setSubmitting(false);

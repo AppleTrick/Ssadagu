@@ -91,4 +91,5 @@ export interface UpdateProductRequest {
   regionName: string;
   status: ProductStatus;
   images?: File[];
+  imageUrls?: string[];
 }

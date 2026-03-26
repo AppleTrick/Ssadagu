@@ -13,6 +13,7 @@ export interface Transaction {
   paymentMethod: PaymentMethod;
   status: TransactionStatus;
   failReason?: string | null;
+  productImageUrl?: string | null;
   createdAt: string;
 }
 
