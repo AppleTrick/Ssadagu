@@ -441,7 +441,7 @@ export function ProductDetailPage() {
               <MetaRow style={{ marginTop: '16px' }}>
                 <span>관심 {product.wishCount}</span>
                 <span>·</span>
-                <span>채팅 {product.chatCount}</span>
+                {/* <span>채팅 {product.chatCount}</span> */}
               </MetaRow>
             </MapSection>
 

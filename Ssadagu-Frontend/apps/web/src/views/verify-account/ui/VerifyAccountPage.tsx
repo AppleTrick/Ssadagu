@@ -489,7 +489,8 @@ export function VerifyAccountPage() {
                   maxLength={20}
                   value={accountHolderName}
                   onChange={(e) => {
-                    setAccountHolderName(e.target.value);
+                    const filtered = e.target.value.replace(/[^a-zA-Zㄱ-ㅎㅏ-ㅣ가-힣 ]/g, '');
+                    setAccountHolderName(filtered);
                     setError("");
                   }}
                 />

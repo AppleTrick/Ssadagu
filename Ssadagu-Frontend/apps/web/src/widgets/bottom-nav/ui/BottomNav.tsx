@@ -31,7 +31,7 @@ const navItems = [
       </svg>
     ),
   },
-  {
+/* {
     label: "채팅",
     path: "/chat",
     icon: (active: boolean) => (
@@ -48,7 +48,7 @@ const navItems = [
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
       </svg>
     ),
-  },
+  }, */
   {
     label: "MY",
     path: "/my",
@@ -90,9 +90,9 @@ const BottomNav = () => {
           <NavItem key={item.path} href={item.path}>
             <IconWrapper>
               {item.icon(isActive)}
-              {item.path === "/chat" && unreadCount > 0 && (
+              {/* {item.path === "/chat" && unreadCount > 0 && (
                 <Badge>{unreadCount > 99 ? '99+' : unreadCount}</Badge>
-              )}
+              )} */}
             </IconWrapper>
             <NavLabel $active={isActive}>{item.label}</NavLabel>
           </NavItem>

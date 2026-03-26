@@ -51,7 +51,7 @@ const ItemDetailBottomBar = ({
           </StatusLabel>
         ) : (
           <>
-            <ChatButton 
+            {/* <ChatButton 
               onClick={!isSold ? onChat : undefined} 
               disabled={isSold}
               style={{
@@ -60,7 +60,7 @@ const ItemDetailBottomBar = ({
               }}
             >
               {isSold ? '거래 완료' : isReserved ? '거래 중' : '채팅하기'}
-            </ChatButton>
+            </ChatButton> */}
             {onBuy && (
               <BuyButton 
                 onClick={product.status === 'ON_SALE' ? onBuy : undefined} 
