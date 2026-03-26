@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, type KeyboardEvent } from 'react';
+import { useState, useRef, type KeyboardEvent } from 'react';
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
 import { useModalStore } from '@/shared/hooks/useModalStore';
 import AttachmentMenu from './AttachmentMenu';
+
+const MAX_LENGTH = 255;
 
 interface ChatInputAreaProps {
   onSend: (content: string) => void;
@@ -13,22 +15,37 @@ interface ChatInputAreaProps {
   onSelectLocation?: () => void;
   onPhotosSelected?: (files: File[]) => void;
   onSelectCamera?: () => void;
-  bottomOffset?: number;
 }
 
-const ChatInputArea = ({ onSend, bottomOffset = 0, onSelectTransaction, onSelectLocation, onPhotosSelected, onSelectCamera }: ChatInputAreaProps) => {
+const ChatInputArea = ({ onSend, onSelectTransaction, onSelectLocation, onPhotosSelected, onSelectCamera }: ChatInputAreaProps) => {
   const { alert: modalAlert } = useModalStore();
   const [value, setValue] = useState('');
   const [attachOpen, setAttachOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const resizeTextarea = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setValue(e.target.value);
+    resizeTextarea();
+  };
 
   const handleSend = () => {
     const trimmed = value.trim();
     if (!trimmed) return;
     onSend(trimmed);
     setValue('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -66,11 +83,14 @@ const ChatInputArea = ({ onSend, bottomOffset = 0, onSelectTransaction, onSelect
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </AttachButton>
-      <Input
+      <Textarea
+        ref={textareaRef}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder="메시지를 입력하세요"
+        maxLength={MAX_LENGTH}
+        rows={1}
       />
       <SendButton onClick={handleSend} aria-label="전송" disabled={!value.trim()}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={colors.surface} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -85,15 +105,13 @@ const ChatInputArea = ({ onSend, bottomOffset = 0, onSelectTransaction, onSelect
 
 export default ChatInputArea;
 
-const CHAT_INPUT_HEIGHT = 56;
-
 const Bar = styled.div`
-  height: ${CHAT_INPUT_HEIGHT}px;
+  min-height: 56px;
   background: ${colors.surface};
   border-top: 1px solid ${colors.border};
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   padding: 8px 16px;
   z-index: 10;
@@ -109,20 +127,24 @@ const AttachButton = styled.button`
   justify-content: center;
   flex-shrink: 0;
   width: 24px;
-  height: 24px;
+  height: 36px;
 `;
 
-const Input = styled.input`
+const Textarea = styled.textarea`
   flex: 1;
-  height: 36px;
+  min-height: 36px;
+  max-height: 120px;
   background: ${colors.bg};
   border: none;
-  border-radius: 999px;
+  border-radius: 18px;
   padding: 8px 16px;
   font-size: ${typography.size.base};
   color: ${colors.textPrimary};
   outline: none;
   font-family: inherit;
+  line-height: 1.5;
+  resize: none;
+  overflow-y: auto;
   &::placeholder {
     color: ${colors.textSecondary};
   }

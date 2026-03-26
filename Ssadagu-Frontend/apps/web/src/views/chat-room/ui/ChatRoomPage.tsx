@@ -68,20 +68,10 @@ export function ChatRoomPage() {
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesAreaRef = useRef<HTMLDivElement | null>(null);
+  const prevScrollHeightRef = useRef(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-
-  const handleScroll = () => {
-    if (!messagesAreaRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = messagesAreaRef.current;
-    // 오차 범위 150px 이내면 맨 아래로 간주
-    const atBottom = scrollHeight - scrollTop - clientHeight < 150;
-    setIsAtBottom(atBottom);
-    if (atBottom && unreadCount > 0) {
-      setUnreadCount(0);
-    }
-  };
 
   // 1. Entities: 사용자 정보 및 방 정보 초기화
   const { data: currentUser } = useUserProfile(userId, accessToken);
@@ -90,8 +80,45 @@ export function ChatRoomPage() {
   const room = isNewRoom ? newRoomData : fetchedRoom;
   const isLoading = isNewRoom ? newRoomLoading : (fetchedRoomLoading || !room);
 
-  // 2. Entities: 대화 내역 조회
-  const { data: historyMessages, isLoading: messagesLoading } = useChatHistory(roomId, userId, accessToken);
+  // 2. Entities: 대화 내역 조회 (커서 기반 무한 스크롤)
+  const {
+    data: chatHistoryData,
+    isLoading: messagesLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useChatHistory(roomId, userId, accessToken);
+
+  const historyMessages = useMemo(
+    () => chatHistoryData?.pages.flatMap(p => p).sort((a, b) => Number(a.id) - Number(b.id)) ?? [],
+    [chatHistoryData],
+  );
+
+  // 오래된 메시지 로드 후 스크롤 위치 복원
+  useEffect(() => {
+    if (!prevScrollHeightRef.current || !messagesAreaRef.current) return;
+    messagesAreaRef.current.scrollTop =
+      messagesAreaRef.current.scrollHeight - prevScrollHeightRef.current;
+    prevScrollHeightRef.current = 0;
+  }, [chatHistoryData?.pages.length]);
+
+  const handleScroll = () => {
+    if (!messagesAreaRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesAreaRef.current;
+
+    // 상단 80px 이내 + 이전 메시지 있으면 로드
+    if (scrollTop < 80 && hasNextPage && !isFetchingNextPage) {
+      prevScrollHeightRef.current = scrollHeight;
+      fetchNextPage();
+    }
+
+    // 오차 범위 150px 이내면 맨 아래로 간주
+    const atBottom = scrollHeight - scrollTop - clientHeight < 150;
+    setIsAtBottom(atBottom);
+    if (atBottom && unreadCount > 0) {
+      setUnreadCount(0);
+    }
+  };
 
   // 3. Features: 실시간 채팅 핸들링
   const { sessionMessages, isStompConnected, sendMessage, addOptimisticMessage } = useChatMessaging(roomId, accessToken, userId);
@@ -303,6 +330,7 @@ export function ChatRoomPage() {
         </ItemSummaryBar>
       )}
       <MessagesArea ref={messagesAreaRef} onScroll={handleScroll}>
+        {isFetchingNextPage && <OlderLoadingBadge>이전 메시지 불러오는 중...</OlderLoadingBadge>}
         {isLoading && displayMessages.length === 0 && <LoadingWrapper>불러오는 중...</LoadingWrapper>}
         {!isLoading && !messagesLoading && displayMessages.length === 0 && <EmptyMessages>아직 메시지가 없습니다.</EmptyMessages>}
         {displayMessages.map((msg) => {
@@ -482,6 +510,13 @@ const FloatingBadge = styled.button`
   &:active {
     transform: scale(0.96);
   }
+`;
+
+const OlderLoadingBadge = styled.div`
+  text-align: center;
+  padding: 8px;
+  font-size: ${typography.size.xs};
+  color: ${colors.textSecondary};
 `;
 
 const LoadingWrapper = styled.div`
