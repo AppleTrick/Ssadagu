@@ -70,6 +70,8 @@ export function ChatRoomPage() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesAreaRef = useRef<HTMLDivElement | null>(null);
   const prevScrollHeightRef = useRef(0);
+  const isLoadingOlderRef = useRef(false);
+  const hasInitialScrolledRef = useRef(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -110,6 +112,7 @@ export function ChatRoomPage() {
     // 상단 80px 이내 + 이전 메시지 있으면 로드
     if (scrollTop < 80 && hasNextPage && !isFetchingNextPage) {
       prevScrollHeightRef.current = scrollHeight;
+      isLoadingOlderRef.current = true;
       fetchNextPage();
     }
 
@@ -187,9 +190,23 @@ export function ChatRoomPage() {
 
   useEffect(() => {
     if (displayMessages.length === 0) return;
+
+    // 이전 메시지 로드 시 → 스크롤 복원으로 처리, 여기선 skip
+    if (isLoadingOlderRef.current) {
+      isLoadingOlderRef.current = false;
+      return;
+    }
+
+    // 최초 입장 시 한 번만 맨 아래로
+    if (!hasInitialScrolledRef.current) {
+      hasInitialScrolledRef.current = true;
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+      return;
+    }
+
+    // 새 메시지 도착 시: 내 메시지거나 이미 맨 아래면 스크롤
     const latestMsg = displayMessages[displayMessages.length - 1];
     const isMine = userId !== null && Number(latestMsg.senderId) === Number(userId);
-
     if (isMine || isAtBottom) {
       setTimeout(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
