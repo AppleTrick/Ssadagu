@@ -120,7 +120,7 @@ export function ChatListPage() {
       return [];
     },
     enabled: !!currentUser?.id,
-    staleTime: 0,
+    staleTime: 30_000,
     refetchOnMount: 'always',
   });
 

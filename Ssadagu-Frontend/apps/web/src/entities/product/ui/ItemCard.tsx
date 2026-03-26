@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
 import type { ProductSummary } from '../model/types';
@@ -52,7 +53,7 @@ const ItemCard = ({ product, onClick, onWishClick }: ItemCardProps) => {
     <Card onClick={onClick}>
       <Thumbnail>
         {product.thumbnailUrl && product.thumbnailUrl !== 'string' ? (
-          <ThumbnailImg src={getProxyImageUrl(product.thumbnailUrl)} alt={product.title} />
+          <ThumbnailImg src={getProxyImageUrl(product.thumbnailUrl)} alt={product.title} width={100} height={100} loading="lazy" />
         ) : (
           <ThumbnailPlaceholder />
         )}
@@ -108,7 +109,7 @@ const ItemCard = ({ product, onClick, onWishClick }: ItemCardProps) => {
   );
 };
 
-export default ItemCard;
+export default memo(ItemCard);
 
 const Card = styled.div`
   display: flex;

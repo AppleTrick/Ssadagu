@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback, memo } from 'react';
 import styled from '@emotion/styled';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,20 @@ import { FadeIn } from '@/shared/ui';
 interface ProductListProps {
   searchQuery?: string;
 }
+
+const MemoizedItem = memo(({ product, onNavigate, onLikeClick }: {
+  product: ProductSummary;
+  onNavigate: (path: string) => void;
+  onLikeClick: (e: React.MouseEvent, productId: number, isLiked: boolean) => void;
+}) => (
+  <li>
+    <ItemCard
+      product={product}
+      onClick={() => onNavigate(`/products/${product.id}`)}
+      onWishClick={(e: React.MouseEvent) => onLikeClick(e, product.id, !!product.isLiked)}
+    />
+  </li>
+));
 
 const ListWrapper = styled.ul`
   list-style: none;
@@ -60,10 +74,6 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
   const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // Debug: Log the current token
-  useEffect(() => {
-    console.log('Current Token:', accessToken);
-  }, [accessToken]);
 
 
   const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -88,14 +98,14 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
     },
   });
 
-  const handleLikeClick = (e: React.MouseEvent, productId: number, isLiked: boolean) => {
+  const handleLikeClick = useCallback((e: React.MouseEvent, productId: number, isLiked: boolean) => {
     e.stopPropagation();
     if (!accessToken) {
       showAlert({ message: '로그인이 필요합니다.' });
       return;
     }
     wishMutation.mutate({ productId, isWished: isLiked });
-  };
+  }, [accessToken, showAlert, wishMutation]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -139,13 +149,12 @@ export const ProductList = ({ searchQuery = '' }: ProductListProps) => {
     <FadeIn>
       <ListWrapper>
         {allProducts.map((product) => (
-          <li key={product.id}>
-            <ItemCard 
-              product={product} 
-              onClick={() => router.push(`/products/${product.id}`)} 
-              onWishClick={(e: any) => handleLikeClick(e, product.id, !!product.isLiked)}
-            />
-          </li>
+          <MemoizedItem
+            key={product.id}
+            product={product}
+            onNavigate={router.push}
+            onLikeClick={handleLikeClick}
+          />
         ))}
       </ListWrapper>
       <div ref={sentinelRef} style={{ height: 1 }} />

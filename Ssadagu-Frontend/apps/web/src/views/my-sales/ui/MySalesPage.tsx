@@ -90,8 +90,8 @@ export function MySalesPage() {
       return getUserProducts(userId, accessToken ?? undefined);
     },
     enabled: !!accessToken && !!userId,
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 30_000,
+    gcTime: 300_000,
   });
 
 

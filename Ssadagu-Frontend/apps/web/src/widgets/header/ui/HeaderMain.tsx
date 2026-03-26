@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import styled from "@emotion/styled";
 import {
@@ -46,8 +46,13 @@ const HeaderMain = ({
 
   const openSearch = () => {
     setSearchOpen(true);
-    setTimeout(() => inputRef.current?.focus(), 50);
   };
+
+  useLayoutEffect(() => {
+    if (searchOpen) {
+      inputRef.current?.focus();
+    }
+  }, [searchOpen]);
 
   const closeSearch = () => {
     setSearchOpen(false);

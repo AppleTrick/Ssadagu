@@ -109,9 +109,12 @@ export function ChatRoomPage() {
   // 오래된 메시지 로드 후 스크롤 위치 복원
   useEffect(() => {
     if (!prevScrollHeightRef.current || !messagesAreaRef.current) return;
-    messagesAreaRef.current.scrollTop =
-      messagesAreaRef.current.scrollHeight - prevScrollHeightRef.current;
+    const savedScrollHeight = prevScrollHeightRef.current;
     prevScrollHeightRef.current = 0;
+    requestAnimationFrame(() => {
+      if (!messagesAreaRef.current) return;
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight - savedScrollHeight;
+    });
   }, [chatHistoryData?.pages.length]);
 
   const handleScroll = () => {

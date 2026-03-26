@@ -44,6 +44,7 @@ const PullIndicator = styled.div<{ pullY: number; refreshing: boolean }>`
   transition: ${({ refreshing }) => refreshing ? 'transform 0.2s' : 'none'};
   z-index: 10;
   pointer-events: none;
+  visibility: ${({ pullY, refreshing }) => (pullY > 4 || refreshing) ? 'visible' : 'hidden'};
 `;
 
 const SpinnerSvg = styled.svg<{ spin: boolean }>`
@@ -65,14 +66,11 @@ export function HomePage() {
 
   const { scrollRef, pullY, progress, refreshing } = usePullToRefresh({ onRefresh: handleRefresh });
 
-  const showIndicator = pullY > 4 || refreshing;
-
   return (
     <Page>
       <HeaderMain onSearchChange={setSearchQuery} />
       <ContentArea ref={scrollRef as React.RefObject<HTMLDivElement>}>
-        {showIndicator && (
-          <PullIndicator pullY={pullY} refreshing={refreshing}>
+        <PullIndicator pullY={pullY} refreshing={refreshing}>
             <SpinnerSvg
               spin={refreshing}
               width="20"
@@ -92,8 +90,7 @@ export function HomePage() {
                 />
               )}
             </SpinnerSvg>
-          </PullIndicator>
-        )}
+        </PullIndicator>
         <ProductList searchQuery={searchQuery} />
       </ContentArea>
       <FABWrite onClick={() => router.push('/products/new')} />

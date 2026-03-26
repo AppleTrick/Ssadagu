@@ -4,6 +4,11 @@ import { typography } from './theme';
 export const globalStyles = css`
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
 
+  @font-face {
+    font-family: 'Pretendard Variable';
+    font-display: swap;
+  }
+
   *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;

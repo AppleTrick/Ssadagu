@@ -41,9 +41,9 @@ export function LandingPage() {
   }, [isAuthenticated, isInitialized, isUserLoading, user, router, modalAlert]);
 
   // 초기 로딩 스플래시는 AuthGuard가 담당합니다
-  // 로그인된 경우 리다이렉트 전까지 기다립니다 (깜빡임 방지용 null)
-  if (isAuthenticated && (isUserLoading || !user)) return null;
-  if (isAuthenticated) return null;
+  // 로그인된 경우 리다이렉트 전까지 빈 배경 유지 (깜빡임 방지)
+  if (isAuthenticated && (isUserLoading || !user)) return <div style={{ height: '100dvh', background: '#F2F4F6' }} />;
+  if (isAuthenticated) return <div style={{ height: '100dvh', background: '#F2F4F6' }} />;
 
   return <LoginForm onSuccess={() => router.push("/home")} />;
 }
