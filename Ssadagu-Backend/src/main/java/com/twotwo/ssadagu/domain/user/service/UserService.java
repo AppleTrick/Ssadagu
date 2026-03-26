@@ -41,9 +41,13 @@ public class UserService {
 
     @Transactional
     public UserResponseDto signup(SignUpRequestDto requestDto) {
-        if (userRepository.existsByEmail(requestDto.getEmail())) {
+        userRepository.findByEmail(requestDto.getEmail()).ifPresent(user -> {
+            if ("DELETED".equals(user.getStatus())) {
+                throw new BusinessException(ErrorCode.DELETED_USER_SIGNUP);
+            }
             throw new BusinessException(ErrorCode.EMAIL_ALREADY_EXISTS);
-        }
+        });
+
         if (userRepository.existsByNickname(requestDto.getNickname())) {
             throw new BusinessException(ErrorCode.NICKNAME_ALREADY_EXISTS);
         }
@@ -53,16 +57,18 @@ public class UserService {
 
         // 즉시 금융망 수시입출금 계좌 생성 (DEMAND_DEPOSIT_03)
         // 유효한 수시입출금 상품 고유번호 (SSAFY DEMAND_DEPOSIT_01 조회 결과)
-        String defaultAccountTypeUniqueNo = "001-1-7a336b19062347"; 
+        String defaultAccountTypeUniqueNo = "001-1-7a336b19062347";
         String accountNo = null;
         try {
-            SsafyApiResponse<java.util.Map<String, Object>> accountResponse = demandDepositService.createAccount(defaultAccountTypeUniqueNo, issuedUserKey);
-            
+            SsafyApiResponse<java.util.Map<String, Object>> accountResponse = demandDepositService
+                    .createAccount(defaultAccountTypeUniqueNo, issuedUserKey);
+
             if (accountResponse != null && accountResponse.getRec() != null) {
                 java.util.Map<String, Object> rec = accountResponse.getRec();
                 if (rec.containsKey("accountNo")) {
                     accountNo = (String) rec.get("accountNo");
-                    log.info("[Signup] 성공적으로 계좌가 생성되었습니다. User Email: {}, AccountNo: {}", requestDto.getEmail(), accountNo);
+                    log.info("[Signup] 성공적으로 계좌가 생성되었습니다. User Email: {}, AccountNo: {}", requestDto.getEmail(),
+                            accountNo);
                 }
             } else {
                 log.warn("[Signup] 계좌 생성 응답 형식이 예상과 다릅니다. Response: {}", accountResponse);
