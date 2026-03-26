@@ -103,6 +103,23 @@ public class ProductSpecification {
     }
 
     /**
+     * metadataSearchAliases 컬럼에서만 검색합니다.
+     * fieldMatch 결과가 없을 때 searchAliases에 있는 동의어/스타일명 등을 찾기 위한 보조 검색입니다.
+     */
+    public static Specification<Product> searchAliasesMatch(List<String> keywords) {
+        return (root, query, cb) -> {
+            if (keywords == null || keywords.isEmpty()) return cb.conjunction();
+
+            List<Predicate> predicates = new ArrayList<>();
+            for (String kw : keywords) {
+                String pattern = "%" + kw.toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(root.get("metadataSearchAliases")), pattern));
+            }
+            return cb.or(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    /**
      * 키워드 목록 중 하나라도 title / description / metadataSearchAliases / metadata 에 포함되면 매칭.
      * 필드 기반 검색이 없는 경우의 fallback 용도로 사용합니다.
      */
