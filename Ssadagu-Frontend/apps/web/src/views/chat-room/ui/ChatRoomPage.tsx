@@ -92,6 +92,15 @@ export function ChatRoomPage() {
     isFetchingNextPage,
   } = useChatHistory(roomId, userId, accessToken);
 
+  // 채팅방 이탈 시 캐시 제거 → 재진입 시 항상 최신 메시지부터 fetch
+  useEffect(() => {
+    return () => {
+      if (roomId > 0) {
+        queryClient.removeQueries({ queryKey: ['chatMessages', roomId, userId] });
+      }
+    };
+  }, [roomId, userId, queryClient]);
+
   const historyMessages = useMemo(
     () => chatHistoryData?.pages.flatMap(p => p).sort((a, b) => Number(a.id) - Number(b.id)) ?? [],
     [chatHistoryData],
@@ -299,7 +308,20 @@ export function ChatRoomPage() {
     }
   };
 
-  const handleMapSubmit = (lat: number, lng: number, locationName: string) => {
+  const handleMapSubmit = async (lat: number, lng: number, locationName: string) => {
+    if (isNewRoom) {
+      sessionStorage.setItem('pendingChatMap', JSON.stringify({ lat, lng, locationName }));
+      const id = await createChatMutation.mutateAsync().catch(() => null);
+      if (id) {
+        if (newRoomData) {
+          queryClient.setQueryData(['chatRoom', Number(id), userId, currentUser?.nickname || ''], { ...newRoomData, id: Number(id) });
+        }
+        queryClient.setQueryData(['chatMessages', Number(id), userId], { pages: [], pageParams: [null] });
+        router.replace(`/chat/${id}`);
+      }
+      setMapSheetOpen(false);
+      return;
+    }
     sendMessage('/pub/chat/message', { senderId: userId || -1, content: locationName, type: 'MAP', latitude: lat, longitude: lng, locationName });
     setMapSheetOpen(false);
   };
@@ -324,9 +346,24 @@ export function ChatRoomPage() {
 
       if (!uploadRes.ok) throw new Error('업로드 실패');
       const imageUrls: string[] = await uploadRes.json();
+
+      if (isNewRoom) {
+        // 첫 번째 이미지를 pending으로 저장 후 채팅방 생성
+        if (imageUrls[0]) sessionStorage.setItem('pendingChatImage', imageUrls[0]);
+        const id = await createChatMutation.mutateAsync().catch(() => null);
+        if (id) {
+          if (newRoomData) {
+            queryClient.setQueryData(['chatRoom', Number(id), userId, currentUser?.nickname || ''], { ...newRoomData, id: Number(id) });
+          }
+          queryClient.setQueryData(['chatMessages', Number(id), userId], { pages: [], pageParams: [null] });
+          router.replace(`/chat/${id}`);
+        }
+        return;
+      }
+
       imageUrls.forEach(url => sendMessage('/pub/chat/message', { senderId: userId || -1, content: '사진', type: 'IMAGE', imageUrl: url }));
-    } catch (e) { 
-      showAlert({ message: '사진 전송 중 오류가 발생했습니다.' }); 
+    } catch (e) {
+      showAlert({ message: '사진 전송 중 오류가 발생했습니다.' });
     }
     finally { setIsUploading(false); }
   };
