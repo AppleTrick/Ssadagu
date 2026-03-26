@@ -1,4 +1,4 @@
-export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'DELETED';
+export type UserStatus = 'UNVERIFIED' | 'VERIFIED' | 'ACTIVE' | 'SUSPENDED' | 'DELETED';
 export type VerifiedStatus = 'PENDING' | 'VERIFIED' | 'FAILED';
 
 export interface User {

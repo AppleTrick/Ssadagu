@@ -190,8 +190,23 @@ const LoginLink = styled.div`
 const SuccessTitle = styled(Title)`
   font-size: 28px;
   margin-top: 20px;
-  margin-bottom: 40px;
+  margin-bottom: 12px;
   white-space: pre-line;
+`;
+
+const SuccessNotice = styled.p`
+  font-family: ${typography.fontFamily};
+  font-size: 14px;
+  color: ${colors.textSecondary};
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 32px;
+  white-space: pre-line;
+
+  strong {
+    color: ${colors.primary};
+    font-weight: ${typography.weight.bold};
+  }
 `;
 
 /* ── Icons ─────────────────────────────────────────────── */
@@ -317,7 +332,12 @@ const SignupForm = ({ onSuccess }: SignupFormProps) => {
         />
         <Inner>
           <div style={{ fontSize: "60px", marginBottom: "20px" }}>🎉</div>
-          <SuccessTitle>{`${nicknameValue}님,\n회원가입에 성공했습니다!`}</SuccessTitle>
+          <SuccessTitle>{`${nicknameValue}님,\n반가워요!`}</SuccessTitle>
+          <SuccessNotice>
+            {"서비스 이용을 위해\n"}
+            <strong>{"1원 계좌 인증"}</strong>
+            {"이 필요합니다."}
+          </SuccessNotice>
           <ButtonArea>
             <Button variant="primary" size="lg" fullWidth onClick={() => onSuccess?.()}>
               다음
