@@ -3,6 +3,7 @@
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
 import type { Transaction, TransactionStatus } from '../model/types';
+import { getProxyImageUrl } from '@/shared/utils';
 
 interface HistoryItemCardProps {
   transaction: Transaction;
@@ -30,7 +31,13 @@ const HistoryItemCard = ({ transaction, role, onClick }: HistoryItemCardProps) =
 
   return (
     <Container onClick={onClick}>
-      <ThumbnailPlaceholder />
+      <ThumbnailWrapper>
+        {transaction.productImageUrl ? (
+          <Thumbnail src={getProxyImageUrl(transaction.productImageUrl)} alt={transaction.productTitle} />
+        ) : (
+          <EmptyThumbnail />
+        )}
+      </ThumbnailWrapper>
       <InfoCol>
         <ProductTitle>{transaction.productTitle}</ProductTitle>
         <RoleLabel>{role === 'buyer' ? '구매' : '판매'}</RoleLabel>
@@ -59,12 +66,35 @@ const Container = styled.div`
   }
 `;
 
-const ThumbnailPlaceholder = styled.div`
+const ThumbnailWrapper = styled.div`
   width: 64px;
   height: 64px;
   border-radius: 8px;
   background: ${colors.bg};
   flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const Thumbnail = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const EmptyThumbnail = styled.div`
+  width: 100%;
+  height: 100%;
+  background: ${colors.bg};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &::after {
+    content: '📦';
+    font-size: 24px;
+  }
 `;
 
 const InfoCol = styled.div`
