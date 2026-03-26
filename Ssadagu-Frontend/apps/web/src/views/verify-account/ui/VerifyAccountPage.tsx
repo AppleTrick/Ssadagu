@@ -349,6 +349,7 @@ export function VerifyAccountPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const userId = useAuthStore((s) => s.userId);
+  const clearToken = useAuthStore((s) => s.clearToken);
   const { register, sendVerification, confirmCode } = useRegisterAccount();
   const [accountId, setAccountId] = useState<number | null>(null);
 
@@ -373,7 +374,11 @@ export function VerifyAccountPage() {
     if (step === "bank-select") setStep("account-number");
     else if (step === "transfer-info") setStep("bank-select");
     else if (step === "verify-code") setStep("transfer-info");
-    else router.back();
+    else {
+      // 첫 단계에서 뒤로가기: 토큰 제거 후 로그인 페이지로
+      clearToken();
+      router.replace("/");
+    }
   };
 
   /* ── Step 1 → 2 ────────────────────────────────────────── */
