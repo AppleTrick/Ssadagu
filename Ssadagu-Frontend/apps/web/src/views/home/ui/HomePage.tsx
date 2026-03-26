@@ -10,7 +10,6 @@ import { ProductList } from '@/widgets/product-list';
 import { FABWrite } from '@/shared/ui';
 import { colors, HEADER_HEIGHT, BOTTOM_NAV_HEIGHT } from '@/shared/styles/theme';
 import { usePullToRefresh } from '@/shared/hooks/usePullToRefresh';
-import { usePullToRefresh } from '@/shared/hooks/usePullToRefresh';
 
 const Page = styled.div`
   display: flex;
