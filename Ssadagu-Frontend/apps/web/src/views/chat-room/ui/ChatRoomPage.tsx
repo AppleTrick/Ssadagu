@@ -242,7 +242,7 @@ export function ChatRoomPage() {
             { ...newRoomData, id: Number(id) }
           );
         }
-        queryClient.setQueryData(['chatMessages', Number(id), userId], []);
+        queryClient.setQueryData(['chatMessages', Number(id), userId], { pages: [], pageParams: [null] });
 
         sessionStorage.setItem('pendingChatMsg', content);
         router.replace(`/chat/${id}`);
