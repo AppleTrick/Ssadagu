@@ -75,13 +75,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     ) {
       // 2-1. 계좌 인증이 완료되지 않은 경우 (UNVERIFIED)
       if (user.status === "UNVERIFIED") {
-        modalAlert({
-          title: "인증 필요",
-          message: "1원 인증을 완료하지 않았습니다.\n1원 인증 페이지로 이동합니다.",
-          confirmLabel: "확인",
-        }).then(() => {
-          router.replace("/verify-account");
-        });
+        router.replace("/verify-account");
         return;
       }
 

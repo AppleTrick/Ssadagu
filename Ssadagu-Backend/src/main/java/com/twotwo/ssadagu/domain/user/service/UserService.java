@@ -1,6 +1,5 @@
 package com.twotwo.ssadagu.domain.user.service;
 
-import com.twotwo.ssadagu.domain.auth.dto.TokenDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductResponseDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductWishResponseDto;
 import com.twotwo.ssadagu.domain.product.repository.ProductRepository;
@@ -9,17 +8,15 @@ import com.twotwo.ssadagu.domain.transaction.dto.TransactionResponseDto;
 import com.twotwo.ssadagu.domain.transaction.repository.TransactionRepository;
 import com.twotwo.ssadagu.domain.user.dto.*;
 import com.twotwo.ssadagu.domain.demanddeposit.service.DemandDepositService;
+import com.twotwo.ssadagu.domain.account.entity.UserAccount;
+import com.twotwo.ssadagu.domain.account.repository.UserAccountRepository;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
 import com.twotwo.ssadagu.global.dto.SsafyApiResponse;
 import com.twotwo.ssadagu.global.error.BusinessException;
 import com.twotwo.ssadagu.global.error.ErrorCode;
-import com.twotwo.ssadagu.global.security.CustomUserDetails;
-import com.twotwo.ssadagu.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,12 +31,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
     private final UserKeyService userKeyService;
     private final ProductRepository productRepository;
     private final ProductWishRepository productWishRepository;
     private final TransactionRepository transactionRepository;
     private final DemandDepositService demandDepositService; // 수시입출금 계좌 서비스 주입
+    private final UserAccountRepository userAccountRepository; // 계좌 레포지토리 주입
     private final com.twotwo.ssadagu.global.service.S3Service s3Service;
 
     @Transactional
@@ -85,13 +82,24 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        // 자동 로그인: 토큰 생성
-        CustomUserDetails userDetails = new CustomUserDetails(savedUser);
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities());
-        TokenDto tokenDto = jwtTokenProvider.generateToken(authentication);
+        // 생성된 계좌가 있다면 DB(user_accounts)에도 자동 등록 (PENDING 상태)
+        if (accountNo != null) {
+            String accountHash = passwordEncoder.encode(accountNo);
+            UserAccount account = UserAccount.builder()
+                    .user(savedUser)
+                    .bankCode("001") // 한국은행 (SSAFY 기본)
+                    .bankName("한국은행")
+                    .accountNumber(accountNo)
+                    .accountHash(accountHash)
+                    .accountHolderName(savedUser.getNickname())
+                    .isPrimary(true)
+                    .verifiedStatus("PENDING")
+                    .build();
+            userAccountRepository.save(account);
+            log.info("[Signup] DB에 계좌 정보가 정상적으로 등록되었습니다. User: {}, AccountNo: {}", savedUser.getEmail(), accountNo);
+        }
 
-        return UserResponseDto.from(savedUser, tokenDto, accountNo);
+        return UserResponseDto.from(savedUser, null, accountNo);
     }
 
     @Transactional
