@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { StyleSheet, View, Platform, BackHandler, Linking } from 'react-native';
+import { StyleSheet, View, Platform, BackHandler, Linking, Alert } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -8,18 +8,18 @@ import * as Crypto from 'expo-crypto';
 import * as ImagePicker from 'expo-image-picker';
 
 // 배포 URL
-// const NEXTJS_URL = 'https://j14a202.p.ssafy.io';
+const NEXTJS_URL = 'https://j14a202.p.ssafy.io';
 
-const DEV_MACHINE_IP = '192.168.45.45';
+//const DEV_MACHINE_IP = '192.168.45.45';
 
-let NEXTJS_URL = 'http://localhost:3000';
-if (__DEV__) {
-  if (Platform.OS === 'android') {
-    NEXTJS_URL = 'http://10.0.2.2:3000';
-  } else if (Platform.OS === 'ios') {
-    NEXTJS_URL = `http://${DEV_MACHINE_IP}:3000`;
-  }
-}
+// let NEXTJS_URL = 'http://localhost:3000';
+// if (__DEV__) {
+//   if (Platform.OS === 'android') {
+//     NEXTJS_URL = 'http://10.0.2.2:3000';
+//   } else if (Platform.OS === 'ios') {
+//     NEXTJS_URL = `http://${DEV_MACHINE_IP}:3000`;
+//   }
+// }
 
 /** Keychain 저장 키 */
 const DEVICE_TOKEN_KEY = 'ssadagu_biometric_device_token';
@@ -90,12 +90,10 @@ export default function AppScreen() {
       // UUID v4 생성
       const token = Crypto.randomUUID();
 
-      // 생체인증 보호 저장 (저장 시 생체인증 요구)
-      await SecureStore.setItemAsync(DEVICE_TOKEN_KEY, token, {
-        requireAuthentication: true,
-        authenticationPrompt: '생체인증으로 본인을 확인합니다',
-      });
-
+      // 디바이스 토큰 저장 (Android에서 requireAuthentication: true 버그로 인해 제거. 생체인증은 어차피 LocalAuthentication에서 선행됨)
+      await SecureStore.deleteItemAsync(DEVICE_TOKEN_KEY).catch(() => {});
+      await SecureStore.setItemAsync(DEVICE_TOKEN_KEY, token);
+      
       sendToWeb({ type: 'deviceTokenGenerated', token });
     } catch (err) {
       console.error('디바이스 토큰 생성 실패:', err);
@@ -110,7 +108,7 @@ export default function AppScreen() {
     try {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
+      
       if (!hasHardware || !isEnrolled) {
         sendToWeb({ type: 'biometricResult', success: false, error: 'not_supported' });
         return;
@@ -125,6 +123,7 @@ export default function AppScreen() {
         ? 'Face ID로 본인인증을 진행합니다'
         : '지문으로 본인인증을 진행합니다';
 
+      // 1. 여기서 기기의 생체인증(지문/얼굴) 모달을 확실히 띄움
       const authResult = await LocalAuthentication.authenticateAsync({
         promptMessage,
         cancelLabel: '취소',
@@ -137,14 +136,8 @@ export default function AppScreen() {
         return;
       }
 
-      // 생체인증 성공 → Keychain에서 디바이스 토큰 읽기
-      const token = await SecureStore.getItemAsync(DEVICE_TOKEN_KEY);
-      if (!token) {
-        sendToWeb({ type: 'biometricResult', success: false, error: 'no_token_stored' });
-        return;
-      }
-
-      sendToWeb({ type: 'biometricResult', success: true, token });
+      // 2. 생체인증 성공 → 바로 통과
+      sendToWeb({ type: 'biometricResult', success: true });
     } catch (err) {
       console.error('생체인증 오류:', err);
       sendToWeb({ type: 'biometricResult', success: false, error: 'error' });
@@ -227,15 +220,22 @@ export default function AppScreen() {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         allowFileAccess={true}
+        thirdPartyCookiesEnabled={true}
+        mixedContentMode="always"
         originWhitelist={['*']}
         scalesPageToFit={true}
         scrollEnabled={true}
         geolocationEnabled={true}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          Alert.alert('웹뷰 접속 에러', `에러 코드: ${nativeEvent.code}\n설명: ${nativeEvent.description}\nURL: ${nativeEvent.url}`);
+        }}
         injectedJavaScript={`
           const meta = document.createElement('meta');
           meta.setAttribute('name', 'viewport');
           meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
           document.getElementsByTagName('head')[0].appendChild(meta);
+          true;
         `}
       />
     </SafeAreaView>

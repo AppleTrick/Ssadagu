@@ -139,35 +139,18 @@ const TransactionAuthModal = ({ isOpen, onSuccess, onClose }: TransactionAuthMod
     }
   };
 
-  /** 생체인증 → 디바이스 토큰으로 백엔드 검증 */
+  /** 생체인증 → 폰의 생체인증 성공 = 본인 확인 */
   const handleBiometric = async () => {
     setError('');
     setLoading(true);
     try {
-      // 네이티브 생체인증 수행 + Keychain에서 UUID 토큰 획득
       const result = await requestBiometricAuth();
 
-      if (!result.success || !result.token) {
-        if (result.error === 'cancelled') {
-          setError('');
-        } else if (result.error === 'no_token_stored') {
-          setError('생체인증이 등록되지 않았습니다. 비밀번호를 입력해주세요.');
-        } else {
+      if (!result.success) {
+        if (result.error !== 'cancelled') {
           setError('생체인증에 실패했습니다. 비밀번호를 입력해주세요.');
         }
         return;
-      }
-
-      // 백엔드에 디바이스 토큰(publicKey)으로 검증
-      const res = await apiClient.post(
-        ENDPOINTS.USERS.BIOMETRIC_VERIFY(userId!),
-        { publicKey: result.token },
-        accessToken ?? undefined
-      );
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as Record<string, any>;
-        throw new Error(body.message || '생체인증 검증에 실패했습니다.');
       }
 
       onSuccess();
