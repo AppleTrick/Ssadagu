@@ -486,6 +486,7 @@ export function VerifyAccountPage() {
                 <FieldLabel>예금주명</FieldLabel>
                 <Input
                   placeholder="예금주명을 입력해주세요"
+                  maxLength={20}
                   value={accountHolderName}
                   onChange={(e) => {
                     setAccountHolderName(e.target.value);

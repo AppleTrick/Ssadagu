@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { useQueryClient } from '@tanstack/react-query';
 import { HeaderMain } from '@/widgets/header';
@@ -9,6 +9,7 @@ import { BottomNav } from '@/widgets/bottom-nav';
 import { ProductList } from '@/widgets/product-list';
 import { FABWrite } from '@/shared/ui';
 import { colors, HEADER_HEIGHT, BOTTOM_NAV_HEIGHT } from '@/shared/styles/theme';
+import { usePullToRefresh } from '@/shared/hooks/usePullToRefresh';
 import { usePullToRefresh } from '@/shared/hooks/usePullToRefresh';
 
 const Page = styled.div`

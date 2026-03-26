@@ -54,7 +54,7 @@ public class ChatMessageService {
         } else if (incomingMessage.getType() == ChatMessage.MessageType.PAYMENT_SUCCESS) {
             lastMessageContent = "(결제 완료)";
         } else if (incomingMessage.getType() == ChatMessage.MessageType.PAYMENT_FAIL) {
-            lastMessageContent = "(결제 실패)";
+            lastMessageContent = "(결제 취소)";
         }
 
         chatRoomService.updateLastMessage(incomingMessage.getRoomId(), lastMessageContent, isBuyer);

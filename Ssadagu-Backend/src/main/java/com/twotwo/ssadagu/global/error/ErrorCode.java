@@ -18,6 +18,7 @@ public enum ErrorCode {
     BIOMETRIC_NOT_ENABLED(HttpStatus.BAD_REQUEST, "U007", "생체 인증이 비활성화되어 있습니다."),
     BIOMETRIC_NOT_REGISTERED(HttpStatus.BAD_REQUEST, "U008", "생체 인증이 등록되어 있지 않습니다."),
     BIOMETRIC_TOKEN_NOT_MATCH(HttpStatus.UNAUTHORIZED, "U009", "생체 인증 토큰이 일치하지 않습니다."),
+    DELETED_USER_SIGNUP(HttpStatus.BAD_REQUEST, "U011", "삭제된 아이디입니다. 삭제 후 1달 뒤 재가입 가능합니다."),
 
     // Product
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P001", "상품을 찾을 수 없습니다."),
