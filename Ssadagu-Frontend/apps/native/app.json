@@ -13,7 +13,9 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "위치 기반 중고거래 서비스를 위해 위치 정보가 필요합니다.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "위치 기반 중고거래 서비스를 위해 위치 정보가 필요합니다.",
-        "NSFaceIDUsageDescription": "2차 비밀번호 인증을 위해 Face ID가 필요합니다."
+        "NSFaceIDUsageDescription": "2차 비밀번호 인증을 위해 Face ID가 필요합니다.",
+        "NSCameraUsageDescription": "채팅에서 사진을 촬영하여 전송하기 위해 카메라 접근이 필요합니다.",
+        "NSPhotoLibraryUsageDescription": "촬영한 사진을 저장하기 위해 사진 라이브러리 접근이 필요합니다."
       }
     },
     "android": {
@@ -30,7 +32,10 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
+        "USE_FINGERPRINT",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -40,6 +45,13 @@
     "plugins": [
       "expo-router",
       "expo-location",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "채팅에서 사진을 전송하기 위해 사진 라이브러리 접근이 필요합니다.",
+          "cameraPermission": "채팅에서 사진을 촬영하여 전송하기 위해 카메라 접근이 필요합니다."
+        }
+      ],
       [
         "expo-splash-screen",
         {
