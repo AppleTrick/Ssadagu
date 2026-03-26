@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
 import styled from "@emotion/styled";
 import { HeaderBack } from "@/widgets/header";
 import { Button, Input } from "@/shared/ui";
@@ -345,6 +347,8 @@ function StepIndicator({ current }: { current: Step }) {
 
 export function VerifyAccountPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.userId);
   const { register, sendVerification, confirmCode } = useRegisterAccount();
   const [accountId, setAccountId] = useState<number | null>(null);
 
@@ -423,6 +427,7 @@ export function VerifyAccountPage() {
     try {
       if (!accountId) throw new Error("계좌 정보를 찾을 수 없습니다.");
       await confirmCode(accountId, code);
+      await queryClient.invalidateQueries({ queryKey: ['myProfile', userId] });
       router.replace("/location-auth");
     } catch (e) {
       setError(e instanceof Error ? e.message : "인증에 실패했습니다.");

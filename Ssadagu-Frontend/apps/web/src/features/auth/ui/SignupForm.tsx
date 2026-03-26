@@ -332,15 +332,18 @@ const SignupForm = ({ onSuccess }: SignupFormProps) => {
         />
         <Inner>
           <div style={{ fontSize: "60px", marginBottom: "20px" }}>🎉</div>
-          <SuccessTitle>{`${nicknameValue}님,\n반가워요!`}</SuccessTitle>
+          <SuccessTitle>{`${nicknameValue}님,\n환영합니다!`}</SuccessTitle>
           <SuccessNotice>
-            {"서비스 이용을 위해\n"}
-            <strong>{"1원 계좌 인증"}</strong>
-            {"이 필요합니다."}
+            {"회원가입이 완료되었습니다.\n"}
+            {"로그인 후 서비스를 이용해주세요."}
           </SuccessNotice>
           <ButtonArea>
-            <Button variant="primary" size="lg" fullWidth onClick={() => onSuccess?.()}>
-              다음
+            <Button variant="primary" size="lg" fullWidth onClick={() => {
+              if (typeof window !== "undefined") {
+                window.location.href = "/";
+              }
+            }}>
+              로그인하러 가기
             </Button>
           </ButtonArea>
         </Inner>
