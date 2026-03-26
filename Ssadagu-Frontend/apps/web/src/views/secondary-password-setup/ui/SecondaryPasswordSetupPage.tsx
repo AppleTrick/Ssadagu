@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { PinPad } from '@/shared/ui/PinPad';
@@ -78,6 +79,7 @@ export function SecondaryPasswordSetupPage() {
   const userId = useAuthStore((s) => s.userId);
   const accessToken = useAuthStore((s) => s.accessToken);
   const { alert: modalAlert } = useModalStore();
+  const queryClient = useQueryClient();
 
   const [step, setStep] = useState<Step>('enter');
   const [password, setPassword] = useState('');
@@ -149,6 +151,7 @@ export function SecondaryPasswordSetupPage() {
         }
       }
 
+      await queryClient.invalidateQueries({ queryKey: ['myProfile', userId] });
       await modalAlert({ message: '2차 비밀번호가 설정되었습니다.' });
       router.replace('/home');
     } catch (err) {

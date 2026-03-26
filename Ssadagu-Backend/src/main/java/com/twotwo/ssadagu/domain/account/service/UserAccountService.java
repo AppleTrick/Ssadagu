@@ -119,8 +119,10 @@ public class UserAccountService {
         verification.verify(now);
         verification.getAccount().verify();
         
-        // 2. 중요: 로그인에 쓰이는 고유값인 '이메일'을 기반으로 DB 상태를 강제 업데이트 (가장 확실한 방법)
-        userRepository.updateStatusToVerifiedByEmail(user.getEmail());
+        // 2. 로그인된 사용자 엔티티를 영속성 컨텍스트로 불러와 더티체킹으로 바로 업데이트 (기존 이메일 기반 강제 업데이트 제거)
+        User dbUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        dbUser.setAccountVerified(); // status -> VERIFIED
     }
 
     @Transactional(readOnly = true)
