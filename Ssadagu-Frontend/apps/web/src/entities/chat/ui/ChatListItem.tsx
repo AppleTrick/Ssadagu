@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
 import type { ChatRoom } from '../model/types';
@@ -8,7 +9,7 @@ import { getProxyImageUrl } from '@/shared/utils';
 interface ChatListItemProps {
   room: any;
   currentUserId?: number;
-  onClick?: () => void;
+  onClick?: (roomId: string | number) => void;
 }
 
 const formatTime = (dateStr: string | null) => {
@@ -34,14 +35,22 @@ const ChatListItem = ({ room, currentUserId, onClick }: ChatListItemProps) => {
   const otherNickname = room.partnerNickname || room.buyerNickname || '상대방';
   const profileUrl = room.partnerProfileImageUrl;
 
+  const handleClick = useCallback(() => {
+    if (onClick) {
+      onClick(room.roomId || room.id);
+    }
+  }, [onClick, room.roomId, room.id]);
+
   return (
-    <Container onClick={onClick}>
+    <Container onClick={handleClick}>
       <Avatar>
         {profileUrl ? (
           <img 
             src={getProxyImageUrl(profileUrl)} 
             alt="프로필" 
             style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <svg width="24" height="24" viewBox="0 0 24 24" fill={colors.textSecondary}>
@@ -65,7 +74,7 @@ const ChatListItem = ({ room, currentUserId, onClick }: ChatListItemProps) => {
   );
 };
 
-export default ChatListItem;
+export default memo(ChatListItem);
 
 const Container = styled.div`
   display: flex;

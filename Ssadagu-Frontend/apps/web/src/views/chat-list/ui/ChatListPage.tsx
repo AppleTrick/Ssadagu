@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMyProfile, type User } from '@/entities/user';
 import styled from '@emotion/styled';
@@ -124,12 +124,45 @@ export function ChatListPage() {
     refetchOnMount: 'always',
   });
 
-  const filteredRooms = (rooms ?? []).filter((room: any) => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'sell') return room.myRole === 'SELLER';
-    if (activeTab === 'buy') return room.myRole === 'BUYER';
-    return true;
-  });
+  const handleRoomClick = useCallback(
+    (roomId: string | number) => {
+      router.push(`/chat/${roomId}`);
+    },
+    [router]
+  );
+
+  const filteredRooms = useMemo(() => {
+    return (rooms ?? []).filter((room: any) => {
+      if (activeTab === 'all') return true;
+      if (activeTab === 'sell') return room.myRole === 'SELLER';
+      if (activeTab === 'buy') return room.myRole === 'BUYER';
+      return true;
+    });
+  }, [rooms, activeTab]);
+
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  // 탭이 변경될 때 렌더링 개수 초기화
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [activeTab]);
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback(
+    (node: HTMLLIElement | null) => {
+      if (isLoading) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && visibleCount < filteredRooms.length) {
+          setVisibleCount((prev) => Math.min(prev + 20, filteredRooms.length));
+        }
+      });
+
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, filteredRooms.length, visibleCount]
+  );
 
   return (
     <Page>
@@ -151,15 +184,21 @@ export function ChatListPage() {
           <>
             {filteredRooms.length > 0 ? (
               <ListWrapper>
-                {filteredRooms.map((room: any) => (
-                  <li key={room.roomId || room.id}>
-                    <ChatListItem
-                      room={room}
-                      currentUserId={currentUser?.id}
-                      onClick={() => router.push(`/chat/${room.roomId || room.id}`)}
-                    />
-                  </li>
-                ))}
+                {filteredRooms.slice(0, visibleCount).map((room: any, index: number) => {
+                  const isLast = index === visibleCount - 1;
+                  return (
+                    <li
+                      key={room.roomId || room.id}
+                      ref={isLast ? lastElementRef : null}
+                    >
+                      <ChatListItem
+                        room={room}
+                        currentUserId={currentUser?.id}
+                        onClick={handleRoomClick}
+                      />
+                    </li>
+                  );
+                })}
               </ListWrapper>
             ) : (
               <EmptyWrapper>채팅 내역이 없습니다.</EmptyWrapper>
