@@ -8,7 +8,7 @@ import { HeaderBack } from '@/widgets/header';
 import { Button, Input } from '@/shared/ui';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { apiClient } from '@/shared/api/client';
-import { getUserMe, updateUser } from '@/entities/user';
+import { useMyProfile, updateUser } from '@/entities/user';
 import { getProxyImageUrl, compressImage } from '@/shared/utils/image';
 import type { User } from '@/entities/user';
 import {
@@ -173,15 +173,8 @@ export function ProfileEditPage() {
   const [isImageDeleted, setIsImageDeleted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // 프로필 조회
-  const { data: user } = useQuery<User>({
-    queryKey: ['myProfile', userId],
-    queryFn: () => {
-      if (!userId) throw new Error('사용자 정보가 없습니다.');
-      return getUserMe(userId, accessToken ?? undefined);
-    },
-    enabled: !!accessToken && !!userId,
-  });
+  // 프로필 조회 (entities에 정의된 공통 훅 사용 - region -> regionName 매핑 포함)
+  const { data: user } = useMyProfile();
 
   useEffect(() => {
     if (user) {
