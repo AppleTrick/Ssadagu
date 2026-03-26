@@ -38,6 +38,10 @@ export const handlers = [
     await d();
     return HttpResponse.json({ data: mockUser });
   }),
+  http.get(`${BASE}/users/:userId`, async ({ params }) => {
+    await d();
+    return HttpResponse.json({ data: { ...mockUser, id: Number(params.userId) } });
+  }),
   http.patch(`${BASE}/users/me`, async ({ request }) => {
     await d();
     const body = await request.json() as Record<string, unknown>;

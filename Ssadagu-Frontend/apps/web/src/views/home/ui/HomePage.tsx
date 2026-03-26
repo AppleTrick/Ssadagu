@@ -12,14 +12,16 @@ import { colors, HEADER_HEIGHT, BOTTOM_NAV_HEIGHT } from '@/shared/styles/theme'
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   background: ${colors.bg};
 `;
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT}px;
-  padding-bottom: ${BOTTOM_NAV_HEIGHT}px;
+  min-height: 0;
+  margin-top: ${HEADER_HEIGHT}px;
+  margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
 `;
 

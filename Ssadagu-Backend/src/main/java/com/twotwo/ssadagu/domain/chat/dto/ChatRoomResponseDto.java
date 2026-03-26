@@ -21,6 +21,7 @@ public class ChatRoomResponseDto {
     private String productStatus;
     private Long partnerId;
     private String partnerNickname;
+    private String partnerProfileImageUrl;
     private String lastMessage;
     private LocalDateTime lastSentAt;
     private Integer unreadCount;
@@ -46,6 +47,7 @@ public class ChatRoomResponseDto {
                 .productStatus(product.getStatus())
                 .partnerId(partner.getId())
                 .partnerNickname(partner.getNickname())
+                .partnerProfileImageUrl(partner.getProfileImageUrl())
                 .lastMessage(chatRoom.getLastMessage())
                 .lastSentAt(chatRoom.getLastSentAt())
                 .unreadCount(unreadCount)

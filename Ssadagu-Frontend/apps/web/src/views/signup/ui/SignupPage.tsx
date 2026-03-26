@@ -7,6 +7,6 @@ export function SignupPage() {
   const router = useRouter();
 
   return (
-    <SignupForm onSuccess={() => router.push('/verify-account')} />
+    <SignupForm onSuccess={() => router.push('/')} />
   );
 }

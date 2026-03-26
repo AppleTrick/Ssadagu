@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import styled from '@emotion/styled';
-import { HeaderBack } from '@/widgets/header';
-import { Button } from '@/shared/ui';
-import { LocationPickerMap } from '@/features/location-picker';
-import { useCurrentLocation } from '@/features/location-picker/model/useCurrentLocation';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
-import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import styled from "@emotion/styled";
+import { HeaderBack } from "@/widgets/header";
+import { Button } from "@/shared/ui";
+import { LocationPickerMap } from "@/features/location-picker";
+import { useCurrentLocation } from "@/features/location-picker/model/useCurrentLocation";
+import { apiClient } from "@/shared/api/client";
+import { ENDPOINTS } from "@/shared/api/endpoints";
+import { useAuthStore } from "@/shared/auth/useAuthStore";
 import {
   colors,
   typography,
@@ -18,7 +18,7 @@ import {
   shadows,
   HEADER_HEIGHT,
   STATUS_BAR_HEIGHT,
-} from '@/shared/styles/theme';
+} from "@/shared/styles/theme";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -45,10 +45,11 @@ const TitleSection = styled.div`
 
 const Title = styled.h2`
   font-family: ${typography.fontFamily};
-  font-size: ${typography.size['2xl']};
+  font-size: ${typography.size["2xl"]};
   font-weight: ${typography.weight.bold};
   color: ${colors.textPrimary};
   margin: 0 0 6px;
+  white-space: pre-wrap;
 `;
 
 const Desc = styled.p`
@@ -88,7 +89,9 @@ const CurrentLocBtn = styled.button`
   color: ${colors.primary};
   cursor: pointer;
   box-shadow: ${shadows.sm};
-  transition: background 0.15s, opacity 0.15s;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
 
   &:active:not(:disabled) {
     background: #ebf2fe;
@@ -100,7 +103,16 @@ const CurrentLocBtn = styled.button`
 `;
 
 const LocIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <circle cx="12" cy="12" r="3" />
     <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
     <circle cx="12" cy="12" r="9" strokeWidth="1.2" strokeDasharray="2 3" />
@@ -192,15 +204,15 @@ const PinSvg = () => (
 export function RegionSelectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isReauth = searchParams?.get('mode') === 'reauth';
+  const isReauth = searchParams?.get("mode") === "reauth";
   const queryClient = useQueryClient();
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);
   const mapRef = useRef<any>(null);
 
-  const [regionName, setRegionName] = useState('');
+  const [regionName, setRegionName] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const { getLocation, loading: geoLoading } = useCurrentLocation({
     onSuccess: (lat, lng) => {
@@ -211,22 +223,26 @@ export function RegionSelectPage() {
 
   const handleConfirm = async () => {
     if (!regionName) return;
-    setError('');
+    setError("");
     setSubmitting(true);
     try {
-      const res = await apiClient.patch(ENDPOINTS.USERS.REGION(userId!), { region: regionName }, accessToken ?? undefined);
+      const res = await apiClient.patch(
+        ENDPOINTS.USERS.REGION(userId!),
+        { region: regionName },
+        accessToken ?? undefined,
+      );
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        throw new Error(d.message || d.error || 'API 응답 에러');
+        throw new Error(d.message || d.error || "API 응답 에러");
       }
       // Invalidate both myProfile to update header, and products to refetch list based on new region
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['myProfile'] }),
-        queryClient.invalidateQueries({ queryKey: ['products'] })
+        queryClient.invalidateQueries({ queryKey: ["myProfile"] }),
+        queryClient.invalidateQueries({ queryKey: ["products"] }),
       ]);
-      router.push('/home');
+      router.push("/home");
     } catch (err: any) {
-      setError(err?.message || '변경에 실패했습니다. 다시 시도해주세요.');
+      setError(err?.message || "변경에 실패했습니다. 다시 시도해주세요.");
       setSubmitting(false);
     }
   };
@@ -238,9 +254,13 @@ export function RegionSelectPage() {
       <ContentArea>
         {/* 타이틀 — 헤더 바로 아래 */}
         <TitleSection>
-          <Title>{isReauth ? '동네를 재설정하실껀가요?' : '어디 동네로 가실껀가요?'}</Title>
+          <Title>
+            {isReauth
+              ? "거래를 위해 동네를\n다시 인증해 주세요."
+              : "찾으시는 동네를 선택해 주세요."}
+          </Title>
           <Desc>
-            지도를 움직여 {isReauth ? '재설정할' : '이동할'} 동네를 선택하세요.
+            지도를 움직여 {isReauth ? "재설정할" : "이동할"} 동네를 선택하세요.
           </Desc>
         </TitleSection>
 
@@ -250,7 +270,9 @@ export function RegionSelectPage() {
             <LocationPickerMap
               height="240px"
               onLocationChange={setRegionName}
-              onMapReady={(map) => { mapRef.current = map; }}
+              onMapReady={(map) => {
+                mapRef.current = map;
+              }}
             />
           </MapCard>
 
@@ -259,7 +281,7 @@ export function RegionSelectPage() {
             disabled={geoLoading || !mapRef.current}
           >
             <LocIcon />
-            {geoLoading ? '위치 확인 중...' : '현재 내 위치로 가기'}
+            {geoLoading ? "위치 확인 중..." : "현재 내 위치로 가기"}
           </CurrentLocBtn>
         </MapBlock>
 
@@ -293,7 +315,7 @@ export function RegionSelectPage() {
             disabled={!regionName || submitting}
             onClick={handleConfirm}
           >
-            {isReauth ? '이 동네로 재설정하기' : '이 동네로 가기'}
+            {isReauth ? "이 동네로 재설정하기" : "이 동네로 가기"}
           </Button>
         </BottomBar>
       </ContentArea>

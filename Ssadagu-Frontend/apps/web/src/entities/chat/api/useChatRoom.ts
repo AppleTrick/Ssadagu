@@ -138,14 +138,16 @@ export const mapToChatRoomDetail = (
     productStatus,
     partnerId: partnerIdNum,
     partnerNickname:
-      partner.nickname || d.partnerNickname || d.targetNickname || "알 수 없음",
+      partner.nickname || d.partnerNickname || d.targetNickname || '알 수 없음',
+    partnerProfileImageUrl:
+      partner.profileImageUrl || d.partnerProfileImageUrl || null,
     lastMessage: d.lastMessage,
     lastSentAt: d.lastSentAt,
-    roomStatus: d.roomStatus || "ACTIVE",
+    roomStatus: d.roomStatus || 'ACTIVE',
     buyerId: finalBuyerId,
-    buyerNickname: finalBuyerNickname || "구매자",
+    buyerNickname: finalBuyerNickname || '구매자',
     sellerId: finalSellerId,
-    sellerNickname: finalSellerNickname || "판매자",
+    sellerNickname: finalSellerNickname || '판매자',
     unreadCount: d.unreadCount ?? 0,
   } as ChatRoom;
 };

@@ -55,5 +55,7 @@ public class ChatRoomDetailResponse {
         private Long userId;
         @Schema(description = "사용자 닉네임", example = "구매자1")
         private String nickname;
+        @Schema(description = "사용자 프로필 이미지 URL", example = "https://example.com/profile.jpg")
+        private String profileImageUrl;
     }
 }
