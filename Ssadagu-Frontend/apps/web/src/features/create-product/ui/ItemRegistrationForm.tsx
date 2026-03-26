@@ -19,6 +19,7 @@ import { useMyProfile } from '@/entities/user';
 import type { ProductDetail } from '@/entities/product';
 import { useQuery } from '@tanstack/react-query';
 import type { User } from '@/entities/user';
+import { useModalStore } from '@/shared/hooks/useModalStore';
 /* ── Types ─────────────────────────────────────────────── */
 
 interface FormValues {
@@ -615,6 +616,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   const [serverError, setServerError] = useState<string | null>(null);
 
   const { data: myProfile } = useMyProfile();
+  const { alert: showAlert } = useModalStore();
 
   const isEdit = !!productId;
 
@@ -626,6 +628,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
     setValue,
     formState: { errors, isSubmitting, isSubmitSuccessful },
   } = useForm<FormValues>({
+    mode: 'onChange',
     defaultValues: {
       title: initialData?.title || '',
       categoryCode: initialData?.categoryCode || '',
@@ -766,28 +769,39 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
       .map((p) => p.originalUrl as string);
 
     try {
+      const timeoutMillis = 15000; // 15초 타임아웃
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), timeoutMillis)
+      );
+
       if (isEdit) {
-        await updateMutation.mutateAsync({
-          title: data.title,
-          categoryCode: data.categoryCode,
-          price: Number(data.price.replace(/[^0-9]/g, '')),
-          description: data.description,
-          regionName: data.regionName || '미설정',
-          status: (data.status as any) || 'ON_SALE',
-          images: imagesToUpload,
-          imageUrls: existingImageUrls,
-        });
+        await Promise.race([
+          updateMutation.mutateAsync({
+            title: data.title,
+            categoryCode: data.categoryCode,
+            price: Number(data.price.replace(/[^0-9]/g, '')),
+            description: data.description,
+            regionName: data.regionName || '미설정',
+            status: (data.status as any) || 'ON_SALE',
+            images: imagesToUpload,
+            imageUrls: existingImageUrls,
+          }),
+          timeoutPromise,
+        ]);
         router.replace(`/products/${productId}`);
       } else {
-        const result = await createMutation.mutateAsync({
-          sellerId: myProfile?.id || 0,
-          title: data.title,
-          categoryCode: data.categoryCode,
-          price: Number(data.price.replace(/[^0-9]/g, '')),
-          description: data.description,
-          regionName: data.regionName || '미설정',
-          images: imagesToUpload,
-        });
+        const result = (await Promise.race([
+          createMutation.mutateAsync({
+            sellerId: myProfile?.id || 0,
+            title: data.title,
+            categoryCode: data.categoryCode,
+            price: Number(data.price.replace(/[^0-9]/g, '')),
+            description: data.description,
+            regionName: data.regionName || '미설정',
+            images: imagesToUpload,
+          }),
+          timeoutPromise,
+        ])) as any;
 
         const newProductId =
           typeof result?.id === 'number'
@@ -803,7 +817,12 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
         }
       }
     } catch (err: any) {
-      setServerError(err.message || '요청에 실패했습니다.');
+      if (err.message === 'TIMEOUT_ERROR') {
+        currentMutation.reset();
+        showAlert({ message: '요청 시간이 초과되었습니다. 다시 시도해주세요.' });
+      } else {
+        setServerError(err.message || '요청에 실패했습니다.');
+      }
     }
   };
 
@@ -869,7 +888,10 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
             <FieldInput
               type="text"
               hasError={!!errors.title}
-              {...register('title', { required: '물품명을 입력해주세요' })}
+              {...register('title', { 
+                required: '물품명을 입력해주세요',
+                maxLength: { value: 50, message: '물품명은 50자 이내로 입력해주세요' }
+              })}
             />
             {errors.title && <FieldError role="alert">{errors.title.message}</FieldError>}
           </FieldWrapper>
@@ -929,9 +951,12 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           <FieldWrapper>
             <Label>상세 설명</Label>
             <TextArea
-              placeholder="물품에 대한 상세한 설명을 적어주세요"
+              placeholder="물품에 대한 상세한 설명을 적어주세요 (500자 이내)"
               hasError={!!errors.description}
-              {...register('description', { required: '상품 설명을 입력해주세요' })}
+              {...register('description', { 
+                required: '상품 설명을 입력해주세요',
+                maxLength: { value: 500, message: '상세 설명은 500자 이내로 입력해주세요' }
+              })}
             />
             {errors.description && (
               <FieldError role="alert">{errors.description.message}</FieldError>
