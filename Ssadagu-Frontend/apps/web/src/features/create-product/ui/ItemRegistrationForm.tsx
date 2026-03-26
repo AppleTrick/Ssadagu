@@ -624,7 +624,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
     reset,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isSubmitSuccessful },
   } = useForm<FormValues>({
     defaultValues: {
       title: initialData?.title || '',
@@ -953,8 +953,8 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           variant="primary"
           size="lg"
           fullWidth
-          loading={currentMutation.isPending || isSubmitting}
-          disabled={currentMutation.isPending || isSubmitting}
+          loading={currentMutation.isPending || isSubmitting || isSubmitSuccessful}
+          disabled={currentMutation.isPending || isSubmitting || isSubmitSuccessful}
         >
           등록하기
         </Button>
