@@ -54,6 +54,8 @@ const STATUS_OPTIONS = [
   { code: 'SOLD', label: '판매완료' },
 ];
 
+const MAX_PRICE = 10000000000; // 100억
+
 /* ── Utilities ──────────────────────────────────────────── */
 
 const compressImage = (file: File, maxWidth = 1024, quality = 0.8): Promise<File> => {
@@ -900,6 +902,13 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
                 {...register('price', {
                   required: '가격을 입력해주세요',
                   pattern: { value: /^[0-9,]+$/, message: '숫자만 입력해주세요' },
+                  validate: (value) => {
+                    const numericValue = Number(value.replace(/[^0-9]/g, ''));
+                    if (numericValue > MAX_PRICE) {
+                      return '거래 금액은 100억 원을 초과할 수 없습니다.';
+                    }
+                    return true;
+                  },
                 })}
               />
               <PriceUnit>원</PriceUnit>
