@@ -146,26 +146,32 @@ public class ProductService {
                 request.getRegionName(),
                 request.getStatus());
 
-        List<String> imageUrls = new ArrayList<>();
+        // 1. 기존 이미지 중 유지할 이미지 선별 (imageUrls 필드가 null이 아닌 경우 적용)
+        List<String> keepUrls = request.getImageUrls();
+        if (keepUrls != null) {
+            product.getImages().removeIf(img -> !keepUrls.contains(img.getImageUrl()));
+        }
+
+        // 2. 새 이미지 업로드 및 추가
         if (imageFiles != null && !imageFiles.isEmpty()) {
-            if (imageFiles.size() > 5) {
+            if (product.getImages().size() + imageFiles.size() > 5) {
                 throw new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.INVALID_INPUT_VALUE);
             }
-            product.getImages().clear();
-            for (int i = 0; i < imageFiles.size(); i++) {
-                String imageUrl = s3Service.uploadImage(imageFiles.get(i));
-                imageUrls.add(imageUrl);
+            for (org.springframework.web.multipart.MultipartFile file : imageFiles) {
+                String imageUrl = s3Service.uploadImage(file);
                 com.twotwo.ssadagu.domain.product.entity.ProductImage image = com.twotwo.ssadagu.domain.product.entity.ProductImage.builder()
                         .product(product)
                         .imageUrl(imageUrl)
-                        .sortOrder(i)
+                        .sortOrder(product.getImages().size())
                         .build();
                 product.getImages().add(image);
             }
-        } else {
-            // 이미지 변경 없으면 기존 이미지 URL 유지
-            product.getImages().forEach(img -> imageUrls.add(img.getImageUrl()));
         }
+
+        // 3. 전체 이미지 URL 리스트 (AI 메타데이터용)
+        final List<String> allImageUrls = product.getImages().stream()
+                .map(com.twotwo.ssadagu.domain.product.entity.ProductImage::getImageUrl)
+                .collect(Collectors.toList());
 
         // 트랜잭션 커밋 후 AI 메타데이터를 백그라운드에서 재생성 (응답 지연 없음)
         final Long asyncProductId = product.getId();
@@ -174,13 +180,12 @@ public class ProductService {
         final Long asyncPrice = product.getPrice();
         final String asyncCategory = product.getCategoryCode();
         final String asyncRegion = product.getRegionName();
-        final List<String> finalImageUrls = new ArrayList<>(imageUrls);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 metadataAsyncService.generateAndApply(
                         asyncProductId, asyncTitle, asyncDesc,
-                        asyncPrice, asyncCategory, asyncRegion, finalImageUrls);
+                        asyncPrice, asyncCategory, asyncRegion, allImageUrls);
             }
         });
 

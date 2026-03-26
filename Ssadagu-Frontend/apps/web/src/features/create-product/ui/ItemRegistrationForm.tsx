@@ -611,7 +611,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
   const accessToken = useAuthStore((s) => s.accessToken);
   const userId = useAuthStore((s) => s.userId);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imagePreviews, setImagePreviews] = useState<{ id?: number; url: string; file?: File }[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<{ id?: number; url: string; file?: File; originalUrl?: string }[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const { data: myProfile } = useMyProfile();
@@ -659,8 +659,8 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
             .sort((a, b) => a.sortOrder - b.sortOrder)
             .map((img) => ({ 
               id: img.id, 
-              // URL 처리를 위해 getProxyImageUrl 사용
-              url: getProxyImageUrl(img.imageUrl) 
+              url: getProxyImageUrl(img.imageUrl),
+              originalUrl: img.imageUrl 
             }))
         );
       }
@@ -761,6 +761,10 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
     
     setServerError(null);
     const imagesToUpload = imagePreviews.filter((p) => p.file).map((p) => p.file as File);
+    const existingImageUrls = imagePreviews
+      .filter((p) => !p.file && p.originalUrl)
+      .map((p) => p.originalUrl as string);
+
     try {
       if (isEdit) {
         await updateMutation.mutateAsync({
@@ -771,6 +775,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           regionName: data.regionName || '미설정',
           status: (data.status as any) || 'ON_SALE',
           images: imagesToUpload,
+          imageUrls: existingImageUrls,
         });
         router.replace(`/products/${productId}`);
       } else {
