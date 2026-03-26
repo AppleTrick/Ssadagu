@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.twotwo.ssadagu.global.security.CustomUserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,7 @@ public class AuthService {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final CustomUserDetailsService userDetailsService;
 
     @Transactional
     public TokenDto login(LoginRequestDto loginRequestDto) {
@@ -55,17 +58,8 @@ public class AuthService {
         RefreshToken savedRefreshToken = refreshTokenRepository.findByValue(refreshToken)
                 .orElseThrow(() -> new RuntimeException("일치하는 리프레시 토큰이 없거나 로그아웃 된 사용자입니다."));
 
-        // 3. Member ID를 기반으로 강제 Authentication 객체 생성 (기존 accessToken의 클레임을 우회)
-        org.springframework.security.core.userdetails.UserDetails userDetails = 
-             ((com.twotwo.ssadagu.global.security.CustomUserDetailsService) 
-                org.springframework.web.context.support.WebApplicationContextUtils
-                    .getRequiredWebApplicationContext(
-                        ((org.springframework.web.context.request.ServletRequestAttributes) 
-                          org.springframework.web.context.request.RequestContextHolder.getRequestAttributes())
-                        .getRequest().getServletContext() // Spring Security context proxy 방지
-                    )
-               .getBean("customUserDetailsService", com.twotwo.ssadagu.global.security.CustomUserDetailsService.class))
-               .loadUserByUsername(savedRefreshToken.getKey());
+        // 3. Member ID를 기반으로 UserDetails 가져오기
+        UserDetails userDetails = userDetailsService.loadUserByUsername(savedRefreshToken.getKey());
                
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
 

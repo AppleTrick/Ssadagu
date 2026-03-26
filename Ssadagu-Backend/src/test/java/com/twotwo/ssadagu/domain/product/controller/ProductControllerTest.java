@@ -12,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -36,6 +35,9 @@ class ProductControllerTest {
 
         @Mock
         private com.twotwo.ssadagu.domain.product.service.ProductWishService productWishService;
+
+        @Mock
+        private com.twotwo.ssadagu.domain.product.service.AIMetadataService aiMetadataService;
 
         @InjectMocks
         private ProductController productController;
@@ -119,15 +121,18 @@ class ProductControllerTest {
                 // given
                 ProductResponseDto p1 = ProductResponseDto.builder().id(1L).title("T1").build();
                 ProductResponseDto p2 = ProductResponseDto.builder().id(2L).title("T2").build();
+                com.twotwo.ssadagu.domain.product.dto.ProductPageResponse response =
+                        new com.twotwo.ssadagu.domain.product.dto.ProductPageResponse(List.of(p1, p2), false, 0, 20);
 
-                given(productService.getProducts(eq(null), eq(null), any())).willReturn(List.of(p1, p2));
+                given(productService.getProducts(eq(null), eq(null), eq(0), eq(20), any())).willReturn(response);
 
                 // when & then
                 mockMvc.perform(get("/api/v1/products"))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.length()").value(2))
-                                .andExpect(jsonPath("$[0].title").value("T1"))
-                                .andExpect(jsonPath("$[1].title").value("T2"));
+                                .andExpect(jsonPath("$.content.length()").value(2))
+                                .andExpect(jsonPath("$.content[0].title").value("T1"))
+                                .andExpect(jsonPath("$.content[1].title").value("T2"))
+                                .andExpect(jsonPath("$.hasNext").value(false));
         }
 
         @Test
@@ -135,15 +140,17 @@ class ProductControllerTest {
         void getProducts_withRegionName() throws Exception {
                 // given
                 ProductResponseDto p1 = ProductResponseDto.builder().id(1L).title("강남 상품").regionName("강남구").build();
+                com.twotwo.ssadagu.domain.product.dto.ProductPageResponse response =
+                        new com.twotwo.ssadagu.domain.product.dto.ProductPageResponse(List.of(p1), false, 0, 20);
 
-                given(productService.getProducts(eq("강남구"), eq(null), any())).willReturn(List.of(p1));
+                given(productService.getProducts(eq("강남구"), eq(null), eq(0), eq(20), any())).willReturn(response);
 
                 // when & then
                 mockMvc.perform(get("/api/v1/products").param("regionName", "강남구"))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.length()").value(1))
-                                .andExpect(jsonPath("$[0].title").value("강남 상품"))
-                                .andExpect(jsonPath("$[0].regionName").value("강남구"));
+                                .andExpect(jsonPath("$.content.length()").value(1))
+                                .andExpect(jsonPath("$.content[0].title").value("강남 상품"))
+                                .andExpect(jsonPath("$.content[0].regionName").value("강남구"));
         }
 
         @Test

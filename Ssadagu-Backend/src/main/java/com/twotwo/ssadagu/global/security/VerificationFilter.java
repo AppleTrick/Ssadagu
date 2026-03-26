@@ -27,7 +27,7 @@ public class VerificationFilter extends OncePerRequestFilter {
     private final List<String> whitelist = Arrays.asList(
             "/api/v1/auth/**",
             "/api/v1/users/signup",
-            "/api/v1/users/*/region-verify",
+            "/api/v1/users/**", // 프로필 정보는 인증/동네인증 전에도 접근 가능해야 AuthGuard가 동작함
             "/api/v1/accounts/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",

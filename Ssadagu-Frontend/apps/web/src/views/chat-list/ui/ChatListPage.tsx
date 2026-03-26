@@ -29,20 +29,21 @@ const TABS = [
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   background: ${colors.surface};
 `;
 
 const ContentArea = styled.main`
   flex: 1;
-  margin-top: ${HEADER_HEIGHT}px;
-  padding-bottom: ${BOTTOM_NAV_HEIGHT}px;
+  min-height: 0;
+  margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
 `;
 
 const TabContainer = styled.div`
-  position: sticky;
-  top: 0;
+  margin-top: ${HEADER_HEIGHT}px;
+  flex-shrink: 0;
   z-index: 5;
   background: ${colors.surface};
 `;
@@ -133,10 +134,10 @@ export function ChatListPage() {
   return (
     <Page>
       <HeaderMain title="채팅" />
+      <TabContainer>
+        <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      </TabContainer>
       <ContentArea>
-        <TabContainer>
-          <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
-        </TabContainer>
         {(!currentUser || isLoading) && (
           <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
         )}

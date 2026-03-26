@@ -13,7 +13,7 @@ interface ModalState {
   onCancel: () => void;
   variant: 'default' | 'danger';
   
-  alert: (options: { title?: string; message: string; confirmLabel?: string }) => Promise<void>;
+  alert: (options: { title?: string; message: string; confirmLabel?: string; variant?: 'default' | 'danger' }) => Promise<void>;
   confirm: (options: { title?: string; message: string; confirmLabel?: string; cancelLabel?: string; variant?: 'default' | 'danger' }) => Promise<boolean>;
   close: () => void;
 }
@@ -29,7 +29,7 @@ export const useModalStore = create<ModalState>((set) => ({
   onCancel: () => {},
   variant: 'default',
 
-  alert: ({ title = '알림', message, confirmLabel = '확인' }) => {
+  alert: ({ title = '알림', message, confirmLabel = '확인', variant = 'default' }) => {
     return new Promise((resolve) => {
       set({
         isOpen: true,
@@ -37,12 +37,13 @@ export const useModalStore = create<ModalState>((set) => ({
         title,
         message,
         confirmLabel,
+        variant,
         onConfirm: () => {
-          set({ isOpen: false });
+          set({ isOpen: false, variant: 'default' });
           resolve();
         },
         onCancel: () => {
-          set({ isOpen: false });
+          set({ isOpen: false, variant: 'default' });
           resolve();
         },
       });
