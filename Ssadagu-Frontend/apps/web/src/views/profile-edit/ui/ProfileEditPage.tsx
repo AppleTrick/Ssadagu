@@ -250,7 +250,12 @@ export function ProfileEditPage() {
           throw new Error("프로필 이미지 업로드에 실패했습니다.");
         
         const resBody = await uploadRes.json();
-        updatedUser = resBody.data || resBody;
+        const rawUser = resBody.data || resBody;
+        // Mapping fix: backend returns region, frontend expects regionName
+        if (rawUser && rawUser.region && !rawUser.regionName) {
+          rawUser.regionName = rawUser.region;
+        }
+        updatedUser = rawUser;
       }
 
       // 2) 이미지 처리: 삭제 요청
@@ -263,7 +268,12 @@ export function ProfileEditPage() {
           throw new Error("프로필 이미지 삭제에 실패했습니다.");
         
         const resBody = await deleteRes.json();
-        updatedUser = resBody.data || resBody;
+        const rawUser = resBody.data || resBody;
+        // Mapping fix
+        if (rawUser && rawUser.region && !rawUser.regionName) {
+          rawUser.regionName = rawUser.region;
+        }
+        updatedUser = rawUser;
       }
 
       // 수동 캐시 갱신 (이미지 변경사항이 있을 경우 즉시 반영)

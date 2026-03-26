@@ -24,5 +24,12 @@ export const updateUser = async (
   }
 
   const json = await res.json();
-  return json.data || json;
+  const user = json.data || json;
+
+  // Backend returns 'region', frontend expects 'regionName'
+  if (user && user.region && !user.regionName) {
+    user.regionName = user.region;
+  }
+
+  return user;
 };
