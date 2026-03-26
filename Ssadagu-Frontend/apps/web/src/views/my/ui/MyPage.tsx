@@ -46,6 +46,8 @@ const ContentArea = styled.main`
   margin-top: ${HEADER_HEIGHT}px;
   margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const ProfileSection = styled.div`

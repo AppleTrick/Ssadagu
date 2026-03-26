@@ -39,6 +39,8 @@ const ContentArea = styled.main`
   min-height: 0;
   margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const TabContainer = styled.div`

@@ -26,6 +26,9 @@ const ContentArea = styled.main`
   margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
   position: relative;
+  /* GPU 스크롤 레이어 */
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const PullIndicator = styled.div<{ pullY: number; refreshing: boolean }>`

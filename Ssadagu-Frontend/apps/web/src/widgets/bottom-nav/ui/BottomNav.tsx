@@ -115,6 +115,9 @@ const Nav = styled.nav`
   display: flex;
   flex-direction: row;
   z-index: ${zIndex.bottomNav};
+  /* GPU 합성 레이어 - 스크롤 시 repaint 방지 */
+  transform: translateZ(0);
+  will-change: transform;
 `;
 
 const NavItem = styled(Link)`

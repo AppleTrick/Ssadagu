@@ -561,6 +561,8 @@ const MessagesArea = styled.div`
   gap: 8px;
   padding: 16px 0;
   position: relative;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const FloatingBadge = styled.button`

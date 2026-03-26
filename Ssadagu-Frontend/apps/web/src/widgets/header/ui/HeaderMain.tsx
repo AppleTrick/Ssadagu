@@ -170,6 +170,9 @@ const Header = styled.header`
   justify-content: space-between;
   padding: 0 20px;
   z-index: ${zIndex.header};
+  /* GPU 합성 레이어 - 스크롤 시 repaint 방지 */
+  transform: translateZ(0);
+  will-change: transform;
 `;
 
 const TitleWrapper = styled.div<{ $clickable?: boolean }>`
