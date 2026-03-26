@@ -123,7 +123,6 @@ export function ChatListPage() {
     },
     enabled: !!currentUser?.id,
     staleTime: 30_000,
-    refetchOnMount: 'always',
   });
 
   const handleRoomClick = useCallback(
