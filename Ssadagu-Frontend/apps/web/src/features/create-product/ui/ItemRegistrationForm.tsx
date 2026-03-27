@@ -14,7 +14,7 @@ import { useCreateProduct } from '../model/useCreateProduct';
 import { useUpdateProduct } from '../model/useUpdateProduct';
 import { LocationPicker } from '@/features/location-picker';
 import { MapBase } from '@/shared/ui';
-import { getProxyImageUrl } from '@/shared/utils';
+import { getProxyImageUrl, compressImage } from '@/shared/utils/image';
 import { useMyProfile } from '@/entities/user';
 import type { ProductDetail } from '@/entities/product';
 import { useQuery } from '@tanstack/react-query';
@@ -59,42 +59,21 @@ const MAX_PRICE = 10000000000; // 100억
 
 /* ── Utilities ──────────────────────────────────────────── */
 
-const compressImage = (file: File, maxWidth = 1024, quality = 0.8): Promise<File> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject(new Error('Canvas context is null'));
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) return reject(new Error('Canvas to Blob failed'));
-            const newFile = new File([blob], file.name, {
-              type: file.type || 'image/jpeg',
-              lastModified: Date.now(),
-            });
-            resolve(newFile);
-          },
-          file.type || 'image/jpeg',
-          quality
-        );
-      };
-      img.onerror = () => reject(new Error('Image loop failed'));
-    };
-    reader.onerror = () => reject(new Error('File read error'));
-  });
+/**
+ * 이미지를 1MB 이하로 압축하고 사용자에게 알림을 띄우는 헬퍼 함수
+ */
+const validateAndCompressImage = async (file: File, showAlert: (opt: any) => void): Promise<File | null> => {
+  try {
+    const compressed = await compressImage(file, 1920, 1920, 1);
+    if (compressed.size > 1.1 * 1024 * 1024) { // 약간의 허용 오차 포함
+      showAlert({ message: `이미지 파일(${file.name}) 용량이 너무 큽니다. 1MB 이하로 전송 가능합니다.` });
+      return null;
+    }
+    return compressed;
+  } catch (err) {
+    console.error('이미지 압축 실패:', err);
+    return null;
+  }
 };
 
 /* ── Styled ─────────────────────────────────────────────── */
@@ -729,9 +708,11 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
     const filesToProcess = files.slice(0, remainingSlots);
 
     try {
-      const compressedFiles = await Promise.all(
-        filesToProcess.map((file) => compressImage(file))
+      const compressedFilesRaw = await Promise.all(
+        filesToProcess.map((file) => validateAndCompressImage(file, showAlert))
       );
+      
+      const compressedFiles = compressedFilesRaw.filter((f): f is File => f !== null);
 
       const newPreviews = compressedFiles.map((file) => ({
         url: URL.createObjectURL(file),

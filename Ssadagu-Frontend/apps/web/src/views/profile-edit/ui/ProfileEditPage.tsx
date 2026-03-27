@@ -235,8 +235,13 @@ export function ProfileEditPage() {
 
       // 1) 이미지 처리: 새 이미지 업로드
       if (selectedImageFile) {
-        // 이미지 압축 (2MB 제한)
-        const compressed = await compressImage(selectedImageFile);
+        // 이미지 압축 (1MB 제한)
+        const compressed = await compressImage(selectedImageFile, 1920, 1920, 1);
+        
+        if (compressed.size > 1.1 * 1024 * 1024) {
+          throw new Error("이미지 파일 용량이 너무 큽니다. 1MB 이하의 파일을 선택해주세요.");
+        }
+
         const formData = new FormData();
         formData.append("file", compressed);
 

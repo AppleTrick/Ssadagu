@@ -337,7 +337,28 @@ export function ChatRoomPage() {
   const handlePhotosSelected = async (files: File[]) => {
     setIsUploading(true);
     try {
-      const compressedFiles = await Promise.all(files.map(f => compressImage(f, 1920, 1920, 2)));
+      // 1MB 이하로 압축 시도 (최대 1MB)
+      const compressedFilesRaw = await Promise.all(
+        files.map(async (f) => {
+          try {
+            const compressed = await compressImage(f, 1920, 1920, 1);
+            if (compressed.size > 1.1 * 1024 * 1024) { // 1.1MB 허용 오차
+              showAlert({ message: `파일(${f.name}) 용량이 너무 큽니다. 1MB 이하로 전송 가능합니다.` });
+              return null;
+            }
+            return compressed;
+          } catch (err) {
+            return null;
+          }
+        })
+      );
+
+      const compressedFiles = compressedFilesRaw.filter((f): f is File => f !== null);
+      if (compressedFiles.length === 0) {
+        setIsUploading(false);
+        return;
+      }
+
       const formData = new FormData();
       compressedFiles.forEach(f => formData.append('files', f));
 
@@ -367,8 +388,9 @@ export function ChatRoomPage() {
       imageUrls.forEach(url => sendMessage('/pub/chat/message', { senderId: userId || -1, content: '사진', type: 'IMAGE', imageUrl: url }));
     } catch (e) {
       showAlert({ message: '사진 전송 중 오류가 발생했습니다.' });
+    } finally {
+      setIsUploading(false);
     }
-    finally { setIsUploading(false); }
   };
 
   const headerTitle = room?.partnerNickname || (room?.buyerId === userId ? room?.sellerNickname : room?.buyerNickname) || '채팅';
