@@ -259,8 +259,12 @@ export function ProfileEditPage() {
           timeoutPromise
         ]);
 
-        if (uploadRes instanceof Response && !uploadRes.ok)
+        if (uploadRes instanceof Response && !uploadRes.ok) {
+          if (uploadRes.status === 413) {
+            throw new Error("사진 용량이 너무 큽니다. (최대 10MB)");
+          }
           throw new Error("프로필 이미지 업로드에 실패했습니다.");
+        }
         
         const resBody = uploadRes instanceof Response ? await uploadRes.json() : {};
         const rawUser = resBody.data || resBody;

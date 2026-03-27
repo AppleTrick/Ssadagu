@@ -381,7 +381,12 @@ export function ChatRoomPage() {
         body: formData,
       });
 
-      if (!uploadRes.ok) throw new Error('업로드 실패');
+      if (!uploadRes.ok) {
+        if (uploadRes.status === 413) {
+          throw new Error('사진 용량이 너무 큽니다. (최대 10MB)');
+        }
+        throw new Error('업로드 실패');
+      }
       const imageUrls: string[] = await uploadRes.json();
 
       if (isNewRoom) {
