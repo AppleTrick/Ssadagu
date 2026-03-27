@@ -220,25 +220,25 @@ function BalanceCardSection({
     account?.accountNumber,
     accessToken,
   );
-  const depositMutation = useDeposit(accessToken);
-  const { alert: modalAlert } = useModalStore();
+  // const depositMutation = useDeposit(accessToken);
+  // const { alert: modalAlert } = useModalStore();
 
-  const handleDeposit = async () => {
-    if (!account?.accountNumber) return;
-    try {
-      await depositMutation.mutateAsync({
-        accountNo: account.accountNumber,
-        amount: 10000,
-        summary: "테스트 충전",
-      });
-      modalAlert({
-        message:
-          "10,000원이 성공적으로 충전되었습니다!\n금융망 잔액이 갱신되었습니다.",
-      });
-    } catch (e) {
-      modalAlert({ message: "충전 중 오류가 발생했습니다." });
-    }
-  };
+  // const handleDeposit = async () => {
+  //   if (!account?.accountNumber) return;
+  //   try {
+  //     await depositMutation.mutateAsync({
+  //       accountNo: account.accountNumber,
+  //       amount: 10000,
+  //       summary: "테스트 충전",
+  //     });
+  //     modalAlert({
+  //       message:
+  //         "10,000원이 성공적으로 충전되었습니다!\n금융망 잔액이 갱신되었습니다.",
+  //     });
+  //   } catch (e) {
+  //     modalAlert({ message: "충전 중 오류가 발생했습니다." });
+  //   }
+  // };
 
   if (!account) return null;
 
@@ -255,7 +255,7 @@ function BalanceCardSection({
             : `${Number(detail?.accountBalance || 0).toLocaleString()}원`}
         </BalanceAmount>
       </BalanceInfo>
-      <Button
+      {/* <Button
         variant="outline"
         size="sm"
         loading={depositMutation.isPending}
@@ -263,7 +263,7 @@ function BalanceCardSection({
         style={{ width: "80px" }}
       >
         충전
-      </Button>
+      </Button> */}
     </BalanceCardContainer>
   );
 }
@@ -341,7 +341,7 @@ export function MyPage() {
           )}
         </ProfileSection>
 
-        {/* {accessToken && <BalanceCardSection accessToken={accessToken} userId={user?.id} />} */}
+        {accessToken && <BalanceCardSection accessToken={accessToken} userId={user?.id} />}
 
         <QuickMenuRow>
           <QuickMenuItem

@@ -387,6 +387,10 @@ export function VerifyAccountPage() {
       setError("계좌번호를 입력해주세요.");
       return;
     }
+    if (accountNumber.trim().length !== 16) {
+      setError("계좌번호는 16자리여야 합니다.");
+      return;
+    }
     if (!accountHolderName.trim()) {
       setError("예금주명을 입력해주세요.");
       return;
@@ -503,6 +507,7 @@ export function VerifyAccountPage() {
                 <FieldLabel>계좌번호</FieldLabel>
                 <Input
                   placeholder="계좌번호를 입력해주세요 (- 없이)"
+                  maxLength={16}
                   value={accountNumber}
                   onChange={(e) => {
                     const onlyNum = e.target.value.replace(/[^0-9]/g, '');
