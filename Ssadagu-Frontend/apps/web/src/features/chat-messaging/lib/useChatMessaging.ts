@@ -21,7 +21,7 @@ export function useChatMessaging(roomId: number, accessToken: string | null, use
     const client = new Client({
       webSocketFactory: () => new SockJS(SOCKET_URL),
       connectHeaders: { Authorization: `Bearer ${accessToken}` },
-      debug: process.env.NODE_ENV === 'development' ? (str) => console.log('[STOMP DEBUG]', str) : undefined,
+      debug: process.env.NODE_ENV === 'development' ? (str) => console.log('[STOMP DEBUG]', str) : () => {},
       onConnect: () => {
         client.subscribe(`/sub/chat/room/${roomId}`, (frame) => {
           try {
