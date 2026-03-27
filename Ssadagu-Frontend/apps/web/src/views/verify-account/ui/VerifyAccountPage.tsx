@@ -409,12 +409,25 @@ export function VerifyAccountPage() {
   const handleSendTransfer = async () => {
     setError("");
     setLoading(true);
+    
+    const timeoutMillis = 10000;
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT_ERROR')), timeoutMillis)
+    );
+
     try {
-      const id = await register({ bankCode, bankName, accountNumber, accountHolderName });
+      const id = await Promise.race([
+          register({ bankCode, bankName, accountNumber, accountHolderName }),
+          timeoutPromise
+      ]) as number;
       setAccountId(id);
       setStep("verify-code");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "오류가 발생했습니다.");
+    } catch (e: any) {
+      if (e.message === 'TIMEOUT_ERROR') {
+        setError("요청 시간이 초과되었습니다. 다시 시도해주세요.");
+      } else {
+        setError(e instanceof Error ? e.message : "오류가 발생했습니다.");
+      }
     } finally {
       setLoading(false);
     }
@@ -429,13 +442,26 @@ export function VerifyAccountPage() {
     }
     setError("");
     setLoading(true);
+
+    const timeoutMillis = 10000;
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT_ERROR')), timeoutMillis)
+    );
+
     try {
       if (!accountId) throw new Error("계좌 정보를 찾을 수 없습니다.");
-      await confirmCode(accountId, code);
+      await Promise.race([
+          confirmCode(accountId, code),
+          timeoutPromise
+      ]);
       await queryClient.invalidateQueries({ queryKey: ['myProfile', userId] });
       router.replace("/location-auth");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "인증에 실패했습니다.");
+    } catch (e: any) {
+      if (e.message === 'TIMEOUT_ERROR') {
+        setError("요청 시간이 초과되었습니다. 다시 시도해주세요.");
+      } else {
+        setError(e instanceof Error ? e.message : "인증에 실패했습니다.");
+      }
     } finally {
       setLoading(false);
     }

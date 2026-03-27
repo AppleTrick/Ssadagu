@@ -750,7 +750,7 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
       .map((p) => p.originalUrl as string);
 
     try {
-      const timeoutMillis = 15000; // 15초 타임아웃
+      const timeoutMillis = 10000; // 10초 타임아웃
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('TIMEOUT_ERROR')), timeoutMillis)
       );
@@ -798,11 +798,12 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
         }
       }
     } catch (err: any) {
+      currentMutation.reset(); // 무한 로딩 방지를 위해 무조건 리셋
       if (err.message === 'TIMEOUT_ERROR') {
-        currentMutation.reset();
-        showAlert({ message: '요청 시간이 초과되었습니다. 다시 시도해주세요.' });
+        showAlert({ message: '요청 시간이 초과되었습니다. 인터넷 연결을 확인하고 다시 시도해주세요.' });
       } else {
         setServerError(err.message || '요청에 실패했습니다.');
+        showAlert({ message: err.message || '요청 처리에 실패했습니다. 다시 시도해 주세요.' });
       }
     }
   };
@@ -964,8 +965,8 @@ const ItemRegistrationForm = ({ productId, initialData }: ItemRegistrationFormPr
           variant="primary"
           size="lg"
           fullWidth
-          loading={currentMutation.isPending || isSubmitting || isSubmitSuccessful}
-          disabled={currentMutation.isPending || isSubmitting || isSubmitSuccessful}
+          loading={currentMutation.isPending || isSubmitting}
+          disabled={currentMutation.isPending || isSubmitting}
         >
           등록하기
         </Button>

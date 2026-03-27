@@ -230,6 +230,11 @@ export function ProfileEditPage() {
     setError("");
     setIsUploading(true);
 
+    const timeoutMillis = 10000;
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT_ERROR')), timeoutMillis)
+    );
+
     try {
       let updatedUser: User | null = null;
 
@@ -245,34 +250,19 @@ export function ProfileEditPage() {
         const formData = new FormData();
         formData.append("file", compressed);
 
-        const uploadRes = await apiClient.postMultipart(
-          `/users/${userId}/profile-image`,
-          formData,
-          accessToken ?? undefined
-        );
+        const uploadRes = await Promise.race([
+          apiClient.postMultipart(
+            `/users/${userId}/profile-image`,
+            formData,
+            accessToken ?? undefined
+          ),
+          timeoutPromise
+        ]);
 
-        if (!uploadRes.ok)
+        if (uploadRes instanceof Response && !uploadRes.ok)
           throw new Error("프로필 이미지 업로드에 실패했습니다.");
         
-        const resBody = await uploadRes.json();
-        const rawUser = resBody.data || resBody;
-        // Mapping fix: backend returns region, frontend expects regionName
-        if (rawUser && rawUser.region && !rawUser.regionName) {
-          rawUser.regionName = rawUser.region;
-        }
-        updatedUser = rawUser;
-      }
-
-      // 2) 이미지 처리: 삭제 요청
-      if (isImageDeleted && !selectedImageFile) {
-        const deleteRes = await apiClient.delete(
-          `/users/${userId}/profile-image`,
-          accessToken ?? undefined
-        );
-        if (!deleteRes.ok)
-          throw new Error("프로필 이미지 삭제에 실패했습니다.");
-        
-        const resBody = await deleteRes.json();
+        const resBody = uploadRes instanceof Response ? await uploadRes.json() : {};
         const rawUser = resBody.data || resBody;
         // Mapping fix
         if (rawUser && rawUser.region && !rawUser.regionName) {
@@ -281,20 +271,42 @@ export function ProfileEditPage() {
         updatedUser = rawUser;
       }
 
-      // 수동 캐시 갱신 (이미지 변경사항이 있을 경우 즉시 반영)
+      // 2) 이미지 처리: 삭제 요청
+      if (isImageDeleted && !selectedImageFile) {
+        const deleteRes = await Promise.race([
+          apiClient.delete(
+            `/users/${userId}/profile-image`,
+            accessToken ?? undefined
+          ),
+          timeoutPromise
+        ]);
+        if (deleteRes instanceof Response && !deleteRes.ok)
+          throw new Error("프로필 이미지 삭제에 실패했습니다.");
+        
+        const resBody = deleteRes instanceof Response ? await deleteRes.json() : {};
+        const rawUser = resBody.data || resBody;
+        // Mapping fix
+        if (rawUser && rawUser.region && !rawUser.regionName) {
+          rawUser.regionName = rawUser.region;
+        }
+        updatedUser = rawUser;
+      }
+
+      // 수동 캐시 갱신
       if (updatedUser) {
         queryClient.setQueryData(["myProfile", userId], updatedUser);
       }
 
-      // 3) 닉네임 변경 (변경된 경우에만)
+      // 3) 닉네임 변경
       if (user?.nickname !== nickname) {
-        const patchRes = await mutation.mutateAsync({ nickname });
-        // PATCH 결과로도 캐시 한 번 더 갱신 (이미지 정보 포함되어 있음)
-        if (patchRes) {
+        const patchRes = await Promise.race([
+          mutation.mutateAsync({ nickname }),
+          timeoutPromise
+        ]);
+        if (patchRes && typeof patchRes === 'object') {
           queryClient.setQueryData(["myProfile", userId], patchRes);
         }
       } else {
-        // 닉네임 변경 없으면 캐시 무효화 후 바로 완료 처리
         setIsUploading(false);
         queryClient.invalidateQueries({ queryKey: ["myProfile", userId] });
         setToastVisible(true);
@@ -305,7 +317,11 @@ export function ProfileEditPage() {
       }
     } catch (err: any) {
       setIsUploading(false);
-      setError(err.message || "저장에 실패했습니다.");
+      if (err.message === 'TIMEOUT_ERROR') {
+        setError("요청 시간이 초과되었습니다. 다시 시도해주세요.");
+      } else {
+        setError(err.message || "저장에 실패했습니다.");
+      }
     }
   };
 
