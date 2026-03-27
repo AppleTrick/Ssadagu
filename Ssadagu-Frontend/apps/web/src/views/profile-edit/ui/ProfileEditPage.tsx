@@ -375,9 +375,17 @@ export function ProfileEditPage() {
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
+                  const allowedExtensions = ['image/png', 'image/jpeg', 'image/jpg'];
+                  const ext = file.type.toLowerCase();
+                  if (!allowedExtensions.includes(ext) && !file.name.match(/\.(jpg|jpeg|png)$/i)) {
+                    setError('이미지 파일(jpg, jpeg, png)만 가능합니다.');
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                    return;
+                  }
                   setSelectedImageFile(file);
                   setPreviewUrl(URL.createObjectURL(file));
                   setIsImageDeleted(false);
+                  setError('');
                 }
               }}
             />

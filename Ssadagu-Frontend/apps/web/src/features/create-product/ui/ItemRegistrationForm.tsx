@@ -63,6 +63,20 @@ const MAX_PRICE = 10000000000; // 100억
  * 이미지를 1MB 이하로 압축하고 사용자에게 알림을 띄우는 헬퍼 함수
  */
 const validateAndCompressImage = async (file: File, showAlert: (opt: any) => void): Promise<File | null> => {
+  // 1. 형식 체크 (png, jpg, jpeg)
+  const allowedExtensions = ['image/png', 'image/jpeg', 'image/jpg'];
+  const ext = file.type.toLowerCase();
+  if (!allowedExtensions.includes(ext) && !file.name.match(/\.(jpg|jpeg|png)$/i)) {
+    showAlert({ message: '이미지 파일(jpg, jpeg, png)만 업로드 가능합니다.' });
+    return null;
+  }
+
+  // 2. 원본 크기 체크 (20MB)
+  if (file.size > 20 * 1024 * 1024) {
+    showAlert({ message: `이미지 파일(${file.name})의 원본 용량이 20MB를 초과합니다. 20MB 이하의 파일을 선택해주세요.` });
+    return null;
+  }
+
   try {
     const compressed = await compressImage(file, 1920, 1920, 1);
     if (compressed.size > 1.1 * 1024 * 1024) { // 약간의 허용 오차 포함

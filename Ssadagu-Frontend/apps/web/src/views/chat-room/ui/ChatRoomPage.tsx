@@ -337,13 +337,26 @@ export function ChatRoomPage() {
   const handlePhotosSelected = async (files: File[]) => {
     setIsUploading(true);
     try {
+      const allowedExtensions = ['image/png', 'image/jpeg', 'image/jpg'];
+      
       // 1MB 이하로 압축 시도 (최대 1MB)
       const compressedFilesRaw = await Promise.all(
         files.map(async (f) => {
           try {
+            const ext = f.type.toLowerCase();
+            if (!allowedExtensions.includes(ext) && !f.name.match(/\.(jpg|jpeg|png)$/i)) {
+              showAlert({ message: `이미지 파일(jpg, jpeg, png)만 가능합니다: ${f.name}` });
+              return null;
+            }
+
+            if (f.size > 20 * 1024 * 1024) {
+              showAlert({ message: `파일(${f.name}) 원본 용량이 20MB를 초과합니다.` });
+              return null;
+            }
+
             const compressed = await compressImage(f, 1920, 1920, 1);
             if (compressed.size > 1.1 * 1024 * 1024) { // 1.1MB 허용 오차
-              showAlert({ message: `파일(${f.name}) 용량이 너무 큽니다. 1MB 이하로 전송 가능합니다.` });
+              showAlert({ message: `파일(${f.name}) 용량이 압축 후에도 너무 큽니다.` });
               return null;
             }
             return compressed;
