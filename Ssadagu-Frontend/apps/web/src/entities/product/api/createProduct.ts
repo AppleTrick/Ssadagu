@@ -32,6 +32,9 @@ export const createProduct = async (
   );
 
   if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error('사진 용량이 너무 큽니다. (최대 10MB)');
+    }
     const errorBody = await res.json().catch(() => ({}));
     throw new Error(errorBody?.message || '상품 등록에 실패했습니다.');
   }

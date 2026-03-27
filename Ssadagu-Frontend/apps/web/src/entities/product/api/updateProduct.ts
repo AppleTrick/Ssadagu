@@ -39,6 +39,9 @@ export const updateProduct = async (
   // 만약 PUT이 필요하다면 apiClient에 put을 추가해야 함.
   
   if (!res.ok) {
+    if (res.status === 413) {
+      throw new Error('사진 용량이 너무 큽니다. (최대 10MB)');
+    }
     const errorBody = await res.json().catch(() => ({}));
     throw new Error(errorBody?.message || '상품 수정에 실패했습니다.');
   }
