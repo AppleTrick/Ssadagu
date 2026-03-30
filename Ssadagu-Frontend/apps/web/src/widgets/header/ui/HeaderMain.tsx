@@ -28,13 +28,10 @@ const HeaderMain = ({
   const { data: user, isPending } = useMyProfile();
 
   const isRegionHeader = !title;
-  const displayTitle =
-    title ||
-    (isPending
-      ? "로딩중..."
-      : user?.regionName?.trim()
-        ? user.regionName
-        : "우리동네");
+  const regionName = user?.regionName?.trim()
+    ? user.regionName.replace(/^[^\s]+(시|도)\s*/, "")
+    : "우리동네";
+  const displayTitle = title || (isPending ? "로딩중..." : regionName);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchMode, setSearchMode] = useState<SearchMode>('sql');
@@ -196,6 +193,8 @@ const TitleWrapper = styled.div<{ $clickable?: boolean }>`
   display: flex;
   align-items: center;
   gap: 4px;
+  flex: 1;
+  min-width: 0;
   cursor: ${(props) => (props.$clickable ? "pointer" : "default")};
 `;
 
@@ -204,6 +203,9 @@ const Title = styled.h1`
   font-size: ${typography.size.xl};
   font-weight: ${typography.weight.bold};
   color: ${colors.textPrimary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const IconGroup = styled.div`
