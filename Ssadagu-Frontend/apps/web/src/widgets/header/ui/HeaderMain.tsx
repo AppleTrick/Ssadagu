@@ -134,21 +134,19 @@ const HeaderMain = ({
           <IconGroup>
             {onSearchChange && (
               <>
-                <IconButton onClick={() => openSearch('ai')} aria-label="AI 검색">
-                  {/* AI 스파클 아이콘 */}
+                <AiSearchButton onClick={() => openSearch('ai')} aria-label="AI 검색">
                   <svg
-                    width="24"
-                    height="24"
+                    width="14"
+                    height="14"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke={colors.primary}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
                   >
-                    <path d="M12 2l2.4 7.2H22l-6.2 4.5 2.4 7.3L12 17l-6.2 4 2.4-7.3L2 9.2h7.6z" />
+                    <path d="M12 2 C12 2 13.5 8 18 10 C13.5 12 12 18 12 18 C12 18 10.5 12 6 10 C10.5 8 12 2 12 2Z" fill="currentColor" />
+                    <path d="M20 3 C20 3 20.7 5.5 23 6.5 C20.7 7.5 20 10 20 10 C20 10 19.3 7.5 17 6.5 C19.3 5.5 20 3 20 3Z" fill="currentColor" />
+                    <path d="M5 16 C5 16 5.7 18.5 8 19.5 C5.7 20.5 5 23 5 23 C5 23 4.3 20.5 2 19.5 C4.3 18.5 5 16 5 16Z" fill="currentColor" />
                   </svg>
-                </IconButton>
+                  AI 검색
+                </AiSearchButton>
                 <IconButton onClick={() => openSearch('sql')} aria-label="검색">
                   <svg
                     width="24"
@@ -262,6 +260,25 @@ const SearchInput = styled.input`
   outline: none;
   &::placeholder {
     color: ${colors.textSecondary};
+  }
+`;
+
+const AiSearchButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1.5px solid ${colors.primary};
+  border-radius: 999px;
+  background: none;
+  color: ${colors.primary};
+  font-size: ${typography.size.sm};
+  font-weight: ${typography.weight.bold};
+  font-family: ${typography.fontFamily};
+  cursor: pointer;
+  white-space: nowrap;
+  &:active {
+    background: ${colors.bg};
   }
 `;
 
