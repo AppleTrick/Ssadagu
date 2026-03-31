@@ -7,6 +7,7 @@ import type { ProductSummary } from '../model/types';
 
 interface ItemCardProps {
   product: ProductSummary;
+  priority?: boolean;
   onClick?: () => void;
   onWishClick?: (e: React.MouseEvent) => void;
 }
@@ -46,14 +47,21 @@ const formatTimeAgo = (dateInput: string | number[] | null | undefined) => {
 
 import { getProxyImageUrl } from '@/shared/utils';
 
-const ItemCard = ({ product, onClick, onWishClick }: ItemCardProps) => {
+const ItemCard = ({ product, priority = false, onClick, onWishClick }: ItemCardProps) => {
   const isSold = product.status === 'SOLD';
   
   return (
     <Card onClick={onClick}>
       <Thumbnail>
         {product.thumbnailUrl && product.thumbnailUrl !== 'string' ? (
-          <ThumbnailImg src={getProxyImageUrl(product.thumbnailUrl)} alt={product.title} width={100} height={100} loading="lazy" />
+          <ThumbnailImg 
+            src={getProxyImageUrl(product.thumbnailUrl)} 
+            alt={product.title} 
+            width={100} 
+            height={100} 
+            loading={priority ? undefined : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
+          />
         ) : (
           <ThumbnailPlaceholder />
         )}

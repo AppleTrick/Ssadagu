@@ -18,14 +18,16 @@ interface ProductListProps {
   searchMode?: SearchMode;
 }
 
-const MemoizedItem = memo(({ product, onNavigate, onLikeClick }: {
+const MemoizedItem = memo(({ product, index, onNavigate, onLikeClick }: {
   product: ProductSummary;
+  index: number;
   onNavigate: (path: string) => void;
   onLikeClick: (e: React.MouseEvent, productId: number, isLiked: boolean) => void;
 }) => (
   <li>
     <ItemCard
       product={product}
+      priority={index < 4}
       onClick={() => onNavigate(`/products/${product.id}`)}
       onWishClick={(e: React.MouseEvent) => onLikeClick(e, product.id, !!product.isLiked)}
     />
@@ -192,10 +194,11 @@ export const ProductList = ({ searchQuery = '', searchMode = 'sql' }: ProductLis
       <StaleOverlay $active={isSearching}>
         <FadeIn>
           <ListWrapper>
-            {allProducts.map((product) => (
+            {allProducts.map((product, index) => (
               <MemoizedItem
                 key={product.id}
                 product={product}
+                index={index}
                 onNavigate={router.push}
                 onLikeClick={handleLikeClick}
               />
