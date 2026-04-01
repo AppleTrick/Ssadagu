@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
 import Button from '@/shared/ui/Button';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { MOCK_TOKEN } from '@/shared/mocks/mockData';
+import { useLoginForm } from '../model/useLoginForm';
 
 const schema = z.object({
   email: z.string().min(1, '이메일을 입력해주세요').email('올바른 이메일을 입력해주세요'),
@@ -102,10 +102,16 @@ const FieldLabel = styled.label`
   color: ${colors.textPrimary};
 `;
 
+const InputContainer = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
 const FieldInput = styled.input<{ hasError?: boolean }>`
   width: 100%;
   height: 52px;
   padding: 0 16px;
+  padding-right: 48px; /* For toggle button */
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.md};
   color: ${colors.textPrimary};
@@ -125,11 +131,30 @@ const FieldInput = styled.input<{ hasError?: boolean }>`
   }
 `;
 
+const ToggleButton = styled.button`
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: ${colors.textSecondary};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: ${colors.textPrimary};
+  }
+`;
+
 const FieldError = styled.span`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.xs};
   color: ${colors.red};
-  padding-left: 4px;
+  padding-left: 12px;
 `;
 
 const ServerError = styled.p`
@@ -159,11 +184,42 @@ const DevButton = styled.button`
   &:hover { background: ${colors.bg}; }
 `;
 
+const SignupLink = styled.div`
+  margin-top: 20px;
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.sm};
+  color: ${colors.textSecondary};
+  text-align: center;
+
+  a {
+    color: ${colors.primary};
+    font-weight: ${typography.weight.medium};
+    text-decoration: none;
+  }
+`;
+
+/* ── Icons ─────────────────────────────────────────────── */
+
+const EyeIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <line x1="1" y1="1" x2="23" y2="23" />
+  </svg>
+);
+
 /* ── Component ───────────────────────────────────────────── */
 
 const LoginForm = ({ onSuccess }: LoginFormProps) => {
-  const setToken = useAuthStore((s) => s.setToken);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const setAuthInfo = useAuthStore((s) => s.setAuthInfo);
+  const { login, loading, error: serverError } = useLoginForm();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -176,42 +232,13 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
   const handleDevLogin = () => {
     if (process.env.NEXT_PUBLIC_MSW_ENABLED !== 'true') return;
-    setToken(MOCK_TOKEN);
+    setAuthInfo(MOCK_TOKEN, 1);
     onSuccess?.();
   };
 
   const onSubmit = async (data: FormValues) => {
-    setServerError(null);
-    try {
-      const res = await apiClient.post(ENDPOINTS.AUTH.LOGIN, {
-        email: data.email,
-        password: data.password,
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as Record<string, unknown>;
-        setServerError(
-          typeof body?.message === 'string'
-            ? body.message
-            : '로그인에 실패했습니다. 다시 시도해주세요.',
-        );
-        return;
-      }
-
-      const body = await res.json() as Record<string, unknown>;
-      const nested = body?.data as Record<string, unknown> | undefined;
-      const token =
-        typeof body?.accessToken === 'string'
-          ? body.accessToken
-          : typeof nested?.accessToken === 'string'
-            ? nested.accessToken
-            : '';
-
-      if (token) setToken(token);
-      onSuccess?.();
-    } catch {
-      setServerError('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
-    }
+    const ok = await login(data.email, data.password);
+    if (ok) onSuccess?.();
   };
 
   return (
@@ -237,13 +264,18 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
           <FieldWrapper>
             <FieldLabel htmlFor="login-password">비밀번호</FieldLabel>
-            <FieldInput
-              id="login-password"
-              type="password"
-              placeholder="비밀번호를 입력하세요"
-              hasError={!!errors.password}
-              {...register('password')}
-            />
+            <InputContainer>
+              <FieldInput
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="비밀번호를 입력하세요"
+                hasError={!!errors.password}
+                {...register('password')}
+              />
+              <ToggleButton type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보이기"}>
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </ToggleButton>
+            </InputContainer>
             {errors.password && <FieldError role="alert">{errors.password.message}</FieldError>}
           </FieldWrapper>
 
@@ -255,13 +287,17 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
               variant="primary"
               size="lg"
               fullWidth
-              loading={isSubmitting}
-              disabled={isSubmitting}
+              loading={loading || isSubmitting}
+              disabled={loading || isSubmitting}
             >
               시작하기
             </Button>
           </ButtonArea>
         </Form>
+
+        <SignupLink>
+          계정이 없으신가요? <Link href="/signup">회원가입</Link>
+        </SignupLink>
 
         {process.env.NEXT_PUBLIC_MSW_ENABLED === 'true' && (
           <DevButton type="button" onClick={handleDevLogin}>

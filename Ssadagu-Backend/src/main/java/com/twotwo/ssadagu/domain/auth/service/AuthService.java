@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.twotwo.ssadagu.global.security.CustomUserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,7 @@ public class AuthService {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final CustomUserDetailsService userDetailsService;
 
     @Transactional
     public TokenDto login(LoginRequestDto loginRequestDto) {
@@ -45,23 +48,20 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenDto reissue(String accessToken, String refreshToken) {
+    public TokenDto reissue(String refreshToken) {
         // 1. Refresh Token 검증
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new RuntimeException("Refresh Token 이 유효하지 않습니다.");
         }
 
-        // 2. Access Token 에서 Member ID 가져오기
-        Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
+        // 2. 저장소에서 Refresh Token 값을 기반으로 토큰 정보와 Member ID(key) 가져옴
+        RefreshToken savedRefreshToken = refreshTokenRepository.findByValue(refreshToken)
+                .orElseThrow(() -> new RuntimeException("일치하는 리프레시 토큰이 없거나 로그아웃 된 사용자입니다."));
 
-        // 3. 저장소에서 Member ID 를 기반으로 Refresh Token 값 가져옴
-        RefreshToken savedRefreshToken = refreshTokenRepository.findByKey(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("로그아웃 된 사용자입니다."));
-
-        // 4. Refresh Token 일치하는지 검사
-        if (!savedRefreshToken.getValue().equals(refreshToken)) {
-            throw new RuntimeException("토큰의 유저 정보가 일치하지 않습니다.");
-        }
+        // 3. Member ID를 기반으로 UserDetails 가져오기
+        UserDetails userDetails = userDetailsService.loadUserByUsername(savedRefreshToken.getKey());
+               
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
 
         // 5. 새로운 토큰 생성
         TokenDto tokenDto = jwtTokenProvider.generateToken(authentication);

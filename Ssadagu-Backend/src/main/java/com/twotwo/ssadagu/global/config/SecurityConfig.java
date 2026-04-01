@@ -15,6 +15,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -30,19 +35,36 @@ public class SecurityConfig {
         }
 
         @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration config = new CorsConfiguration();
+                config.setAllowedOrigins(List.of(
+                        "http://localhost:3000",
+                        "http://192.168.45.45:3000"
+                ));
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                config.setAllowedHeaders(List.of("*"));
+                config.setAllowCredentials(true);
+
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", config);
+                return source;
+        }
+
+        @Bean
         public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
                 return httpSecurity
                                 // REST API이므로 basic auth 및 csrf 보안을 사용하지 않음
                                 .httpBasic(AbstractHttpConfigurer::disable)
                                 .csrf(AbstractHttpConfigurer::disable)
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 // JWT를 사용하기 때문에 세션을 사용하지 않음
                                 .sessionManagement(
                                                 sessionManagement -> sessionManagement
                                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(authorize -> authorize
                                                 // public API
-                                                .requestMatchers("/api/auth/**", "/api/users/signup", "/swagger-ui/**",
-                                                                "/v3/api-docs/**")
+                                                .requestMatchers("/api/v1/auth/**", "/api/v1/users/signup", "/swagger-ui/**",
+                                                                "/v3/api-docs/**", "/error", "/api/v1/demand-deposits/**", "/ws/**", "/ws-stomp/**", "/api/v1/chat/test/**")
                                                 .permitAll()
                                                 // 그 외 요청은 모두 인증 필요
                                                 .anyRequest().authenticated())

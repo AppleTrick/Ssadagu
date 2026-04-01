@@ -5,14 +5,16 @@ import com.twotwo.ssadagu.domain.product.dto.ProductResponseDto;
 import com.twotwo.ssadagu.domain.product.dto.ProductUpdateRequestDto;
 import com.twotwo.ssadagu.domain.product.entity.Product;
 import com.twotwo.ssadagu.domain.product.repository.ProductRepository;
+import com.twotwo.ssadagu.domain.product.repository.ProductWishRepository;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
+import com.twotwo.ssadagu.global.error.BusinessException;
+import com.twotwo.ssadagu.global.error.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -21,7 +23,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -37,6 +39,15 @@ class ProductServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ProductWishRepository productWishRepository;
+
+    @Mock
+    private com.twotwo.ssadagu.global.service.S3Service s3Service;
+
+    @Mock
+    private AIMetadataService aiMetadataService;
+
     @Test
     @DisplayName("상품을 성공적으로 생성한다.")
     void createProduct() {
@@ -44,26 +55,29 @@ class ProductServiceTest {
         User seller = User.builder().build();
         ReflectionTestUtils.setField(seller, "id", 1L);
 
-        ProductCreateRequestDto request = new ProductCreateRequestDto(
-                1L, "테스트 상품", "명품 시계입니다.", 100000L, "FASHION", "강남구");
+        com.twotwo.ssadagu.domain.product.dto.ProductCreateRequestDto request = new com.twotwo.ssadagu.domain.product.dto.ProductCreateRequestDto(
+                1L, "테스트 상품", "명품 시계입니다.", 100000L, "FASHION", "강남구", java.util.List.of("url1", "url2"));
 
         Product product = Product.builder()
                 .seller(seller)
                 .title(request.getTitle())
                 .price(request.getPrice())
                 .status("ON_SALE")
+                .images(new java.util.ArrayList<>())
                 .build();
         ReflectionTestUtils.setField(product, "id", 100L);
 
         given(userRepository.findById(1L)).willReturn(Optional.of(seller));
         given(productRepository.save(any(Product.class))).willReturn(product);
+        given(aiMetadataService.generateMetadata(any(), any(), any(), any(), any(), any())).willReturn(null);
 
         // when
-        ProductResponseDto response = productService.createProduct(request);
+        ProductResponseDto response = productService.createProduct(request, null);
 
         // then
         assertThat(response.getId()).isEqualTo(100L);
         assertThat(response.getTitle()).isEqualTo("테스트 상품");
+        assertThat(response.getIsMine()).isTrue();
         verify(productRepository).save(any(Product.class));
     }
 
@@ -79,16 +93,19 @@ class ProductServiceTest {
                 .title("조회 테스트 상품")
                 .status("ON_SALE")
                 .build();
-        ReflectionTestUtils.setField(product, "id", 1L);
+        ReflectionTestUtils.setField(product, "id", 100L);
 
-        given(productRepository.findById(1L)).willReturn(Optional.of(product));
+        given(productRepository.findById(100L)).willReturn(Optional.of(product));
+        given(productWishRepository.existsByUserIdAndProductId(1L, 100L)).willReturn(true);
 
         // when
-        ProductResponseDto response = productService.getProduct(1L);
+        ProductResponseDto response = productService.getProduct(100L, 1L);
 
         // then
-        assertThat(response.getId()).isEqualTo(1L);
+        assertThat(response.getId()).isEqualTo(100L);
         assertThat(response.getTitle()).isEqualTo("조회 테스트 상품");
+        assertThat(response.getIsMine()).isTrue();
+        assertThat(response.getIsLiked()).isTrue();
     }
 
     @Test
@@ -102,31 +119,40 @@ class ProductServiceTest {
         given(productRepository.findById(1L)).willReturn(Optional.of(product));
 
         // when & then
-        assertThatThrownBy(() -> productService.getProduct(1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Product is deleted");
+        assertThatThrownBy(() -> productService.getProduct(1L, null))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PRODUCT_NOT_FOUND);
     }
 
     @Test
-    @DisplayName("삭제되지 않은 상품 목록을 전체 조회한다.")
-    void getProducts() {
+    @DisplayName("regionName 없으면 삭제되지 않은 상품 전체를 조회한다.")
+    @SuppressWarnings("unchecked")
+    void getProducts_noRegion() {
         // given
         User seller = User.builder().build();
-        ReflectionTestUtils.setField(seller, "id", 1L);
+        ReflectionTestUtils.setField(seller, "id", 2L); // 2번 유저가 판매자
 
-        Product p1 = Product.builder().seller(seller).title("p1").status("ON_SALE").build();
-        Product p2 = Product.builder().seller(seller).title("p2").status("DELETED").build();
-        Product p3 = Product.builder().seller(seller).title("p3").status("RESERVED").build();
+        Product p1 = Product.builder().seller(seller).title("p1").status("ON_SALE").regionName("강남구").build();
+        ReflectionTestUtils.setField(p1, "id", 10L);
 
-        given(productRepository.findAll()).willReturn(List.of(p1, p2, p3));
+        org.springframework.data.domain.Page<Product> productPage = new org.springframework.data.domain.PageImpl<>(
+                List.of(p1), 
+                org.springframework.data.domain.PageRequest.of(0, 20), 
+                1);
+
+        given(productRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(productPage);
+        given(productWishRepository.findLikedProductIds(anyLong(), anyList()))
+                .willReturn(java.util.Collections.emptySet());
 
         // when
-        List<ProductResponseDto> responseDtos = productService.getProducts();
+        com.twotwo.ssadagu.domain.product.dto.ProductPageResponse response = productService.getProducts(null, null, 0, 20, 1L); // 1번 유저가 조회
 
         // then
-        assertThat(responseDtos).hasSize(2); // p1, p3
-        assertThat(responseDtos.get(0).getTitle()).isEqualTo("p1");
-        assertThat(responseDtos.get(1).getTitle()).isEqualTo("p3");
+        assertThat(response.content()).hasSize(1);
+        assertThat(response.content().get(0).getTitle()).isEqualTo("p1");
+        assertThat(response.content().get(0).getIsMine()).isFalse();
+        assertThat(response.hasNext()).isFalse();
     }
 
     @Test
@@ -145,18 +171,40 @@ class ProductServiceTest {
         ReflectionTestUtils.setField(product, "id", 1L);
 
         given(productRepository.findById(1L)).willReturn(Optional.of(product));
+        given(aiMetadataService.generateMetadata(any(), any(), any(), any(), any(), any())).willReturn(null);
+        given(productWishRepository.existsByUserIdAndProductId(1L, 1L)).willReturn(false);
 
         ProductUpdateRequestDto request = new ProductUpdateRequestDto(
-                "수정된 이름", "내용수정", 2000L, "CATEGORY", "SEOUL", "RESERVED");
+                "수정된 이름", "내용수정", 2000L, "CATEGORY", "SEOUL", "RESERVED", java.util.List.of("newUrl1"));
 
         // when
-        ProductResponseDto response = productService.updateProduct(1L, request);
+        ProductResponseDto response = productService.updateProduct(1L, request, null, 1L);
 
         // then
         assertThat(response.getTitle()).isEqualTo("수정된 이름");
-        assertThat(response.getPrice()).isEqualTo(2000L);
-        assertThat(response.getStatus()).isEqualTo("RESERVED");
-        assertThat(product.getTitle()).isEqualTo("수정된 이름"); // Entity 업데이트 확인
+        assertThat(response.getIsMine()).isTrue();
+        assertThat(product.getTitle()).isEqualTo("수정된 이름");
+    }
+
+    @Test
+    @DisplayName("권한이 없는 사용자가 상품 수정을 시도하면 예외가 발생한다.")
+    void updateProduct_NoPermission() {
+        // given
+        User seller = User.builder().build();
+        ReflectionTestUtils.setField(seller, "id", 1L);
+
+        Product product = Product.builder().seller(seller).status("ON_SALE").build();
+        ReflectionTestUtils.setField(product, "id", 1L);
+
+        given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+        ProductUpdateRequestDto request = new ProductUpdateRequestDto(
+                "제목", "설명", 1000L, "C", "R", "ON_SALE", null);
+
+        // when & then
+        assertThatThrownBy(() -> productService.updateProduct(1L, request, null, 2L)) // 2번 유저가 시도
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NOT_PRODUCT_SELLER);
     }
 
     @Test
@@ -176,10 +224,36 @@ class ProductServiceTest {
         given(productRepository.findById(1L)).willReturn(Optional.of(product));
 
         // when
-        productService.deleteProduct(1L);
+        productService.deleteProduct(1L, 1L);
 
         // then
         assertThat(product.getStatus()).isEqualTo("DELETED");
         assertThat(product.getDeletedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("이미지가 5개를 초과하면 상품 생성 시 예외가 발생한다.")
+    void createProduct_ImageLimitExceeded() {
+        // given
+        User seller = User.builder().build();
+        ReflectionTestUtils.setField(seller, "id", 1L);
+
+        ProductCreateRequestDto request = new ProductCreateRequestDto(
+                1L, "테스트 상품", "설명", 1000L, "CATEGORY", "REGION", 
+                java.util.List.of("1", "2", "3", "4", "5", "6"));
+
+        given(userRepository.findById(1L)).willReturn(Optional.of(seller));
+
+        // when & then
+        assertThatThrownBy(() -> productService.createProduct(request, List.of(
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.Mockito.mock(org.springframework.web.multipart.MultipartFile.class)
+        )))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
     }
 }

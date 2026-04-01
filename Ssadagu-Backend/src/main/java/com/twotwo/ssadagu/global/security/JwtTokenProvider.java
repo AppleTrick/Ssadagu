@@ -55,6 +55,7 @@ public class JwtTokenProvider {
         String accessToken = Jwts.builder()
                 .subject(authentication.getName())
                 .claim("auth", authorities)
+                .claim("userId", ((CustomUserDetails) authentication.getPrincipal()).getUser().getId())
                 .expiration(accessTokenExpiresIn)
                 .signWith(key)
                 .compact();
@@ -68,6 +69,7 @@ public class JwtTokenProvider {
                 .grantType("Bearer")
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .userId(((CustomUserDetails) authentication.getPrincipal()).getUser().getId())
                 .build();
     }
 

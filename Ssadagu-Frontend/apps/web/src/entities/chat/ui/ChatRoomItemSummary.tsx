@@ -16,10 +16,13 @@ const formatPrice = (price: number) =>
 
 const statusLabel: Record<string, string> = {
   ON_SALE: '판매중',
+  TRADING: '거래중',
   RESERVED: '예약중',
   SOLD: '거래완료',
   DELETED: '삭제됨',
 };
+
+import { getProxyImageUrl } from '@/shared/utils';
 
 const ChatRoomItemSummary = ({
   productId: _productId,
@@ -32,7 +35,7 @@ const ChatRoomItemSummary = ({
     <Container>
       <Thumbnail>
         {productThumbnailUrl ? (
-          <ThumbnailImg src={productThumbnailUrl} alt={productTitle} />
+          <ThumbnailImg src={getProxyImageUrl(productThumbnailUrl)} alt={productTitle} />
         ) : (
           <ThumbnailPlaceholder />
         )}

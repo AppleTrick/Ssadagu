@@ -1,147 +1,101 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useState, useCallback } from 'react';
 import styled from '@emotion/styled';
-import { HeaderMain } from '@/widgets/header';
+import { useQueryClient } from '@tanstack/react-query';
+import { HeaderMain, type SearchMode } from '@/widgets/header';
 import { BottomNav } from '@/widgets/bottom-nav';
-import { ItemCard } from '@/entities/product';
-import type { ProductSummary } from '@/entities/product';
+import { ProductList } from '@/widgets/product-list';
 import { FABWrite } from '@/shared/ui';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
-import { useAuthStore } from '@/shared/auth/useAuthStore';
-import { colors, typography, HEADER_HEIGHT, BOTTOM_NAV_HEIGHT } from '@/shared/styles/theme';
-
-interface PageData {
-  content: ProductSummary[];
-  hasNext: boolean;
-  page: number;
-}
-
-interface ProductsResponse {
-  data?: PageData;
-}
+import { colors, HEADER_HEIGHT, BOTTOM_NAV_HEIGHT } from '@/shared/styles/theme';
+import { usePullToRefresh } from '@/shared/hooks/usePullToRefresh';
 
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   background: ${colors.bg};
 `;
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT}px;
-  padding-bottom: ${BOTTOM_NAV_HEIGHT}px;
+  min-height: 0;
+  margin-top: ${HEADER_HEIGHT}px;
+  margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
+  position: relative;
+  /* GPU 스크롤 레이어 */
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
-const ListWrapper = styled.ul`
-  list-style: none;
-  margin: 0;
-  padding: 0;
-`;
-
-const LoadingWrapper = styled.div`
+const PullIndicator = styled.div<{ pullY: number; refreshing: boolean }>`
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(${({ pullY, refreshing }) => refreshing ? 8 : pullY - 36}px);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: ${colors.surface};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 200px;
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.base};
-  color: ${colors.textSecondary};
+  transition: ${({ refreshing }) => refreshing ? 'transform 0.2s' : 'none'};
+  z-index: 10;
+  pointer-events: none;
+  visibility: ${({ pullY, refreshing }) => (pullY > 4 || refreshing) ? 'visible' : 'hidden'};
 `;
 
-const EmptyWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.base};
-  color: ${colors.textSecondary};
-`;
-
-const FetchMoreIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.sm};
-  color: ${colors.textSecondary};
+const SpinnerSvg = styled.svg<{ spin: boolean }>`
+  animation: ${({ spin }) => spin ? 'ptr-spin 0.7s linear infinite' : 'none'};
+  @keyframes ptr-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 `;
 
 export function HomePage() {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [searchMode, setSearchMode] = useState<SearchMode>('sql');
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery<PageData>({
-      queryKey: ['products', searchQuery],
-      queryFn: async ({ pageParam }) => {
-        const page = pageParam as number;
-        const q = searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : '';
-        const res = await apiClient.get(
-          `${ENDPOINTS.PRODUCTS.BASE}?page=${page}${q}`,
-          accessToken ?? undefined,
-        );
-        if (!res.ok) throw new Error('상품 목록을 불러오지 못했습니다.');
-        const json = await res.json() as ProductsResponse;
-        return json.data ?? { content: [], hasNext: false, page };
-      },
-      initialPageParam: 0,
-      getNextPageParam: (lastPage) => (lastPage.hasNext ? lastPage.page + 1 : undefined),
-    });
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['products'] });
+  };
 
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const allProducts = data?.pages.flatMap((p) => p.content) ?? [];
+  const { scrollRef, pullY, progress, refreshing } = usePullToRefresh({ onRefresh: handleRefresh });
 
   return (
     <Page>
-      <HeaderMain onSearchChange={setSearchQuery} />
-      <ContentArea>
-        {isLoading && (
-          <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
-        )}
-        {isError && <LoadingWrapper>상품 목록을 불러오지 못했습니다.</LoadingWrapper>}
-        {!isLoading && !isError && (
-          <>
-            {allProducts.length > 0 ? (
-              <ListWrapper>
-                {allProducts.map((product) => (
-                  <li key={product.id}>
-                    <ItemCard product={product} onClick={() => router.push(`/products/${product.id}`)} />
-                  </li>
-                ))}
-              </ListWrapper>
-            ) : (
-              <EmptyWrapper>
-                {searchQuery ? `'${searchQuery}' 검색 결과가 없습니다.` : '등록된 상품이 없습니다.'}
-              </EmptyWrapper>
-            )}
-            <div ref={sentinelRef} style={{ height: 1 }} />
-            {isFetchingNextPage && <FetchMoreIndicator>더 불러오는 중...</FetchMoreIndicator>}
-          </>
-        )}
+      <HeaderMain onSearchChange={(q, mode) => { setSearchQuery(q); setSearchMode(mode); }} />
+      <ContentArea ref={scrollRef as React.RefObject<HTMLDivElement>}>
+        <PullIndicator pullY={pullY} refreshing={refreshing}>
+            <SpinnerSvg
+              spin={refreshing}
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={colors.primary}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
+              {refreshing ? (
+                <path d="M12 2a10 10 0 1 0 10 10" />
+              ) : (
+                <path
+                  d="M12 5v14M5 12l7-7 7 7"
+                  strokeOpacity={Math.max(0.2, progress)}
+                />
+              )}
+            </SpinnerSvg>
+        </PullIndicator>
+        <ProductList searchQuery={searchQuery} searchMode={searchMode} />
       </ContentArea>
       <FABWrite onClick={() => router.push('/products/new')} />
       <BottomNav />

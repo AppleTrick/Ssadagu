@@ -1,0 +1,194 @@
+services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - certs:/etc/letsencrypt
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - webroot:/var/www/certbot
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Asia/Seoul
+    depends_on:
+      - backend
+      - frontend
+      - jenkins
+    networks:
+      - ssadagu-network
+    restart: always
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - webroot:/var/www/certbot
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=Asia/Seoul
+    command: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - ssadagu-network
+
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - JENKINS_OPTS=--prefix=/jenkins
+      - JAVA_OPTS=-Duser.timezone=Asia/Seoul
+      - TZ=Asia/Seoul
+    networks:
+      - ssadagu-network
+    restart: always
+
+  backend:
+    build:
+      context: ./Ssadagu-Backend
+      dockerfile: Dockerfile
+    expose:
+      - "8080"
+    depends_on:
+      - logstash
+    networks:
+      - ssadagu-network
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/v3/api-docs" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./Ssadagu-Frontend
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    networks:
+      - ssadagu-network
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    environment:
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+
+  elasticsearch:
+    build:
+      context: ./elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms4g -Xmx4g"
+      - xpack.security.enabled=false
+      - TZ=Asia/Seoul
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "9200:9200"
+    networks:
+      - ssadagu-network
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cat/health | grep -q 'green\\|yellow' || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+
+  logstash:
+    build:
+      context: ./logstash
+    ports:
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    environment:
+      - LS_JAVA_OPTS=-Xms1g -Xmx1g
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - ssadagu-network
+    depends_on:
+      - elasticsearch
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-s", "-XGET", "http://localhost:9600/_node/pipeline" ]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 180s
+
+  kibana:
+    build:
+      context: ./kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - TZ=Asia/Seoul
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - ssadagu-network
+    depends_on:
+      - elasticsearch
+    restart: always
+
+  filebeat:
+    build:
+      context: ./filebeat
+    user: root
+    command: [ "--strict.perms=false" ]
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - STRICT_PATH_CHECK=false
+      - TZ=Asia/Seoul
+    networks:
+      - ssadagu-network
+    depends_on:
+      - logstash
+    restart: always
+
+networks:
+  ssadagu-network:
+    external: true
+
+volumes:
+  certs:
+  certbot-etc:
+  certbot-var:
+  webroot:
+  jenkins_home:
+  es_data:

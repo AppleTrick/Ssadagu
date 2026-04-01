@@ -25,12 +25,14 @@ public class VerificationFilter extends OncePerRequestFilter {
 
     // 1원 인증 없이도 접근 가능한 경로 목록
     private final List<String> whitelist = Arrays.asList(
-            "/api/auth/**",
-            "/api/users/signup",
-            "/api/accounts/**",
+            "/api/v1/auth/**",
+            "/api/v1/users/signup",
+            "/api/v1/users/**", // 프로필 정보는 인증/동네인증 전에도 접근 가능해야 AuthGuard가 동작함
+            "/api/v1/accounts/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
-            "/error");
+            "/error",
+            "/api/v1/chat/test/**");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

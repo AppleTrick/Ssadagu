@@ -1,19 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { Button } from '@/shared/ui';
+import { LocationPickerMap } from '@/features/location-picker';
+import { useCurrentLocation } from '@/features/location-picker/model/useCurrentLocation';
 import { apiClient } from '@/shared/api/client';
+import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { useMyProfile } from '@/entities/user';
 import {
   colors,
   typography,
   radius,
+  shadows,
   HEADER_HEIGHT,
-  STATUS_BAR_HEIGHT,
 } from '@/shared/styles/theme';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* ── Styled ─────────────────────────────────────────────── */
 
@@ -21,29 +28,19 @@ const Page = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  background: ${colors.surface};
+  background: ${colors.bg};
 `;
 
 const ContentArea = styled.main`
-  flex: 1;
-  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
-  padding-bottom: 40px;
+  padding-top: ${HEADER_HEIGHT}px;
+  padding-bottom: 32px;
   display: flex;
   flex-direction: column;
+  gap: 20px;
 `;
 
-const Section = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  padding: 24px;
-`;
-
-const TitleBlock = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+const TitleSection = styled.div`
+  padding: 20px 20px 0;
 `;
 
 const Title = styled.h2`
@@ -51,7 +48,7 @@ const Title = styled.h2`
   font-size: ${typography.size['2xl']};
   font-weight: ${typography.weight.bold};
   color: ${colors.textPrimary};
-  margin: 0;
+  margin: 0 0 6px;
 `;
 
 const Desc = styled.p`
@@ -62,79 +59,133 @@ const Desc = styled.p`
   line-height: 1.6;
 `;
 
-const LocationCard = styled.div`
-  background: ${colors.bg};
-  border-radius: ${radius.lg};
-  padding: 20px;
+/* 지도 + 현재위치 버튼 묶음 */
+const MapBlock = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  padding: 0 20px;
 `;
 
-const LocationRow = styled.div`
+const MapCard = styled.div`
+  border-radius: ${radius.lg};
+  overflow: hidden;
+  box-shadow: ${shadows.md};
+`;
+
+const CurrentLocBtn = styled.button`
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  width: 100%;
+  border-radius: ${radius.pill};
+  border: 1.5px solid ${colors.primary};
+  background: ${colors.surface};
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.md};
+  font-weight: ${typography.weight.semibold};
+  color: ${colors.primary};
+  cursor: pointer;
+  box-shadow: ${shadows.sm};
+  transition: background 0.15s, opacity 0.15s;
+
+  &:active:not(:disabled) {
+    background: #ebf2fe;
+  }
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 `;
 
-const LocationIcon = styled.div`
-  width: 40px;
-  height: 40px;
+const LocIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    <circle cx="12" cy="12" r="9" strokeWidth="1.2" strokeDasharray="2 3" />
+  </svg>
+);
+
+/* 선택된 동네 카드 */
+const ResultCard = styled.div`
+  margin: 0 20px;
+  background: ${colors.surface};
+  border-radius: ${radius.lg};
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: ${shadows.sm};
+  border: 1px solid ${colors.border};
+`;
+
+const ResultIconWrap = styled.div`
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: #EBF2FE;
+  background: #ebf2fe;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 `;
 
-const LocationText = styled.div`
+const ResultInfo = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 `;
 
-const LocationName = styled.span`
+const ResultName = styled.span`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.lg};
   font-weight: ${typography.weight.semibold};
   color: ${colors.textPrimary};
 `;
 
-const LocationSub = styled.span`
+const ResultSub = styled.span`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.sm};
   color: ${colors.textSecondary};
 `;
 
-const StatusBox = styled.div<{ status: 'idle' | 'loading' | 'success' | 'error' }>`
-  padding: 16px;
-  border-radius: ${radius.md};
-  background: ${({ status }) => {
-    if (status === 'success') return colors.successBg;
-    if (status === 'error') return '#FFF1F2';
-    return colors.bg;
-  }};
+const EmptyCard = styled.div`
+  margin: 0 20px;
+  background: ${colors.surface};
+  border-radius: ${radius.lg};
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1.5px dashed ${colors.border};
+`;
+
+const EmptyText = styled.span`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.base};
-  color: ${({ status }) => {
-    if (status === 'success') return colors.success;
-    if (status === 'error') return colors.red;
-    return colors.textSecondary;
-  }};
-  text-align: center;
+  color: ${colors.textSecondary};
+`;
+
+const ErrorMsg = styled.p`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.sm};
+  color: ${colors.red};
+  margin: -8px 20px 0;
+  padding: 10px 14px;
+  background: #fff1f2;
+  border-radius: ${radius.md};
 `;
 
 const BottomBar = styled.div`
-  padding: 16px 24px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  padding: 0 20px;
+  margin-top: 4px;
 `;
 
-const PinIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill={colors.primary}>
-    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+const PinSvg = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="#3182F6">
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
   </svg>
 );
 
@@ -143,104 +194,117 @@ const PinIcon = () => (
 export function LocationAuthPage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
+  const queryClient = useQueryClient();
+  const [mapInstance, setMapInstance] = useState<any>(null);
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams ? searchParams.get('redirect') : null;
+  const { data: myProfile } = useMyProfile();
 
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [regionName, setRegionName] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      setStatus('error');
-      setErrorMsg('위치 정보를 지원하지 않는 브라우저입니다.');
-      return;
+  const { getLocation, loading: geoLoading } = useCurrentLocation({
+    onSuccess: (lat, lng) => {
+      mapInstance?.setCenter(new window.kakao.maps.LatLng(lat, lng));
+    },
+    onError: (msg) => setError(msg),
+  });
+
+  const handleConfirm = async () => {
+    if (!regionName) return;
+    setError('');
+    setSubmitting(true);
+    try {
+      const res = await apiClient.post(ENDPOINTS.USERS.REGION_VERIFY(userId!), { region: regionName }, accessToken ?? undefined);
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || d.error || 'API 응답 에러');
+      }
+      await queryClient.invalidateQueries({ queryKey: ['myProfile', userId] });
+      
+      // 이미 동네 정보가 있던 유저(재인증)거나 수동으로 redirectUrl이 들어온 경우 그곳으로 이동
+      if (myProfile?.regionName || redirectUrl) {
+        router.replace(redirectUrl || '/home');
+      } else {
+        // 완전 신규 가입 온보딩 시퀀스라면 다음 단계(2차 비번)로 안내
+        const nextPath = redirectUrl 
+          ? `/secondary-password-setup?redirect=${encodeURIComponent(redirectUrl)}`
+          : '/secondary-password-setup';
+        router.push(nextPath);
+      }
+    } catch (err: any) {
+      setError(err?.message || '저장에 실패했습니다. 다시 시도해주세요.');
+      setSubmitting(false);
     }
-
-    setStatus('loading');
-    setErrorMsg('');
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const res = await apiClient.post(
-            '/users/me/region',
-            { latitude, longitude },
-            accessToken ?? undefined,
-          );
-          if (!res.ok) throw new Error('인증 실패');
-          const body = await res.json() as Record<string, unknown>;
-          const name = typeof body.regionName === 'string' ? body.regionName
-            : typeof (body.data as Record<string, unknown>)?.regionName === 'string'
-              ? (body.data as Record<string, unknown>).regionName as string
-              : `위도 ${latitude.toFixed(4)}, 경도 ${longitude.toFixed(4)}`;
-          setRegionName(name);
-          setStatus('success');
-        } catch {
-          setStatus('error');
-          setErrorMsg('위치 인증에 실패했습니다. 다시 시도해주세요.');
-        }
-      },
-      () => {
-        setStatus('error');
-        setErrorMsg('위치 접근 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요.');
-      },
-      { timeout: 10000, maximumAge: 0 },
-    );
-  };
-
-  const handleConfirm = () => {
-    router.push('/home');
   };
 
   return (
     <Page>
       <HeaderBack title="동네 인증" onBack={() => router.back()} />
+
       <ContentArea>
-        <Section>
-          <TitleBlock>
-            <Title>동네를 인증해주세요</Title>
-            <Desc>현재 위치를 기반으로 동네를 인증합니다.{'\n'}정확한 거래를 위해 실제 거주 지역을 인증해주세요.</Desc>
-          </TitleBlock>
+        {/* 타이틀 — 헤더 바로 아래 */}
+        <TitleSection>
+          <Title>동네를 인증해주세요</Title>
+          <Desc>
+            지도를 움직여 거래할 동네를 선택하세요.{'\n'}
+            정확한 거래를 위해 실제 거주 지역을 선택해주세요.
+          </Desc>
+        </TitleSection>
 
-          {status === 'success' && regionName && (
-            <LocationCard>
-              <LocationRow>
-                <LocationIcon>
-                  <PinIcon />
-                </LocationIcon>
-                <LocationText>
-                  <LocationName>{regionName}</LocationName>
-                  <LocationSub>현재 인증된 동네</LocationSub>
-                </LocationText>
-              </LocationRow>
-            </LocationCard>
-          )}
+        {/* 지도 + 현재위치 버튼 */}
+        <MapBlock>
+          <MapCard>
+            <LocationPickerMap
+              height="240px"
+              onLocationChange={setRegionName}
+              onMapReady={(map) => setMapInstance(map)}
+            />
+          </MapCard>
 
-          {status !== 'idle' && (
-            <StatusBox status={status}>
-              {status === 'loading' && '위치 정보를 가져오는 중...'}
-              {status === 'success' && '동네 인증이 완료되었습니다!'}
-              {status === 'error' && errorMsg}
-            </StatusBox>
-          )}
-        </Section>
+          <CurrentLocBtn
+            onClick={getLocation}
+            disabled={geoLoading || !mapInstance}
+          >
+            <LocIcon />
+            {geoLoading ? '위치 확인 중...' : '현재 위치로 이동'}
+          </CurrentLocBtn>
+        </MapBlock>
 
+        {/* 선택 결과 */}
+        {regionName ? (
+          <ResultCard>
+            <ResultIconWrap>
+              <PinSvg />
+            </ResultIconWrap>
+            <ResultInfo>
+              <ResultName>{regionName}</ResultName>
+              <ResultSub>선택한 동네</ResultSub>
+            </ResultInfo>
+          </ResultCard>
+        ) : (
+          <EmptyCard>
+            <span style={{ fontSize: 20 }}>🗺️</span>
+            <EmptyText>지도를 움직이면 동네가 표시됩니다</EmptyText>
+          </EmptyCard>
+        )}
+
+        {error && <ErrorMsg>{error}</ErrorMsg>}
+
+        {/* 인증 버튼 */}
         <BottomBar>
-          {status !== 'success' ? (
-            <Button
-              variant="primary"
-              size="lg"
-              fullWidth
-              loading={status === 'loading'}
-              onClick={handleGetLocation}
-            >
-              현재 위치로 인증하기
-            </Button>
-          ) : (
-            <Button variant="primary" size="lg" fullWidth onClick={handleConfirm}>
-              완료
-            </Button>
-          )}
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={submitting}
+            disabled={!regionName || submitting}
+            onClick={handleConfirm}
+          >
+            이 동네로 인증하기
+          </Button>
         </BottomBar>
       </ContentArea>
     </Page>

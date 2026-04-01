@@ -1,227 +1,417 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
+
+// Widgets
 import { HeaderBack } from '@/widgets/header';
 import { ChatInputArea } from '@/widgets/chat-input';
-import { ChatBubbleMine, ChatBubbleOther, ChatRoomItemSummary } from '@/entities/chat';
-import type { ChatMessage, ChatRoom } from '@/entities/chat';
-import type { User } from '@/entities/user';
+
+// Entities
+import { 
+  ChatBubbleMine, 
+  ChatBubbleOther, 
+  ChatRoomItemSummary, 
+  SystemMessage, 
+  MapChatBubble 
+} from '@/entities/chat';
+import { useChatRoomDetail, useNewChatRoomInit, useMarkAsRead } from '@/entities/chat/api/useChatRoom';
+import { useChatHistory } from '@/entities/chat/api/useChatMessages';
+import { useUserProfile } from '@/entities/user/api/useProfile';
+import type { ChatMessage, ChatRoom } from '@/entities/chat/model/types';
+import { User } from '@/entities/user';
+
+// Features
+import { TransactionBubble } from '@/entities/transaction';
+import { TransactionRequestSheet, TransactionConfirmSheet } from '@/features/transfer-payment';
+import TransactionAuthModal from '@/features/transfer-payment/ui/TransactionAuthModal';
+import { ChatMapPickerSheet } from '@/features/chat-map-picker';
+import { useChatMessaging } from '@/features/chat-messaging/lib/useChatMessaging';
+import { useChatCamera, CameraModal } from '@/features/chat-camera';
+
+// Shared
 import { apiClient } from '@/shared/api/client';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import { colors, typography, HEADER_HEIGHT } from '@/shared/styles/theme';
+import { compressImage } from '@/shared/utils/image';
+import { useModalStore } from '@/shared/hooks/useModalStore';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:8080/ws';
 const CHAT_INPUT_HEIGHT = 56;
-const CHAT_INPUT_BOTTOM_OFFSET = 0; // 채팅방은 BottomNav 없음 → bottom: 0
-const MESSAGES_BOTTOM_PAD = CHAT_INPUT_HEIGHT + CHAT_INPUT_BOTTOM_OFFSET + 16;
-
-const Page = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  background: ${colors.bg};
-  overflow: hidden;
-`;
-
-const MessagesArea = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: ${HEADER_HEIGHT + 80}px 0 ${MESSAGES_BOTTOM_PAD}px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const LoadingWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.base};
-  color: ${colors.textSecondary};
-`;
-
-const ErrorWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  gap: 8px;
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.base};
-  color: ${colors.textSecondary};
-`;
-
-const RetryButton = styled.button`
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.sm};
-  color: ${colors.primary};
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: underline;
-`;
-
-const ItemSummaryBar = styled.div`
-  position: fixed;
-  top: ${HEADER_HEIGHT}px;
-  left: 0;
-  right: 0;
-  z-index: 4;
-  background: ${colors.surface};
-  border-bottom: 1px solid ${colors.border};
-`;
-
-const EmptyMessages = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 120px;
-  font-family: ${typography.fontFamily};
-  font-size: ${typography.size.base};
-  color: ${colors.textSecondary};
-`;
-
-interface ChatRoomResponse {
-  data?: ChatRoom;
-}
-
-interface MessagesResponse {
-  content?: ChatMessage[];
-  data?: ChatMessage[] | { content?: ChatMessage[] };
-}
 
 export function ChatRoomPage() {
   const params = useParams();
   const router = useRouter();
-  const rawId = Array.isArray(params.roomId) ? params.roomId[0] : params.roomId;
-  const roomId = Number(rawId);
+  const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
 
+  const [reqSheetOpen, setReqSheetOpen] = useState(false);
+  const [confirmSheetOpen, setConfirmSheetOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [mapSheetOpen, setMapSheetOpen] = useState(false);
+  const [selectedConfirmMessage, setSelectedConfirmMessage] = useState<ChatMessage | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  // 1. 공통 데이터 및 상태 추출 (상단 배치)
   const accessToken = useAuthStore((s) => s.accessToken);
-  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
-  const stompRef = useRef<Client | null>(null);
+  const userId = useAuthStore((s) => s.userId);
+  const { alert: showAlert } = useModalStore();
+
+  const rawId = params && params.roomId ? (Array.isArray(params.roomId) ? params.roomId[0] : params.roomId) : '';
+  const isNewRoom = rawId === 'new';
+  const roomId = isNewRoom ? -1 : Number(rawId);
+  const newProductId = Number(searchParams?.get('productId'));
+
+  // 2. 읽음 처리 로직 (ID와 토큰 확보 후)
+  const { mutate: markAsRead } = useMarkAsRead(accessToken);
+
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const messagesAreaRef = useRef<HTMLDivElement | null>(null);
+  const prevScrollHeightRef = useRef(0);
+  const isLoadingOlderRef = useRef(false);
+  const hasInitialScrolledRef = useRef(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
-      if (!res.ok) throw new Error('사용자 정보를 불러오지 못했습니다.');
-      const json = await res.json() as User | { data?: User };
-      if ((json as { data?: User }).data) return (json as { data: User }).data;
-      return json as User;
-    },
-    enabled: !!accessToken,
-    staleTime: 5 * 60 * 1000,
-  });
+  // 1. Entities: 사용자 정보 및 방 정보 초기화
+  const { data: currentUser } = useUserProfile(userId, accessToken);
+  const { data: newRoomData, isLoading: newRoomLoading } = useNewChatRoomInit(newProductId, userId, accessToken, currentUser?.nickname);
+  const { data: fetchedRoom, isLoading: fetchedRoomLoading } = useChatRoomDetail(roomId, userId, accessToken, currentUser?.nickname);
+  const room = isNewRoom ? newRoomData : fetchedRoom;
+  const isLoading = isNewRoom ? newRoomLoading : (fetchedRoomLoading || !room);
 
-  const { data: room, isLoading: roomLoading } = useQuery<ChatRoom>({
-    queryKey: ['chatRoom', roomId],
-    queryFn: async () => {
-      const res = await apiClient.get(`${ENDPOINTS.CHATS.ROOMS}/${roomId}`, accessToken ?? undefined);
-      if (!res.ok) throw new Error('채팅방 정보를 불러오지 못했습니다.');
-      const json = await res.json() as ChatRoom | ChatRoomResponse;
-      if ((json as ChatRoomResponse).data) return (json as ChatRoomResponse).data as ChatRoom;
-      return json as ChatRoom;
-    },
-    enabled: !isNaN(roomId),
-  });
+  // 2. Entities: 대화 내역 조회 (커서 기반 무한 스크롤)
+  const {
+    data: chatHistoryData,
+    isLoading: messagesLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useChatHistory(roomId, userId, accessToken);
 
-  const { data: historyMessages, isLoading: messagesLoading, isError, refetch } = useQuery<ChatMessage[]>({
-    queryKey: ['chatMessages', roomId],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.CHATS.MESSAGES(roomId), accessToken ?? undefined);
-      if (!res.ok) throw new Error('메시지를 불러오지 못했습니다.');
-      const json = await res.json() as MessagesResponse | ChatMessage[];
-      if (Array.isArray(json)) return json;
-      const body = json as MessagesResponse;
-      if (Array.isArray(body.content)) return body.content as ChatMessage[];
-      const d = body.data;
-      if (Array.isArray(d)) return d as ChatMessage[];
-      if (d && !Array.isArray(d) && Array.isArray((d as { content?: ChatMessage[] }).content)) {
-        return (d as { content: ChatMessage[] }).content;
-      }
-      return [];
-    },
-    enabled: !isNaN(roomId),
-  });
-
+  // 채팅방 이탈 시 캐시 제거 → 재진입 시 항상 최신 메시지부터 fetch
   useEffect(() => {
-    if (historyMessages) setLocalMessages(historyMessages);
-  }, [historyMessages]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [localMessages]);
-
-  useEffect(() => {
-    if (isNaN(roomId)) return;
-    const client = new Client({
-      webSocketFactory: () => new SockJS(SOCKET_URL),
-      connectHeaders: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      onConnect: () => {
-        client.subscribe(`/topic/chat/${roomId}`, (frame) => {
-          try {
-            const msg = JSON.parse(frame.body) as ChatMessage;
-            setLocalMessages((prev) => {
-              const exists = prev.some((m) => m.id === msg.id);
-              return exists ? prev : [...prev, msg];
-            });
-          } catch {
-            // ignore parse errors
-          }
-        });
-      },
-      reconnectDelay: 5000,
-    });
-    client.activate();
-    stompRef.current = client;
     return () => {
-      client.deactivate();
-      stompRef.current = null;
-    };
-  }, [roomId, accessToken]);
-
-  const currentUserId = currentUser?.id ?? null;
-
-  const handleSend = useCallback(
-    (content: string) => {
-      if (!stompRef.current?.connected) {
-        const optimistic: ChatMessage = {
-          id: `local-${Date.now()}`,
-          roomId,
-          senderId: currentUserId ?? -1,
-          senderNickname: currentUser?.nickname ?? '나',
-          content,
-          sentAt: new Date().toISOString(),
-          isRead: false,
-        };
-        setLocalMessages((prev) => [...prev, optimistic]);
-        return;
+      if (roomId > 0) {
+        queryClient.removeQueries({ queryKey: ['chatMessages', roomId, userId] });
       }
-      stompRef.current.publish({
-        destination: `/app/chat/${roomId}`,
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        body: JSON.stringify({ content }),
-      });
-    },
-    [roomId, accessToken, currentUserId, currentUser?.nickname],
+    };
+  }, [roomId, userId, queryClient]);
+
+  const historyMessages = useMemo(
+    () => chatHistoryData?.pages.flatMap(p => p).sort((a, b) => Number(a.id) - Number(b.id)) ?? [],
+    [chatHistoryData],
   );
 
-  const headerTitle = room
-    ? room.buyerId === currentUserId
-      ? room.sellerNickname || '채팅'
-      : room.buyerNickname || '채팅'
-    : '채팅';
-  const isLoading = roomLoading || messagesLoading;
+  // 오래된 메시지 로드 후 스크롤 위치 복원
+  useEffect(() => {
+    if (!prevScrollHeightRef.current || !messagesAreaRef.current) return;
+    const savedScrollHeight = prevScrollHeightRef.current;
+    prevScrollHeightRef.current = 0;
+    requestAnimationFrame(() => {
+      if (!messagesAreaRef.current) return;
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight - savedScrollHeight;
+    });
+  }, [chatHistoryData?.pages.length]);
+
+  const handleScroll = () => {
+    if (!messagesAreaRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesAreaRef.current;
+
+    // 상단 80px 이내 + 이전 메시지 있으면 로드
+    if (scrollTop < 80 && hasNextPage && !isFetchingNextPage) {
+      prevScrollHeightRef.current = scrollHeight;
+      isLoadingOlderRef.current = true;
+      fetchNextPage();
+    }
+
+    // 오차 범위 150px 이내면 맨 아래로 간주
+    const atBottom = scrollHeight - scrollTop - clientHeight < 150;
+    setIsAtBottom(atBottom);
+    if (atBottom && unreadCount > 0) {
+      setUnreadCount(0);
+    }
+  };
+
+  // 3. Features: 실시간 채팅 핸들링
+  const { sessionMessages, isStompConnected, sendMessage, addOptimisticMessage } = useChatMessaging(roomId, accessToken, userId);
+
+  // 채팅방 최초 진입 시 & 채팅방 안에 머무는 중 상대방이 새 메시지를 보냈을 때 모두 읽음 처리
+  useEffect(() => {
+    if (roomId > 0 && !isNewRoom) {
+      markAsRead(roomId);
+    }
+  }, [roomId, isNewRoom, markAsRead, sessionMessages.length]);
+
+  // 역할 판별 (타입 불일치 방지 위해 Number 사용)
+  const isSeller = room && userId && Number(userId) > 0 && Number(userId) === Number(room.sellerId);
+  const isBuyer = room && userId && Number(userId) > 0 && Number(userId) === Number(room.buyerId) && !isSeller;
+
+  // 리다이렉트 로직 (이미 방이 있을 때)
+  useEffect(() => {
+    if (isNewRoom && newRoomData && newRoomData.id > 0) {
+      router.replace(`/chat/${newRoomData.id}`);
+    }
+  }, [isNewRoom, newRoomData, router]);
+
+  const displayMessages = useMemo(() => {
+    const history = historyMessages ? [...historyMessages].reverse() : [];
+    const historyIds = new Set(history.map(m => m.id));
+    const filteredSession = sessionMessages.filter(m => !historyIds.has(m.id));
+    
+    const rawList = [...history, ...filteredSession].sort((a, b) => {
+      const timeA = new Date((a.sentAt || (a as any).createdAt || 0) as string).getTime();
+      const timeB = new Date((b.sentAt || (b as any).createdAt || 0) as string).getTime();
+      return (isNaN(timeA) ? 0 : timeA) - (isNaN(timeB) ? 0 : timeB);
+    });
+
+    const result: (ChatMessage & { resolvedType?: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' })[] = [];
+    for (const msg of rawList) {
+      const msgType = msg.type || msg.messageType || 'TALK';
+      
+      // 버그 방지: 결제 요청 메시지의 경우 내용(JSON)이 올바르지 않거나 정보가 없으면 제외
+      if (msgType === 'PAYMENT_REQUEST') {
+        try {
+          const content = JSON.parse(msg.content || '{}');
+          if (!content.price || content.price <= 0) {
+            // 가격이 없거나 0원인 거래 요청은 비정상 데이터로 간주하고 무시
+            continue;
+          }
+        } catch (e) {
+          // JSON 파싱 실패 시에도 비정상 데이터로 간주
+          continue;
+        }
+      }
+
+      if (['PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
+        for (let i = result.length - 1; i >= 0; i--) {
+          if ((result[i].type || result[i].messageType) === 'PAYMENT_REQUEST' && !result[i].resolvedType) {
+            result[i].resolvedType = msgType as any;
+            break;
+          }
+        }
+      } else {
+        result.push({ ...msg });
+      }
+    }
+    return result;
+  }, [historyMessages, sessionMessages]);
+
+  useEffect(() => {
+    if (displayMessages.length === 0) return;
+
+    // 이전 메시지 로드 시 → 스크롤 복원으로 처리, 여기선 skip
+    if (isLoadingOlderRef.current) {
+      isLoadingOlderRef.current = false;
+      return;
+    }
+
+    // 최초 입장 시 한 번만 맨 아래로
+    if (!hasInitialScrolledRef.current) {
+      hasInitialScrolledRef.current = true;
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+      return;
+    }
+
+    // 새 메시지 도착 시: 내 메시지거나 이미 맨 아래면 스크롤
+    const latestMsg = displayMessages[displayMessages.length - 1];
+    const isMine = userId !== null && Number(latestMsg.senderId) === Number(userId);
+    if (isMine || isAtBottom) {
+      setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    } else {
+      setUnreadCount((prev) => prev + 1);
+    }
+  }, [displayMessages.length]);
+
+  const createChatMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post(ENDPOINTS.CHATS.CREATE, { productId: newProductId }, accessToken ?? undefined);
+      if (!res.ok) throw new Error('채팅방 생성 실패');
+      const json = await res.json() as any;
+      return json.data?.id || json.id || json.data?.roomId;
+    },
+  });
+
+  const extractCleanErrorMsg = (msg: string) => {
+    if (!msg) return '';
+    const match = msg.match(/"responseMessage"\s*:\s*"([^"]+)"/);
+    return match ? match[1] : msg;
+  };
+
+  const handleSend = async (content: string) => {
+    if (isNewRoom) {
+      const id = await createChatMutation.mutateAsync();
+      if (id) {
+        // 프리패칭: 라우터 이동 시점의 '로딩 중' 깜빡임 화면을 방지하고자 미리 임시 캐시를 심습니다.
+        if (newRoomData) {
+          queryClient.setQueryData(
+            ['chatRoom', Number(id), userId, currentUser?.nickname || ''],
+            { ...newRoomData, id: Number(id) }
+          );
+        }
+        queryClient.setQueryData(['chatMessages', Number(id), userId], { pages: [], pageParams: [null] });
+
+        sessionStorage.setItem('pendingChatMsg', content);
+        router.replace(`/chat/${id}`);
+      }
+      return;
+    }
+    sendMessage('/pub/chat/message', { senderId: userId || -1, content, type: 'TALK' });
+  };
+
+
+
+  const handleTransactionAction = async (msg: ChatMessage, actionType: 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL') => {
+    if (!room) return;
+    try {
+      const isMine = userId !== null && (Number(msg.senderId) === Number(userId));
+      // 결제 승인의 경우, 내가 요청을 받은 입장(!isMine)이라면 내가 곧 구매자임. 아니라면 방 정보를 따름.
+      const targetBuyerId = (actionType === 'PAYMENT_SUCCESS' && !isMine) ? userId : room.buyerId;
+
+      const endpoint = actionType === 'PAYMENT_SUCCESS' ? ENDPOINTS.TRANSACTIONS.APPROVE : ENDPOINTS.TRANSACTIONS.CANCEL;
+      const body = actionType === 'PAYMENT_SUCCESS' 
+        ? { productId: room.productId, buyerId: targetBuyerId, amount: JSON.parse(msg.content || '{}').price || room.productPrice }
+        : { productId: room.productId, buyerId: targetBuyerId, roomId };
+
+      const res = await apiClient.post(endpoint, body, accessToken ?? undefined);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        showAlert({ message: extractCleanErrorMsg(errJson.message || '처리 실패') });
+        return;
+      }
+
+      // 결제 성공 시 추가 후처리
+      if (actionType === 'PAYMENT_SUCCESS') {
+        const result = await res.json().catch(() => ({}));
+        const amount = result?.data?.amount || result?.amount || 0;
+        const counterpart = result?.data?.counterpartNickname || result?.counterpartNickname || '판매자';
+
+        showAlert({ 
+          title: '결제 완료', 
+          message: `${counterpart}님께 ${amount.toLocaleString()}원 송금이 완료되었습니다.\n이제 상품이 '거래완료' 상태로 변경됩니다.` 
+        });
+
+        // 관련 데이터 무효화 (실시간 UI 갱신)
+        queryClient.invalidateQueries({ queryKey: ['product', room.productId] });
+        queryClient.invalidateQueries({ queryKey: ['chatRoom', roomId] });
+        queryClient.invalidateQueries({ queryKey: ['myAccount'] });
+        queryClient.invalidateQueries({ queryKey: ['userPurchases'] });
+      }
+
+      sendMessage('/pub/chat/message', { senderId: userId || -1, content: msg.content, type: actionType });
+      setConfirmSheetOpen(false);
+      setSelectedConfirmMessage(null);
+    } catch (e) { 
+      showAlert({ message: '처리 중 오류 발생\n잠시 후 다시 시도해 주세요.' }); 
+    }
+  };
+
+  const handleMapSubmit = async (lat: number, lng: number, locationName: string) => {
+    if (isNewRoom) {
+      sessionStorage.setItem('pendingChatMap', JSON.stringify({ lat, lng, locationName }));
+      const id = await createChatMutation.mutateAsync().catch(() => null);
+      if (id) {
+        if (newRoomData) {
+          queryClient.setQueryData(['chatRoom', Number(id), userId, currentUser?.nickname || ''], { ...newRoomData, id: Number(id) });
+        }
+        queryClient.setQueryData(['chatMessages', Number(id), userId], { pages: [], pageParams: [null] });
+        router.replace(`/chat/${id}`);
+      }
+      setMapSheetOpen(false);
+      return;
+    }
+    sendMessage('/pub/chat/message', { senderId: userId || -1, content: locationName, type: 'MAP', latitude: lat, longitude: lng, locationName });
+    setMapSheetOpen(false);
+  };
+
+  const { openCamera, cameraOpen, handleModalCapture, handleModalClose } = useChatCamera({
+    onCapture: (files) => handlePhotosSelected(files),
+    onError: (msg) => showAlert({ message: msg }),
+  });
+
+  const handlePhotosSelected = async (files: File[]) => {
+    setIsUploading(true);
+    try {
+      const allowedExtensions = ['image/png', 'image/jpeg', 'image/jpg'];
+      
+      // 1MB 이하로 압축 시도 (최대 1MB)
+      const compressedFilesRaw = await Promise.all(
+        files.map(async (f) => {
+          try {
+            const ext = f.type.toLowerCase();
+            if (!allowedExtensions.includes(ext) && !f.name.match(/\.(jpg|jpeg|png)$/i)) {
+              showAlert({ message: `이미지 파일(jpg, jpeg, png)만 가능합니다: ${f.name}` });
+              return null;
+            }
+
+            if (f.size > 20 * 1024 * 1024) {
+              showAlert({ message: `파일(${f.name}) 원본 용량이 20MB를 초과합니다.` });
+              return null;
+            }
+
+            const compressed = await compressImage(f, 1920, 1920, 1);
+            if (compressed.size > 1.1 * 1024 * 1024) { // 1.1MB 허용 오차
+              showAlert({ message: `파일(${f.name}) 용량이 압축 후에도 너무 큽니다.` });
+              return null;
+            }
+            return compressed;
+          } catch (err) {
+            return null;
+          }
+        })
+      );
+
+      const compressedFiles = compressedFilesRaw.filter((f): f is File => f !== null);
+      if (compressedFiles.length === 0) {
+        setIsUploading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      compressedFiles.forEach(f => formData.append('files', f));
+
+      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/files/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        if (uploadRes.status === 413) {
+          throw new Error('사진 용량이 너무 큽니다. (최대 10MB)');
+        }
+        throw new Error('업로드 실패');
+      }
+      const imageUrls: string[] = await uploadRes.json();
+
+      if (isNewRoom) {
+        // 첫 번째 이미지를 pending으로 저장 후 채팅방 생성
+        if (imageUrls[0]) sessionStorage.setItem('pendingChatImage', imageUrls[0]);
+        const id = await createChatMutation.mutateAsync().catch(() => null);
+        if (id) {
+          if (newRoomData) {
+            queryClient.setQueryData(['chatRoom', Number(id), userId, currentUser?.nickname || ''], { ...newRoomData, id: Number(id) });
+          }
+          queryClient.setQueryData(['chatMessages', Number(id), userId], { pages: [], pageParams: [null] });
+          router.replace(`/chat/${id}`);
+        }
+        return;
+      }
+
+      imageUrls.forEach(url => sendMessage('/pub/chat/message', { senderId: userId || -1, content: '사진', type: 'IMAGE', imageUrl: url }));
+    } catch (e) {
+      showAlert({ message: '사진 전송 중 오류가 발생했습니다.' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const headerTitle = room?.partnerNickname || (room?.buyerId === userId ? room?.sellerNickname : room?.buyerNickname) || '채팅';
 
   return (
     <Page>
@@ -232,41 +422,279 @@ export function ChatRoomPage() {
             productId={room.productId}
             productTitle={room.productTitle}
             productThumbnailUrl={room.productThumbnailUrl}
-            price={0}
-            status={room.roomStatus}
+            price={room.productPrice ?? 0}
+            status={room.productStatus ?? room.roomStatus}
           />
         </ItemSummaryBar>
       )}
-      {isLoading && (
-        <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
-      )}
-      {isError && !isLoading && (
-        <ErrorWrapper>
-          <span>메시지를 불러오지 못했습니다.</span>
-          <RetryButton onClick={() => refetch()}>다시 시도</RetryButton>
-        </ErrorWrapper>
-      )}
-      {!isLoading && !isError && (
-        <MessagesArea>
-          {localMessages.length === 0 && (
-            <EmptyMessages>아직 메시지가 없습니다. 먼저 인사해보세요!</EmptyMessages>
-          )}
-          {localMessages.map((msg) =>
-            currentUserId !== null && msg.senderId === currentUserId ? (
-              <ChatBubbleMine key={msg.id} message={msg.content} sentAt={msg.sentAt} />
-            ) : (
-              <ChatBubbleOther
-                key={msg.id}
-                senderNickname={msg.senderNickname}
-                message={msg.content}
-                sentAt={msg.sentAt}
+      <MessagesArea ref={messagesAreaRef} onScroll={handleScroll}>
+        {isFetchingNextPage && <OlderLoadingBadge>이전 메시지 불러오는 중...</OlderLoadingBadge>}
+        {isLoading && displayMessages.length === 0 && <LoadingWrapper>불러오는 중...</LoadingWrapper>}
+        {!isLoading && !messagesLoading && displayMessages.length === 0 && <EmptyMessages>아직 메시지가 없습니다.</EmptyMessages>}
+        {displayMessages.map((msg) => {
+          const isMine = userId !== null && Number(msg.senderId) === Number(userId);
+          const msgType = msg.type || msg.messageType || 'TALK';
+          
+          // 백엔드에서 닉네임이 안 내려올 경우를 대비해 룸 정보에서 매핑
+          const resolvedNickname = isMine 
+            ? '나' 
+            : (msg.senderNickname || (Number(msg.senderId) === Number(room?.sellerId) ? room?.sellerNickname : room?.buyerNickname) || room?.partnerNickname || '상대방');
+
+          if (['ENTER', 'LEAVE', 'SYSTEM'].includes(msgType)) return <SystemMessage key={msg.id} message={msg.content} />;
+          
+          if (['PAYMENT_REQUEST', 'PAYMENT_SUCCESS', 'PAYMENT_FAIL'].includes(msgType)) {
+            return (
+              <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start', width: '100%', gap: '4px', padding: '2px 16px' }}>
+                {!isMine && (
+                  <span style={{ fontSize: typography.size.xs, color: colors.textSecondary, fontWeight: typography.weight.medium, margin: '0 0 0 2px' }}>
+                    {resolvedNickname}
+                  </span>
+                )}
+                <TransactionBubble
+                  message={msg} productThumbnailUrl={room?.productThumbnailUrl}
+                  isMyMessage={isMine} onCancel={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
+                  onReject={() => handleTransactionAction(msg, 'PAYMENT_FAIL')}
+                  onAccept={() => { setSelectedConfirmMessage(msg); setConfirmSheetOpen(true); }}
+                />
+              </div>
+            );
+          }
+          
+          if (msgType === 'MAP') {
+            return (
+              <MapChatBubble 
+                key={msg.id} 
+                lat={msg.latitude || 0} 
+                lng={msg.longitude || 0} 
+                label={msg.locationName} 
+                isMine={isMine} 
+                senderNickname={resolvedNickname}
+                sentAt={msg.sentAt || (msg as any).createdAt} 
               />
-            ),
-          )}
-          <div ref={bottomRef} />
-        </MessagesArea>
+            );
+          }
+          
+          return isMine
+            ? <ChatBubbleMine key={msg.id} type={msgType} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} onImageClick={setLightboxUrl} />
+            : <ChatBubbleOther key={msg.id} type={msgType} senderNickname={resolvedNickname} message={msg.content} sentAt={msg.sentAt || (msg as any).createdAt} imageUrl={msg.imageUrl} onImageClick={setLightboxUrl} />;
+        })}
+        {isUploading && <UploadStatus>사진 전송 중...</UploadStatus>}
+        <div ref={bottomRef} style={{ height: '1px' }} />
+        
+        {/* 채팅방 하단 새 메시지 플로팅 알림 (안 읽음 배지) */}
+        {unreadCount > 0 && !isAtBottom && (
+          <FloatingBadge onClick={() => {
+            setUnreadCount(0);
+            setIsAtBottom(true);
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }}>
+            {unreadCount}개의 새 메시지
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </FloatingBadge>
+        )}
+      </MessagesArea>
+      <CameraModal
+        isOpen={cameraOpen}
+        onCapture={handleModalCapture}
+        onClose={handleModalClose}
+        onError={(msg) => showAlert({ message: msg })}
+      />
+      <ChatInputArea
+        onSend={handleSend}
+        onSelectTransaction={isSeller ? () => {
+          setReqSheetOpen(true);
+        } : undefined}
+        onSelectLocation={() => setMapSheetOpen(true)}
+        onPhotosSelected={handlePhotosSelected}
+        onSelectCamera={openCamera}
+      />
+      {/* 닉네임 판별 로직: 이제 룸 매퍼에서 처리된 닉네임을 그대로 사용합니다. */}
+      {room && (
+        <TransactionRequestSheet 
+          isOpen={reqSheetOpen} 
+          onClose={() => setReqSheetOpen(false)} 
+          roomInfo={{ productTitle: room.productTitle, productPrice: room.productPrice ?? 0, productThumbnailUrl: room.productThumbnailUrl }} 
+          buyerNickname={room.buyerNickname}
+          sellerNickname={room.sellerNickname}
+          onSubmit={async (locationName, time, price) => {
+            try {
+              const targetBuyerId = isSeller ? room.partnerId : room.buyerId;
+              const res = await apiClient.post(ENDPOINTS.TRANSACTIONS.REQUEST, { productId: room.productId, buyerId: targetBuyerId, roomId }, accessToken ?? undefined);
+              if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                showAlert({ message: extractCleanErrorMsg(body.message || '결제 요청 실패') });
+                return;
+              }
+              sendMessage('/pub/chat/message', { 
+                senderId: userId || -1, 
+                content: JSON.stringify({ 
+                  productTitle: room.productTitle,
+                  locationName, 
+                  time, 
+                  price,
+                  buyerNickname: room.buyerNickname,
+                  sellerNickname: room.sellerNickname,
+                }), 
+                type: 'PAYMENT_REQUEST' 
+              });
+              setReqSheetOpen(false);
+            } catch (e) { 
+              showAlert({ message: '요청 중 오류 발생\n잠시 후 다시 시도해 주세요.' }); 
+            }
+          }} 
+        />
       )}
-      <ChatInputArea onSend={handleSend} bottomOffset={CHAT_INPUT_BOTTOM_OFFSET} />
+      <TransactionConfirmSheet isOpen={confirmSheetOpen} onClose={() => setConfirmSheetOpen(false)}
+        roomInfo={room ? { productTitle: room.productTitle, productThumbnailUrl: room.productThumbnailUrl } : null} content={selectedConfirmMessage ? JSON.parse(selectedConfirmMessage.content || '{}') : undefined}
+        onConfirm={() => {
+          // 수락 버튼 → 2차 비밀번호/생체인증 확인 후 결제 진행
+          setAuthModalOpen(true);
+        }} />
+      <TransactionAuthModal
+        isOpen={authModalOpen}
+        onSuccess={() => {
+          setAuthModalOpen(false);
+          setConfirmSheetOpen(false);
+          if (selectedConfirmMessage) {
+            handleTransactionAction(selectedConfirmMessage, 'PAYMENT_SUCCESS');
+          }
+        }}
+        onClose={() => setAuthModalOpen(false)}
+      />
+      <ChatMapPickerSheet isOpen={mapSheetOpen} onClose={() => setMapSheetOpen(false)} onSubmit={handleMapSubmit} />
+
+      {/* 이미지 라이트박스 */}
+      {lightboxUrl && (
+        <Lightbox onClick={() => setLightboxUrl(null)}>
+          <LightboxImage
+            src={lightboxUrl}
+            alt="이미지 보기"
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          />
+          <LightboxClose onClick={() => setLightboxUrl(null)}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </LightboxClose>
+        </Lightbox>
+      )}
     </Page>
   );
 }
+
+const Page = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: ${colors.surface};
+  overflow: hidden;
+`;
+
+const MessagesArea = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 0;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+`;
+
+const FloatingBadge = styled.button`
+  position: sticky;
+  bottom: 24px;
+  align-self: center;
+  background: ${colors.primary};
+  color: ${colors.surface};
+  border: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-size: ${typography.size.sm};
+  font-weight: ${typography.weight.semibold};
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.2s, transform 0.2s;
+  
+  &:active {
+    transform: scale(0.96);
+  }
+`;
+
+const OlderLoadingBadge = styled.div`
+  text-align: center;
+  padding: 8px;
+  font-size: ${typography.size.xs};
+  color: ${colors.textSecondary};
+`;
+
+const LoadingWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-family: ${typography.fontFamily};
+  color: ${colors.textSecondary};
+`;
+
+const ItemSummaryBar = styled.div`
+  background: ${colors.surface};
+  border-bottom: 1px solid ${colors.border};
+  flex-shrink: 0;
+`;
+
+const EmptyMessages = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: ${colors.textSecondary};
+`;
+
+const UploadStatus = styled.div`
+  padding: 8px 16px;
+  text-align: right;
+  font-size: 13px;
+  color: ${colors.textSecondary};
+`;
+
+const Lightbox = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+`;
+
+const LightboxImage = styled.img`
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+`;
+
+const LightboxClose = styled.button`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+`;

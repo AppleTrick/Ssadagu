@@ -2,10 +2,15 @@
 
 export const colors = {
   primary: '#3182F6',
+  primaryLight: '#D0E2FF',
+  primaryBg: '#F5F9FF',
+  primaryActiveBg: '#EBF4FF',
+  primaryHoverBg: '#E0ECFF',
   bg: '#F2F4F6',
   surface: '#FFFFFF',
   textPrimary: '#191F28',
   textSecondary: '#8B95A1',
+  textTertiary: '#4B5563',
   border: '#E5E8EB',
   disabled: '#D1D6DB',
   red: '#F04452',
@@ -18,6 +23,7 @@ export const colors = {
   warningBg: '#FFFBEB',
   textWhite: '#FFFFFF',
   overlay: 'rgba(0,0,0,0.4)',
+  overlayWhite: 'rgba(255, 255, 255, 0.95)',
 } as const;
 
 export const shadows = {
@@ -29,7 +35,7 @@ export const shadows = {
 export const zIndex = {
   header: 10,
   bottomNav: 20,
-  modal: 50,
+  modal: 100,
 } as const;
 
 export const radius = {

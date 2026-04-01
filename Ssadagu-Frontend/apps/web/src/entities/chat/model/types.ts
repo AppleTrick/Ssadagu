@@ -5,6 +5,8 @@ export interface ChatRoom {
   productId: number;
   productTitle: string;
   productThumbnailUrl: string | null;
+  productPrice?: number;
+  productStatus?: string;
   buyerId: number;
   buyerNickname: string;
   sellerId: number;
@@ -13,14 +15,35 @@ export interface ChatRoom {
   lastSentAt: string | null;
   unreadCount: number;
   roomStatus: RoomStatus;
+  partnerId: number;
+  partnerNickname: string;
+  partnerProfileImageUrl?: string | null;
+}
+
+export type MessageType = 'TALK' | 'ENTER' | 'LEAVE' | 'SYSTEM' | 'PAYMENT_REQUEST' | 'PAYMENT_SUCCESS' | 'PAYMENT_FAIL' | 'IMAGE' | 'MAP';
+
+export interface TransactionContent {
+  productTitle?: string;
+  price?: number;
+  time?: string;
+  locationName?: string;
+  buyerNickname?: string;
+  sellerNickname?: string;
 }
 
 export interface ChatMessage {
-  id: string;
+  id: string; // 백엔드 message_id
   roomId: number;
   senderId: number;
   senderNickname: string;
   content: string;
-  sentAt: string;
+  sentAt: string | null;
+  createdAt?: string; // 백엔드 필드 매핑
+  type?: MessageType; // 백엔드 필드 매핑
   isRead: boolean;
+  messageType?: MessageType;
+  imageUrl?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationName?: string | null;
 }

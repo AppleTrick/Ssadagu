@@ -18,7 +18,11 @@ export const handlers = [
   // ── Auth ──────────────────────────────────────────────────────────────
   http.post(`${BASE}/auth/login`, async () => {
     await d();
-    return HttpResponse.json({ data: { accessToken: MOCK_TOKEN } });
+    return HttpResponse.json({ data: { accessToken: MOCK_TOKEN, refreshToken: 'mock-refresh-token' } });
+  }),
+  http.post(`${BASE}/auth/reissue`, async () => {
+    await d();
+    return HttpResponse.json({ data: { accessToken: MOCK_TOKEN, refreshToken: 'mock-refresh-token' } });
   }),
   http.post(`${BASE}/auth/logout`, async () => {
     await d(100);
@@ -26,9 +30,17 @@ export const handlers = [
   }),
 
   // ── Users ─────────────────────────────────────────────────────────────
+  http.post(`${BASE}/users/signup`, async () => {
+    await d(400);
+    return HttpResponse.json({ data: { id: 1, email: 'test@test.com', nickname: '테스트유저' } });
+  }),
   http.get(`${BASE}/users/me`, async () => {
     await d();
     return HttpResponse.json({ data: mockUser });
+  }),
+  http.get(`${BASE}/users/:userId`, async ({ params }) => {
+    await d();
+    return HttpResponse.json({ data: { ...mockUser, id: Number(params.userId) } });
   }),
   http.patch(`${BASE}/users/me`, async ({ request }) => {
     await d();
@@ -39,16 +51,76 @@ export const handlers = [
     await d();
     return HttpResponse.json({ data: { content: mockWishes } });
   }),
+  http.get(`${BASE}/users/:userId/wishes`, async () => {
+    await d();
+    const data = mockWishes.map(p => ({
+      id: p.id,
+      productId: p.id,
+      productTitle: p.title,
+      productPrice: p.price,
+      regionName: p.regionName,
+      thumbnailUrl: p.thumbnailUrl ?? null,
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '관심 목록 조회 성공',
+      data,
+    });
+  }),
+  http.get(`${BASE}/users/:userId/products`, async () => {
+    await d();
+    // 사용자 요청 스펙에 맞춘 필드 매핑 (images 포함)
+    const data = mockMyProducts.map(p => ({
+      ...p,
+      images: p.thumbnailUrl ? [{ id: 0, imageUrl: p.thumbnailUrl }] : []
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '조직 조회 성공',
+      data: data
+    });
+  }),
+  http.post(`${BASE}/users/region-verify`, async ({ request }) => {
+    await d();
+    const body = await request.json() as { region: string };
+    if (body.region) {
+      mockUser.regionName = body.region;
+    }
+    return HttpResponse.json({ message: 'ok' });
+  }),
   http.get(`${BASE}/users/me/transactions`, async () => {
     await d();
     return HttpResponse.json({ data: { content: mockTransactions } });
+  }),
+  http.get(`${BASE}/users/:userId/purchases`, async () => {
+    await d();
+    const data = mockTransactions.map(t => ({
+      id: t.id,
+      productId: t.productId,
+      productTitle: t.productTitle,
+      amount: t.price,
+      paymentMethod: 'TRANSFER',
+      status: 'COMPLETED',
+      createdAt: t.createdAt,
+    }));
+    return HttpResponse.json({
+      status: 'SUCCESS',
+      message: '구매 내역 조회 성공',
+      data,
+    });
   }),
   http.get(`${BASE}/users/me/products`, async () => {
     await d();
     return HttpResponse.json({ data: { content: mockMyProducts } });
   }),
-  http.post(`${BASE}/users/me/region`, async () => {
+  http.post(`${BASE}/users/me/region`, async ({ request }) => {
     await d();
+    try {
+      const body = await request.json() as { region: string };
+      if (body.region) {
+        mockUser.regionName = body.region;
+      }
+    } catch (e) { }
     return HttpResponse.json({ message: 'ok' });
   }),
 
@@ -67,27 +139,27 @@ export const handlers = [
   }),
 
   // ── Products (페이지네이션 지원) ────────────────────────────────────────
-  http.get(`${BASE}/products`, async ({ request }) => {
+  http.get(`${BASE}/v1/products`, async ({ request }) => {
     await d();
     const url = new URL(request.url);
     const page = Number(url.searchParams.get('page') ?? 0);
     const query = url.searchParams.get('q') ?? undefined;
     return HttpResponse.json({ data: paginateProducts(page, query) });
   }),
-  http.get(`${BASE}/products/:id`, async ({ params }) => {
+  http.get(`${BASE}/v1/products/:id`, async ({ params }) => {
     await d();
     const id = Number(params.id);
     return HttpResponse.json({ data: { ...mockProductDetail, id } });
   }),
-  http.post(`${BASE}/products`, async () => {
+  http.post(`${BASE}/v1/products`, async () => {
     await d(600);
     return HttpResponse.json({ data: { id: 99 } });
   }),
-  http.patch(`${BASE}/products/:id/status`, async () => {
+  http.patch(`${BASE}/v1/products/:id/status`, async () => {
     await d();
     return HttpResponse.json({ message: 'ok' });
   }),
-  http.post(`${BASE}/products/:id/wish`, async ({ params }) => {
+  http.post(`${BASE}/v1/products/:id/wish`, async ({ params }) => {
     await d(200);
     const id = Number(params.id);
     const wasWished = id === 2 || id === 8;

@@ -1,74 +1,166 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import styled from '@emotion/styled';
-import { colors, typography, HEADER_HEIGHT, zIndex } from '@/shared/styles/theme';
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useRouter } from "next/navigation";
+import styled from "@emotion/styled";
+import {
+  colors,
+  typography,
+  HEADER_HEIGHT,
+  zIndex,
+} from "@/shared/styles/theme";
+import { useMyProfile } from "@/entities/user";
+
+export type SearchMode = 'ai' | 'sql';
 
 interface HeaderMainProps {
   title?: string;
-  onSearchChange?: (query: string) => void;
+  onSearchChange?: (query: string, mode: SearchMode) => void;
   onNotification?: () => void;
 }
 
-const HeaderMain = ({ title = '우리동네', onSearchChange, onNotification }: HeaderMainProps) => {
+const HeaderMain = ({
+  title,
+  onSearchChange,
+  onNotification,
+}: HeaderMainProps) => {
+  const router = useRouter();
+  const { data: user, isPending } = useMyProfile();
+
+  const isRegionHeader = !title;
+  const regionName = user?.regionName?.trim()
+    ? user.regionName.replace(/^[^\s]+(시|도)\s*/, "")
+    : "우리동네";
+  const displayTitle = title || (isPending ? "로딩중..." : regionName);
+
   const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [searchMode, setSearchMode] = useState<SearchMode>('sql');
+  const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const openSearch = () => {
-    setSearchOpen(true);
-    setTimeout(() => inputRef.current?.focus(), 50);
+  const handleTitleClick = () => {
+    if (isRegionHeader) {
+      router.push("/region-select");
+    }
   };
+
+  const openSearch = (mode: SearchMode) => {
+    setSearchMode(mode);
+    setSearchOpen(true);
+  };
+
+  useLayoutEffect(() => {
+    if (searchOpen) {
+      inputRef.current?.focus();
+    }
+  }, [searchOpen]);
 
   const closeSearch = () => {
     setSearchOpen(false);
-    setQuery('');
-    onSearchChange?.('');
+    setQuery("");
+    onSearchChange?.("", searchMode);
   };
 
   const handleChange = (v: string) => {
     setQuery(v);
-    onSearchChange?.(v);
+    onSearchChange?.(v, searchMode);
   };
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeSearch(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeSearch();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <Header>
       {searchOpen ? (
         <SearchBar>
+          <SearchModeTag $mode={searchMode}>
+            {searchMode === 'ai' ? 'AI' : '검색'}
+          </SearchModeTag>
           <SearchInput
             ref={inputRef}
             value={query}
             onChange={(e) => handleChange(e.target.value)}
-            placeholder="상품명을 검색하세요"
+            placeholder={searchMode === 'ai' ? 'AI에게 자연어로 검색하세요' : '상품명을 검색하세요'}
             aria-label="상품 검색"
           />
           <CloseButton onClick={closeSearch} aria-label="검색 닫기">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={colors.textSecondary}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </CloseButton>
         </SearchBar>
       ) : (
         <>
-          <Title>{title}</Title>
+          <TitleWrapper
+            onClick={isRegionHeader ? handleTitleClick : undefined}
+            $clickable={isRegionHeader}
+          >
+            <Title>{displayTitle}</Title>
+            {isRegionHeader && (
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={colors.textPrimary}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ marginTop: 2 }}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            )}
+          </TitleWrapper>
           <IconGroup>
-            <IconButton onClick={openSearch} aria-label="검색">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </IconButton>
-            <IconButton onClick={onNotification} aria-label="알림">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-            </IconButton>
+            {onSearchChange && (
+              <>
+                <AiSearchButton onClick={() => openSearch('ai')} aria-label="AI 검색">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <path d="M12 2 C12 2 13.5 8 18 10 C13.5 12 12 18 12 18 C12 18 10.5 12 6 10 C10.5 8 12 2 12 2Z" fill="currentColor" />
+                    <path d="M20 3 C20 3 20.7 5.5 23 6.5 C20.7 7.5 20 10 20 10 C20 10 19.3 7.5 17 6.5 C19.3 5.5 20 3 20 3Z" fill="currentColor" />
+                    <path d="M5 16 C5 16 5.7 18.5 8 19.5 C5.7 20.5 5 23 5 23 C5 23 4.3 20.5 2 19.5 C4.3 18.5 5 16 5 16Z" fill="currentColor" />
+                  </svg>
+                  AI 검색
+                </AiSearchButton>
+                <IconButton onClick={() => openSearch('sql')} aria-label="검색">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={colors.textPrimary}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </IconButton>
+              </>
+            )}
           </IconGroup>
         </>
       )}
@@ -79,13 +171,31 @@ const HeaderMain = ({ title = '우리동네', onSearchChange, onNotification }: 
 export default HeaderMain;
 
 const Header = styled.header`
-  position: fixed; top: 0; left: 0; right: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   height: ${HEADER_HEIGHT}px;
   background: ${colors.surface};
   border-bottom: 1px solid ${colors.border};
-  display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   padding: 0 20px;
   z-index: ${zIndex.header};
+  /* GPU 합성 레이어 - 스크롤 시 repaint 방지 */
+  transform: translateZ(0);
+  will-change: transform;
+`;
+
+const TitleWrapper = styled.div<{ $clickable?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  cursor: ${(props) => (props.$clickable ? "pointer" : "default")};
 `;
 
 const Title = styled.h1`
@@ -93,25 +203,55 @@ const Title = styled.h1`
   font-size: ${typography.size.xl};
   font-weight: ${typography.weight.bold};
   color: ${colors.textPrimary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const IconGroup = styled.div`
-  display: flex; flex-direction: row; align-items: center; gap: 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
 `;
 
 const IconButton = styled.button`
-  background: none; border: none; padding: 6px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
-  &:active { background: ${colors.bg}; }
+  &:active {
+    background: ${colors.bg};
+  }
 `;
 
 const SearchBar = styled.div`
-  flex: 1; display: flex; align-items: center; gap: 8px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const SearchModeTag = styled.span<{ $mode: SearchMode }>`
+  flex-shrink: 0;
+  font-size: ${typography.size.xs};
+  font-weight: ${typography.weight.bold};
+  font-family: ${typography.fontFamily};
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: ${({ $mode }) => ($mode === 'ai' ? colors.primary : colors.bg)};
+  color: ${({ $mode }) => ($mode === 'ai' ? '#fff' : colors.textSecondary)};
+  border: 1.5px solid ${({ $mode }) => ($mode === 'ai' ? colors.primary : colors.border)};
+  user-select: none;
 `;
 
 const SearchInput = styled.input`
-  flex: 1; height: 36px;
+  flex: 1;
+  height: 36px;
   background: ${colors.bg};
   border: 1.5px solid ${colors.primary};
   border-radius: 999px;
@@ -120,10 +260,37 @@ const SearchInput = styled.input`
   font-family: ${typography.fontFamily};
   color: ${colors.textPrimary};
   outline: none;
-  &::placeholder { color: ${colors.textSecondary}; }
+  &::placeholder {
+    color: ${colors.textSecondary};
+  }
+`;
+
+const AiSearchButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1.5px solid ${colors.primary};
+  border-radius: 999px;
+  background: none;
+  color: ${colors.primary};
+  font-size: ${typography.size.sm};
+  font-weight: ${typography.weight.bold};
+  font-family: ${typography.fontFamily};
+  cursor: pointer;
+  white-space: nowrap;
+  &:active {
+    background: ${colors.bg};
+  }
 `;
 
 const CloseButton = styled.button`
-  background: none; border: none; padding: 4px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 `;

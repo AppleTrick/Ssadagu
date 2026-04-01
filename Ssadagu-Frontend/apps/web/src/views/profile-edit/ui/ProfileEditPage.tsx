@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { HeaderBack } from '@/widgets/header';
 import { Button, Input } from '@/shared/ui';
-import { apiClient } from '@/shared/api/client';
-import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
+import { apiClient } from '@/shared/api/client';
+import { useMyProfile, updateUser } from '@/entities/user';
+import { getProxyImageUrl, compressImage } from '@/shared/utils/image';
 import type { User } from '@/entities/user';
 import {
   colors,
   typography,
   radius,
   HEADER_HEIGHT,
-  STATUS_BAR_HEIGHT,
 } from '@/shared/styles/theme';
 
 /* ── Styled ─────────────────────────────────────────────── */
@@ -29,7 +29,7 @@ const Page = styled.div`
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
+  padding-top: ${HEADER_HEIGHT}px;
   padding-bottom: 40px;
   display: flex;
   flex-direction: column;
@@ -57,6 +57,7 @@ const Avatar = styled.div`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 `;
 
 const AvatarEditButton = styled.button`
@@ -72,6 +73,25 @@ const AvatarEditButton = styled.button`
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  z-index: 10;
+`;
+
+const RemoveImageButton = styled.button`
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 10;
 `;
 
 const FormSection = styled.div`
@@ -96,7 +116,7 @@ const FieldLabel = styled.label`
 
 const ToastWrapper = styled.div<{ visible: boolean }>`
   position: fixed;
-  top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT + 12}px;
+  top: ${HEADER_HEIGHT + 12}px;
   left: 50%;
   transform: translateX(-50%);
   background: ${colors.textPrimary};
@@ -136,74 +156,176 @@ const CameraIcon = () => (
   </svg>
 );
 
-interface UserResponse {
-  data?: User;
-}
-
 /* ── Component ───────────────────────────────────────────── */
 
 export function ProfileEditPage() {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const queryClient = useQueryClient();
+  const { accessToken, userId } = useAuthStore();
 
   const [nickname, setNickname] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
 
-  const { data: user } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
-      if (!res.ok) throw new Error('프로필을 불러오지 못했습니다.');
-      const json = await res.json() as User | UserResponse;
-      if ((json as UserResponse).data) return (json as UserResponse).data as User;
-      return json as User;
-    },
-    enabled: !!accessToken,
-  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isImageDeleted, setIsImageDeleted] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // 프로필 조회 (entities에 정의된 공통 훅 사용 - region -> regionName 매핑 포함)
+  const { data: user } = useMyProfile();
 
   useEffect(() => {
-    if (user?.nickname) setNickname(user.nickname);
-  }, [user]);
+    if (user) {
+      if (user.nickname) setNickname(user.nickname);
+      // 로컬에서 선택한 이미지가 없을 때만 서버 이미지를 반영
+      if (!selectedImageFile && !isImageDeleted) {
+        setPreviewUrl(user.profileImageUrl || null);
+      }
+    }
+  }, [user, selectedImageFile, isImageDeleted]);
 
-  const showToast = () => {
-    setToastVisible(true);
-    setTimeout(() => setToastVisible(false), 2000);
-  };
+  // Preview URL Cleanup
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  // 프로필 수정 Mutation
+  const mutation = useMutation({
+    mutationFn: (data: { nickname?: string }) => {
+      if (!userId) throw new Error('사용자 정보가 없습니다.');
+      return updateUser(userId, data, accessToken ?? undefined);
+    },
+    onSuccess: () => {
+      setIsUploading(false);
+      queryClient.invalidateQueries({ queryKey: ['myProfile', userId] });
+      setToastVisible(true);
+      setTimeout(() => {
+        setToastVisible(false);
+        router.push('/my');
+      }, 1500);
+    },
+    onError: (err: Error) => {
+      setIsUploading(false);
+      setError(err.message || '저장에 실패했습니다.');
+    },
+  });
+
 
   const handleSave = async () => {
-    if (!nickname.trim()) { setError('닉네임을 입력해주세요.'); return; }
+    if (!nickname.trim()) {
+      setError("닉네임을 입력해주세요.");
+      return;
+    }
     if (nickname.length < 2 || nickname.length > 20) {
-      setError('닉네임은 2~20자 사이여야 합니다.');
+      setError("닉네임은 2~20자 사이여야 합니다.");
       return;
     }
 
-    setError('');
-    setLoading(true);
+    setError("");
+    setIsUploading(true);
+
+    const timeoutMillis = 10000;
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT_ERROR')), timeoutMillis)
+    );
+
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api'}${ENDPOINTS.USERS.ME}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-          body: JSON.stringify({ nickname }),
-        },
-      );
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as Record<string, unknown>;
-        setError(typeof body.message === 'string' ? body.message : '저장에 실패했습니다.');
-        return;
+      let updatedUser: User | null = null;
+
+      // 1) 이미지 처리: 새 이미지 업로드
+      if (selectedImageFile) {
+        // 이미지 압축 (1MB 제한)
+        const compressed = await compressImage(selectedImageFile, 1920, 1920, 1);
+        
+        if (compressed.size > 1.1 * 1024 * 1024) {
+          throw new Error("이미지 파일 용량이 너무 큽니다. 1MB 이하의 파일을 선택해주세요.");
+        }
+
+        const formData = new FormData();
+        formData.append("file", compressed);
+
+        const uploadRes = await Promise.race([
+          apiClient.postMultipart(
+            `/users/${userId}/profile-image`,
+            formData,
+            accessToken ?? undefined
+          ),
+          timeoutPromise
+        ]);
+
+        if (uploadRes instanceof Response && !uploadRes.ok) {
+          if (uploadRes.status === 413) {
+            throw new Error("사진 용량이 너무 큽니다. (최대 10MB)");
+          }
+          throw new Error("프로필 이미지 업로드에 실패했습니다.");
+        }
+        
+        const resBody = uploadRes instanceof Response ? await uploadRes.json() : {};
+        const rawUser = resBody.data || resBody;
+        // Mapping fix
+        if (rawUser && rawUser.region && !rawUser.regionName) {
+          rawUser.regionName = rawUser.region;
+        }
+        updatedUser = rawUser;
       }
-      showToast();
-      setTimeout(() => router.push('/my'), 1500);
-    } catch {
-      setError('네트워크 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
+
+      // 2) 이미지 처리: 삭제 요청
+      if (isImageDeleted && !selectedImageFile) {
+        const deleteRes = await Promise.race([
+          apiClient.delete(
+            `/users/${userId}/profile-image`,
+            accessToken ?? undefined
+          ),
+          timeoutPromise
+        ]);
+        if (deleteRes instanceof Response && !deleteRes.ok)
+          throw new Error("프로필 이미지 삭제에 실패했습니다.");
+        
+        const resBody = deleteRes instanceof Response ? await deleteRes.json() : {};
+        const rawUser = resBody.data || resBody;
+        // Mapping fix
+        if (rawUser && rawUser.region && !rawUser.regionName) {
+          rawUser.regionName = rawUser.region;
+        }
+        updatedUser = rawUser;
+      }
+
+      // 수동 캐시 갱신
+      if (updatedUser) {
+        queryClient.setQueryData(["myProfile", userId], updatedUser);
+      }
+
+      // 3) 닉네임 변경
+      if (user?.nickname !== nickname) {
+        const patchRes = await Promise.race([
+          mutation.mutateAsync({ nickname }),
+          timeoutPromise
+        ]);
+        if (patchRes && typeof patchRes === 'object') {
+          queryClient.setQueryData(["myProfile", userId], patchRes);
+        }
+      } else {
+        setIsUploading(false);
+        queryClient.invalidateQueries({ queryKey: ["myProfile", userId] });
+        setToastVisible(true);
+        setTimeout(() => {
+          setToastVisible(false);
+          router.push("/my");
+        }, 1500);
+      }
+    } catch (err: any) {
+      setIsUploading(false);
+      if (err.message === 'TIMEOUT_ERROR') {
+        setError("요청 시간이 초과되었습니다. 다시 시도해주세요.");
+      } else {
+        setError(err.message || "저장에 실패했습니다.");
+      }
     }
   };
 
@@ -216,10 +338,61 @@ export function ProfileEditPage() {
       <ContentArea>
         <Section>
           <AvatarWrapper>
-            <Avatar><UserIcon /></Avatar>
-            <AvatarEditButton type="button" aria-label="프로필 사진 변경">
+            <Avatar>
+              {previewUrl && previewUrl.trim() !== "" ? (
+                <img
+                  src={getProxyImageUrl(previewUrl)}
+                  alt="프로필 이미지 미리보기"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <UserIcon />
+              )}
+            </Avatar>
+
+            <AvatarEditButton type="button" aria-label="프로필 사진 변경" onClick={() => fileInputRef.current?.click()}>
               <CameraIcon />
             </AvatarEditButton>
+            {previewUrl && (
+              <RemoveImageButton
+                type="button"
+                aria-label="프로필 사진 삭제"
+                onClick={() => {
+                  setPreviewUrl(null);
+                  setSelectedImageFile(null);
+                  setIsImageDeleted(true);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+              >
+                ✕
+              </RemoveImageButton>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              ref={fileInputRef}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const allowedExtensions = ['image/png', 'image/jpeg', 'image/jpg'];
+                  const ext = file.type.toLowerCase();
+                  if (!allowedExtensions.includes(ext) && !file.name.match(/\.(jpg|jpeg|png)$/i)) {
+                    setError('이미지 파일(jpg, jpeg, png)만 가능합니다.');
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                    return;
+                  }
+                  setSelectedImageFile(file);
+                  setPreviewUrl(URL.createObjectURL(file));
+                  setIsImageDeleted(false);
+                  setError('');
+                }
+              }}
+            />
           </AvatarWrapper>
 
           <FormSection>
@@ -229,7 +402,10 @@ export function ProfileEditPage() {
                 id="edit-nickname"
                 placeholder="닉네임을 입력하세요 (2~20자)"
                 value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  setError('');
+                }}
                 maxLength={20}
               />
             </FieldGroup>
@@ -246,7 +422,14 @@ export function ProfileEditPage() {
         </Section>
 
         <BottomBar>
-          <Button variant="primary" size="lg" fullWidth loading={loading} onClick={handleSave}>
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={mutation.isPending || isUploading}
+            onClick={handleSave}
+            disabled={mutation.isPending || isUploading}
+          >
             저장하기
           </Button>
         </BottomBar>

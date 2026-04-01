@@ -8,9 +8,11 @@ import { HeaderBack } from '@/widgets/header';
 import { TabBar } from '@/widgets/tab-bar';
 import { ItemCard } from '@/entities/product';
 import type { ProductSummary, ProductStatus } from '@/entities/product';
-import { apiClient } from '@/shared/api/client';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
-import { colors, typography, HEADER_HEIGHT, STATUS_BAR_HEIGHT } from '@/shared/styles/theme';
+import { colors, typography } from '@/shared/styles/theme';
+import { getUserMe } from '@/entities/user/api/getUserMe';
+import { ProductListSkeleton, getUserProducts } from '@/entities/product';
+import { FadeIn } from '@/shared/ui';
 
 /* ── Constants ──────────────────────────────────────────── */
 
@@ -24,20 +26,24 @@ const TABS = [
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
   background: ${colors.bg};
+  overflow: hidden;
 `;
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const TabContainer = styled.div`
   position: sticky;
-  top: ${HEADER_HEIGHT + STATUS_BAR_HEIGHT}px;
-  z-index: 5;
+  top: 0;
+  z-index: 10;
   background: ${colors.surface};
   border-bottom: 1px solid ${colors.border};
 `;
@@ -71,37 +77,25 @@ const RetryButton = styled.button`
   text-decoration: underline;
 `;
 
-/* ── Types ─────────────────────────────────────────────── */
-
-interface ProductsResponse {
-  content?: ProductSummary[];
-  data?: ProductSummary[] | { content?: ProductSummary[] };
-}
-
 /* ── Component ───────────────────────────────────────────── */
 
 export function MySalesPage() {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
+  const { accessToken, userId } = useAuthStore();
   const [activeTab, setActiveTab] = useState('ON_SALE');
 
+  // 해당 사용자의 판매 상품 조회
   const { data, isLoading, isError, refetch } = useQuery<ProductSummary[]>({
-    queryKey: ['mySales'],
-    queryFn: async () => {
-      const res = await apiClient.get('/users/me/products', accessToken ?? undefined);
-      if (!res.ok) throw new Error('판매 내역을 불러오지 못했습니다.');
-      const json = await res.json() as ProductsResponse | ProductSummary[];
-      if (Array.isArray(json)) return json;
-      if (Array.isArray((json as ProductsResponse).content)) return (json as ProductsResponse).content as ProductSummary[];
-      const d = (json as ProductsResponse).data;
-      if (Array.isArray(d)) return d as ProductSummary[];
-      if (d && !Array.isArray(d) && Array.isArray((d as { content?: ProductSummary[] }).content)) {
-        return (d as { content: ProductSummary[] }).content;
-      }
-      return [];
+    queryKey: ['userProducts', userId],
+    queryFn: () => {
+      if (!userId) throw new Error('계정 정보가 없습니다.');
+      return getUserProducts(userId, accessToken ?? undefined);
     },
-    enabled: !!accessToken,
+    enabled: !!accessToken && !!userId,
+    staleTime: 30_000,
+    gcTime: 300_000,
   });
+
 
   const filtered = (data ?? []).filter((p) => p.status === (activeTab as ProductStatus));
 
@@ -113,7 +107,7 @@ export function MySalesPage() {
           <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
         </TabContainer>
 
-        {isLoading && <CenterWrapper>불러오는 중...</CenterWrapper>}
+        {isLoading && <ProductListSkeleton count={5} />}
 
         {isError && (
           <CenterWrapper>
@@ -123,7 +117,7 @@ export function MySalesPage() {
         )}
 
         {!isLoading && !isError && (
-          <>
+          <FadeIn>
             {filtered.length > 0 ? (
               <ListWrapper>
                 {filtered.map((product) => (
@@ -140,7 +134,7 @@ export function MySalesPage() {
                 {activeTab === 'ON_SALE' ? '판매중인 상품이 없습니다.' : '판매완료된 상품이 없습니다.'}
               </CenterWrapper>
             )}
-          </>
+          </FadeIn>
         )}
       </ContentArea>
     </Page>

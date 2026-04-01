@@ -29,3 +29,5 @@
 
 # turborepo
 **/.turbo
+
+.DS_Store

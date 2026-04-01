@@ -1,13 +1,15 @@
 'use client';
 
+import { memo, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { colors, typography } from '@/shared/styles/theme';
 import type { ChatRoom } from '../model/types';
+import { getProxyImageUrl } from '@/shared/utils';
 
 interface ChatListItemProps {
-  room: ChatRoom;
+  room: any;
   currentUserId?: number;
-  onClick?: () => void;
+  onClick?: (roomId: string | number) => void;
 }
 
 const formatTime = (dateStr: string | null) => {
@@ -30,16 +32,31 @@ const formatTime = (dateStr: string | null) => {
 };
 
 const ChatListItem = ({ room, currentUserId, onClick }: ChatListItemProps) => {
-  const otherNickname = currentUserId === room.buyerId
-    ? room.sellerNickname
-    : room.buyerNickname;
+  const otherNickname = room.partnerNickname || room.buyerNickname || '상대방';
+  const profileUrl = room.partnerProfileImageUrl;
+
+  const handleClick = useCallback(() => {
+    if (onClick) {
+      onClick(room.roomId || room.id);
+    }
+  }, [onClick, room.roomId, room.id]);
 
   return (
-    <Container onClick={onClick}>
+    <Container onClick={handleClick}>
       <Avatar>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill={colors.textSecondary}>
-          <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-        </svg>
+        {profileUrl ? (
+          <img 
+            src={getProxyImageUrl(profileUrl)} 
+            alt="프로필" 
+            style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill={colors.textSecondary}>
+            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+          </svg>
+        )}
       </Avatar>
       <InfoArea>
         <TopRow>
@@ -57,7 +74,7 @@ const ChatListItem = ({ room, currentUserId, onClick }: ChatListItemProps) => {
   );
 };
 
-export default ChatListItem;
+export default memo(ChatListItem);
 
 const Container = styled.div`
   display: flex;

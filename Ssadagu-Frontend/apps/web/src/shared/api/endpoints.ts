@@ -5,27 +5,54 @@ export const ENDPOINTS = {
     LOGOUT: '/auth/logout',
   },
   USERS: {
-    ME: '/users/me',
-    MY_WISHES: '/users/me/wishes',
-    MY_TRANSACTIONS: '/users/me/transactions',
+    SIGNUP: '/users/signup',
+    MY_WISHES: (id: number) => `/users/${id}/wishes`,
+    MY_TRANSACTIONS: (id: number) => `/users/${id}/purchases`,
+    REGION: (id: number) => `/users/${id}/region`,
+
+    PROFILE: (id: number) => `/users/${id}`,
+    REGION_VERIFY: (id: number) => `/users/${id}/region-verify`,
+    GET_USER_PRODUCTS: (id: number) => `/users/${id}/products`,
+    GET_USER_PURCHASES: (id: number) => `/users/${id}/purchases`,
+    GET_USER_WISHES: (id: number) => `/users/${id}/wishes`,
+    SECONDARY_PASSWORD: (id: number) => `/users/${id}/secondary-password`,
+    VERIFY_SECONDARY_PASSWORD: (id: number) => `/users/${id}/secondary-password/verify`,
+    BIOMETRIC_REGISTER: (id: number) => `/users/${id}/biometric/register`,
+    BIOMETRIC_TOGGLE: (id: number) => `/users/${id}/biometric/toggle`,
+    BIOMETRIC_VERIFY: (id: number) => `/users/${id}/biometric/verify`,
   },
   ACCOUNTS: {
     BASE: '/accounts',
     VERIFY_SEND: (id: number) => `/accounts/${id}/verify/send`,
     VERIFY_CONFIRM: (id: number) => `/accounts/${id}/verify/confirm`,
+    MY: (userId: number) => `/accounts/users/${userId}`,
+  },
+  DEMAND_DEPOSITS: {
+    GET_ACCOUNT: (accountNo: string) => `/demand-deposits/accounts/${accountNo}`,
+    DEPOSIT: (accountNo: string) => `/demand-deposits/accounts/${accountNo}/deposit`,
+    HISTORY: (accountNo: string) => `/demand-deposits/accounts/${accountNo}/transactions`,
   },
   PRODUCTS: {
     BASE: '/products',
+    AI_SEARCH: '/products/search',
     DETAIL: (id: number) => `/products/${id}`,
     STATUS: (id: number) => `/products/${id}/status`,
     WISH: (id: number) => `/products/${id}/wish`,
   },
   CHATS: {
-    ROOMS: '/chats/rooms',
-    CREATE: '/chats/rooms',
-    MESSAGES: (roomId: number) => `/chats/rooms/${roomId}/messages`,
+    USER_ROOMS: '/chat/rooms/user',
+    CREATE: '/chat/rooms',
+    DETAIL: (roomId: number) => `/chat/rooms/${roomId}`,
+    MESSAGES: (roomId: number) => `/chat/rooms/${roomId}/messages`,
+    READ: (roomId: number) => `/chat/rooms/${roomId}/read`,
   },
   TRANSFERS: {
     BASE: '/transfers',
+  },
+  TRANSACTIONS: {
+    REQUEST: '/transactions/request', // 결제 요청 (판매자)
+    APPROVE: '/transactions/approve', // 결제 승인 (구매자)
+    CANCEL: '/transactions/cancel',   // 거래 취소
+    HISTORY: '/transactions/history', // 거래 내역 조회
   },
 } as const;

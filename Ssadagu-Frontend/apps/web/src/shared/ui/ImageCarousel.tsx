@@ -90,6 +90,8 @@ const EmptyPlaceholder = styled.div`
   font-size: 14px;
 `;
 
+import { getProxyImageUrl } from '@/shared/utils';
+
 const ImageCarousel = ({ images, height = '300px' }: ImageCarouselProps) => {
   const [current, setCurrent] = useState(0);
 
@@ -112,8 +114,8 @@ const ImageCarousel = ({ images, height = '300px' }: ImageCarouselProps) => {
   return (
     <Container height={height}>
       {images.map((src, idx) => (
-        <ImageWrapper key={src + idx} index={idx} current={current} total={images.length}>
-          <Img src={src} alt={`이미지 ${idx + 1}`} draggable={false} />
+        <ImageWrapper key={src} index={idx} current={current} total={images.length}>
+          <Img src={getProxyImageUrl(src)} alt={`이미지 ${idx + 1}`} draggable={false} loading={idx === 0 ? 'eager' : 'lazy'} />
         </ImageWrapper>
       ))}
 
@@ -126,9 +128,9 @@ const ImageCarousel = ({ images, height = '300px' }: ImageCarouselProps) => {
             ›
           </NavButton>
           <DotsRow>
-            {images.map((_, idx) => (
+            {images.map((src, idx) => (
               <Dot
-                key={idx}
+                key={src}
                 active={idx === current}
                 role="button"
                 aria-label={`이미지 ${idx + 1}로 이동`}

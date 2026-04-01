@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import type { User } from '@/entities/user';
+import { useMyProfile, type User } from '@/entities/user';
 import styled from '@emotion/styled';
 import { HeaderMain } from '@/widgets/header';
 import { BottomNav } from '@/widgets/bottom-nav';
 import { TabBar } from '@/widgets/tab-bar';
-import { ChatListItem } from '@/entities/chat';
+import { ChatListItem, ChatListSkeleton } from '@/entities/chat';
 import type { ChatRoom } from '@/entities/chat';
 import { apiClient } from '@/shared/api/client';
+import { useQuery } from '@tanstack/react-query';
 import { ENDPOINTS } from '@/shared/api/endpoints';
 import { useAuthStore } from '@/shared/auth/useAuthStore';
 import {
@@ -29,20 +29,23 @@ const TABS = [
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   background: ${colors.surface};
 `;
 
 const ContentArea = styled.main`
   flex: 1;
-  padding-top: ${HEADER_HEIGHT}px;
-  padding-bottom: ${BOTTOM_NAV_HEIGHT}px;
+  min-height: 0;
+  margin-bottom: ${BOTTOM_NAV_HEIGHT}px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
 `;
 
 const TabContainer = styled.div`
-  position: sticky;
-  top: ${HEADER_HEIGHT}px;
+  margin-top: ${HEADER_HEIGHT}px;
+  flex-shrink: 0;
   z-index: 5;
   background: ${colors.surface};
 `;
@@ -103,50 +106,76 @@ interface ChatRoomsResponse {
 export function ChatListPage() {
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const userId = useAuthStore((s) => s.userId);
   const [activeTab, setActiveTab] = useState('all');
 
-  const { data: currentUser } = useQuery<User>({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.USERS.ME, accessToken ?? undefined);
-      if (!res.ok) throw new Error('사용자 정보 오류');
-      const json = await res.json() as User | { data?: User };
-      if ((json as { data?: User }).data) return (json as { data: User }).data;
-      return json as User;
-    },
-    enabled: !!accessToken,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: currentUser } = useMyProfile();
 
   const { data: rooms, isLoading, isError, refetch } = useQuery<ChatRoom[]>({
-    queryKey: ['chatRooms'],
+    queryKey: ['chatRooms', currentUser?.id],
     queryFn: async () => {
-      const res = await apiClient.get(ENDPOINTS.CHATS.ROOMS, accessToken ?? undefined);
+      const res = await apiClient.get(`${ENDPOINTS.CHATS.USER_ROOMS}?userId=${currentUser?.id}`, accessToken ?? undefined);
       if (!res.ok) throw new Error('채팅 목록을 불러오지 못했습니다.');
-      const json = await res.json() as ChatRoomsResponse | ChatRoom[];
-      if (Array.isArray(json)) return json;
-      const body = json as ChatRoomsResponse;
-      if (Array.isArray(body.content)) return body.content as ChatRoom[];
-      const d = body.data;
-      if (Array.isArray(d)) return d as ChatRoom[];
-      if (d && !Array.isArray(d) && Array.isArray((d as { content?: ChatRoom[] }).content)) {
-        return (d as { content: ChatRoom[] }).content;
-      }
+      const json = await res.json();
+      if (Array.isArray(json)) return json as ChatRoom[];
+      if (json?.data && Array.isArray(json.data)) return json.data as ChatRoom[];
       return [];
     },
+    enabled: !!currentUser?.id,
+    staleTime: 30_000,
   });
 
-  const filteredRooms = rooms ?? [];
+  const handleRoomClick = useCallback(
+    (roomId: string | number) => {
+      router.push(`/chat/${roomId}`);
+    },
+    [router]
+  );
+
+  const filteredRooms = useMemo(() => {
+    return (rooms ?? []).filter((room: any) => {
+      if (activeTab === 'all') return true;
+      if (activeTab === 'sell') return room.myRole === 'SELLER';
+      if (activeTab === 'buy') return room.myRole === 'BUYER';
+      return true;
+    });
+  }, [rooms, activeTab]);
+
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  // 탭이 변경될 때 렌더링 개수 초기화
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [activeTab]);
+
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback(
+    (node: HTMLLIElement | null) => {
+      if (isLoading) return;
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && visibleCount < filteredRooms.length) {
+          setVisibleCount((prev) => Math.min(prev + 20, filteredRooms.length));
+        }
+      });
+
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, filteredRooms.length, visibleCount]
+  );
 
   return (
     <Page>
       <HeaderMain title="채팅" />
+      <TabContainer>
+        <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      </TabContainer>
       <ContentArea>
-        <TabContainer>
-          <TabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
-        </TabContainer>
-        {isLoading && (
-          <LoadingWrapper aria-live="polite" aria-busy="true">불러오는 중...</LoadingWrapper>
+        {(!currentUser || isLoading) && (
+          <ListWrapper aria-live="polite" aria-busy="true">
+            <ChatListSkeleton />
+          </ListWrapper>
         )}
         {isError && (
           <ErrorWrapper>
@@ -154,19 +183,25 @@ export function ChatListPage() {
             <RetryButton onClick={() => refetch()}>다시 시도</RetryButton>
           </ErrorWrapper>
         )}
-        {!isLoading && !isError && (
+        {currentUser && !isLoading && !isError && (
           <>
             {filteredRooms.length > 0 ? (
               <ListWrapper>
-                {filteredRooms.map((room) => (
-                  <li key={room.id}>
-                    <ChatListItem
-                      room={room}
-                      currentUserId={currentUser?.id}
-                      onClick={() => router.push(`/chat/${room.id}`)}
-                    />
-                  </li>
-                ))}
+                {filteredRooms.slice(0, visibleCount).map((room: any, index: number) => {
+                  const isLast = index === visibleCount - 1;
+                  return (
+                    <li
+                      key={room.roomId || room.id}
+                      ref={isLast ? lastElementRef : null}
+                    >
+                      <ChatListItem
+                        room={room}
+                        currentUserId={currentUser?.id}
+                        onClick={handleRoomClick}
+                      />
+                    </li>
+                  );
+                })}
               </ListWrapper>
             ) : (
               <EmptyWrapper>채팅 내역이 없습니다.</EmptyWrapper>

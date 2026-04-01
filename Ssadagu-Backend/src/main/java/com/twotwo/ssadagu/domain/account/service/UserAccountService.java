@@ -3,10 +3,12 @@ package com.twotwo.ssadagu.domain.account.service;
 import com.twotwo.ssadagu.domain.account.dto.AccountRegisterRequestDto;
 import com.twotwo.ssadagu.domain.account.dto.AccountRegisterResponseDto;
 import com.twotwo.ssadagu.domain.account.dto.AccountVerifyRequestDto;
+import com.twotwo.ssadagu.domain.account.dto.UserAccountResponseDto;
 import com.twotwo.ssadagu.domain.account.entity.AccountVerification;
 import com.twotwo.ssadagu.domain.account.entity.UserAccount;
 import com.twotwo.ssadagu.domain.account.repository.AccountVerificationRepository;
 import com.twotwo.ssadagu.domain.account.repository.UserAccountRepository;
+import com.twotwo.ssadagu.domain.demanddeposit.service.DemandDepositService;
 import com.twotwo.ssadagu.domain.user.entity.User;
 import com.twotwo.ssadagu.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,32 +29,50 @@ public class UserAccountService {
     private final AccountVerificationRepository verificationRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DemandDepositService demandDepositService;
 
     @Transactional
     public AccountRegisterResponseDto registerAccountAndStartAuth(User user, AccountRegisterRequestDto requestDto) {
-        // 이미 계좌가 있는지 확인. 없다면 PENDING 상태로 생성
         UserAccount account = userAccountRepository.findByUserId(user.getId())
-                .orElseGet(() -> {
-                    UserAccount newAccount = UserAccount.builder()
-                            .user(user)
-                            .bankCode(requestDto.getBankCode())
-                            .bankName("임시은행명") // 프론트에서 넘어오지 않으므로 임시 설정
-                            .accountNumber(requestDto.getAccountNumber())
-                            .accountHash(passwordEncoder.encode(requestDto.getAccountNumber())) // 간이 해시
-                            .accountHolderName(requestDto.getAccountHolderName())
-                            .isPrimary(true)
-                            .verifiedStatus("PENDING")
-                            .build();
-                    return userAccountRepository.save(newAccount);
-                });
+                .orElse(null);
 
-        if ("VERIFIED".equals(account.getVerifiedStatus())) {
-            throw new IllegalArgumentException("이미 인증된 계좌입니다.");
+        String newHash = passwordEncoder.encode(requestDto.getAccountNumber()); // 간이 해시
+
+        if (account == null) {
+            account = UserAccount.builder()
+                    .user(user)
+                    .bankCode(requestDto.getBankCode())
+                    .bankName(requestDto.getBankName() != null ? requestDto.getBankName() : "등록은행")
+                    .accountNumber(requestDto.getAccountNumber())
+                    .accountHash(newHash)
+                    .accountHolderName(requestDto.getAccountHolderName())
+                    .isPrimary(true)
+                    .verifiedStatus("PENDING")
+                    .build();
+            account = userAccountRepository.save(account);
+        } else {
+            // 이미 PENDING이거나 VERIFIED 이더라도 사용자가 재인증을 요청했으므로 덮어쓰고 PENDING으로 초기화
+            account.updateAccountAndPending(
+                    requestDto.getBankCode(),
+                    requestDto.getBankName() != null ? requestDto.getBankName() : "등록은행",
+                    requestDto.getAccountNumber(),
+                    newHash,
+                    requestDto.getAccountHolderName()
+            );
         }
 
-        // Mock: 4자리 랜덤 숫자 생성
+        // 실제 4자리 랜덤 숫자 통장 적요(Summary)로 송금
         String randomCode = String.format("%04d", new Random().nextInt(10000));
-        log.info("[1원 송금 발생] 계좌번호: {}, 인증코드: {}", requestDto.getAccountNumber(), randomCode);
+        String summary = "SSADAGU" + randomCode;
+
+        try {
+            log.info("[1원 송금 요청] 계좌번호: {}, 입금자명: {}", requestDto.getAccountNumber(), summary);
+            demandDepositService.updateDeposit(requestDto.getAccountNumber(), 1L, summary, user.getUserKey());
+            log.info("[1원 송금 완료] 계좌번호: {}, 인증코드: {}", requestDto.getAccountNumber(), randomCode);
+        } catch (Exception e) {
+            log.error("[1원 송금 오류] 1원 이체 실패: {}", e.getMessage());
+            throw new IllegalArgumentException("금융망 연동 오류: 유효한 계좌번호인지 확인해주세요.", e);
+        }
 
         // AccountVerification 생성
         AccountVerification verification = AccountVerification.builder()
@@ -65,7 +85,7 @@ public class UserAccountService {
                 .requestedAt(LocalDateTime.now())
                 .build();
 
-        AccountVerification savedVerification = verificationRepository.save(verification);
+        verificationRepository.save(verification);
 
         return AccountRegisterResponseDto.builder()
                 .id(account.getId())
@@ -94,9 +114,21 @@ public class UserAccountService {
             throw new IllegalArgumentException("인증 번호가 일치하지 않습니다.");
         }
 
-        // 상태 업데이트
-        verificationRepository.updateVerificationStatus(verification.getId(), "VERIFIED", LocalDateTime.now());
-        userAccountRepository.updateVerifiedStatus(verification.getAccount().getId(), "VERIFIED");
-        userRepository.updateStatus(user.getId(), "ACTIVE");
+        // 1. 인증 기록 및 계좌 상태 업데이트
+        LocalDateTime now = LocalDateTime.now();
+        verification.verify(now);
+        verification.getAccount().verify();
+        
+        // 2. 로그인된 사용자 엔티티를 영속성 컨텍스트로 불러와 더티체킹으로 바로 업데이트 (기존 이메일 기반 강제 업데이트 제거)
+        User dbUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        dbUser.setAccountVerified(); // status -> VERIFIED
+    }
+
+    @Transactional(readOnly = true)
+    public UserAccountResponseDto getMyAccount(Long userId) {
+        UserAccount account = userAccountRepository.findByUserId(userId)
+                .orElseThrow(() -> new com.twotwo.ssadagu.global.error.BusinessException(com.twotwo.ssadagu.global.error.ErrorCode.ACCOUNT_NOT_FOUND));
+        return UserAccountResponseDto.from(account);
     }
 }

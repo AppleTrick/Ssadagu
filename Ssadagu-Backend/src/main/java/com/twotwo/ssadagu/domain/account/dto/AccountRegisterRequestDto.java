@@ -2,6 +2,7 @@ package com.twotwo.ssadagu.domain.account.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,11 +15,15 @@ public class AccountRegisterRequestDto {
     @NotBlank(message = "은행 코드는 필수 입력값입니다.")
     private String bankCode;
 
+    @Schema(description = "은행 명", example = "국민은행")
+    private String bankName;
+
     @Schema(description = "계좌 번호", example = "1234567890")
     @NotBlank(message = "계좌 번호는 필수 입력값입니다.")
     private String accountNumber;
 
     @Schema(description = "예금주 명", example = "홍길동")
     @NotBlank(message = "예금주 명은 필수 입력값입니다.")
+    @Size(max = 20, message = "예금주 명은 20자를 초과할 수 없습니다.")
     private String accountHolderName;
 }
