@@ -1,2 +1,0 @@
-FROM kibana:8.12.0
-COPY config/kibana.yml /usr/share/kibana/config/kibana.yml

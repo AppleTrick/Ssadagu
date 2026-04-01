@@ -1,33 +1,24 @@
-# Build stage
+# 1. 빌드 스테이지 (JDK 21)
 FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 
-# Copy gradle files
-COPY gradlew .
-COPY gradle gradle
-COPY build.gradle .
-COPY settings.gradle .
+# 모든 소스 복사 (json, sql 포함)
+COPY . .
 
-# Grant execute permission for gradlew
-RUN chmod +x gradlew
+# 빌드 실행
+RUN chmod +x ./gradlew
+RUN ./gradlew clean build -x test
 
-# Build the application
-COPY src src
-RUN ./gradlew bootJar --no-daemon
-
-# Final stage
+# 2. 실행 스테이지 (JRE 21)
 FROM eclipse-temurin:21-jre-jammy
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# Copy the build artifact from the build stage
+# 빌드 결과물 jar 복사
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Expose the internal port
-EXPOSE 8080
+# 루트에 있는 설정 파일들도 실행 위치로 복사 (JSON, SQL 등)
+COPY --from=build /app/schema.sql ./schema.sql
+COPY --from=build /app/SSAFY_금융망_API_명세_파싱.json ./SSAFY_금융망_API_명세_파싱.json
 
-# Copy environment variables if they exist
-COPY .env* .env
-
-# Run the application (Natively import .env as a property source)
-ENTRYPOINT ["java", "-Dspring.config.import=optional:file:.env", "-jar", "app.jar"]
+# 앱 실행
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar"]
