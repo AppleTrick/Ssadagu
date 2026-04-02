@@ -1,0 +1,21 @@
+name: Deploy to Home Server
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull latest code
+        run: |
+          cd ~/my-server/apps/ssadagu
+          git pull origin master
+
+      - name: Rebuild and restart containers
+        run: |
+          cd ~/my-server
+          docker-compose up -d --build ssadagu-back ssadagu-front
