@@ -18,4 +18,4 @@ jobs:
       - name: Rebuild and restart containers
         run: |
           cd ~/my-server
-          docker-compose up -d --build ssadagu-back ssadagu-front
+          docker compose up -d --build ssadagu-back ssadagu-front
