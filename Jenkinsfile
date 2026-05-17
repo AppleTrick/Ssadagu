@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Pull') {
             steps {
-                sh 'cd /home/ubuntu/project/apps/ssadagu && git pull origin main'
+                sh 'cd /home/ubuntu/project/apps/ssadagu && git pull origin master'
             }
         }
         stage('Deploy') {
