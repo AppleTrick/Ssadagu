@@ -4,7 +4,13 @@ pipeline {
     stages {
         stage('Pull') {
             steps {
-                sh 'cd /home/ubuntu/project/apps/ssadagu && git pull origin master'
+                withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                    sh '''
+                        cd /home/ubuntu/project/apps/ssadagu
+                        git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/AppleTrick/Ssadagu.git
+                        git pull origin master
+                    '''
+                }
             }
         }
         stage('Deploy') {
