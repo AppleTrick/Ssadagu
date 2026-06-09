@@ -9,6 +9,7 @@ pipeline {
                         cd /home/ubuntu/project/apps/ssadagu
                         git remote set-url origin https://${GIT_USER}:${GIT_TOKEN}@github.com/AppleTrick/Ssadagu.git
                         git pull origin master
+                        git remote set-url origin https://github.com/AppleTrick/Ssadagu.git
                     '''
                 }
             }

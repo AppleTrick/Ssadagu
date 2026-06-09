@@ -18,7 +18,6 @@ COPY --from=build /app/build/libs/*.jar app.jar
 
 # 루트에 있는 설정 파일들도 실행 위치로 복사 (JSON, SQL 등)
 COPY --from=build /app/schema.sql ./schema.sql
-COPY --from=build /app/SSAFY_금융망_API_명세_파싱.json ./SSAFY_금융망_API_명세_파싱.json
 
 # 앱 실행
 ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar"]
