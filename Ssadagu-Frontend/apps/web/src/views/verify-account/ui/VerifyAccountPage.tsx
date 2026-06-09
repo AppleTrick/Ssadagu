@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/shared/auth/useAuthStore";
+import { useMyAccount } from "@/entities/user/api/useAccount";
+import { apiClient } from "@/shared/api/client";
+import { ENDPOINTS } from "@/shared/api/endpoints";
 import styled from "@emotion/styled";
 import { HeaderBack } from "@/widgets/header";
 import { Button, Input } from "@/shared/ui";
@@ -253,6 +256,96 @@ const CodeBox = styled.input`
   }
 `;
 
+const NoticeBox = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #f0f4ff;
+  border-radius: ${radius.md};
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.sm};
+  color: ${colors.textSecondary};
+  line-height: 1.5;
+`;
+
+/* ── Transaction Card (mobile) ──────────────────────────── */
+
+const TxCard = styled.div`
+  border: 1.5px solid ${colors.border};
+  border-radius: ${radius.lg};
+  overflow: hidden;
+`;
+
+const TxCardHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: ${colors.bg};
+  border-bottom: 1px solid ${colors.border};
+`;
+
+const TxBadge = styled.span`
+  font-family: ${typography.fontFamily};
+  font-size: 11px;
+  font-weight: ${typography.weight.semibold};
+  color: ${colors.primary};
+  background: #e8f0fe;
+  border-radius: 4px;
+  padding: 2px 7px;
+  letter-spacing: 0.3px;
+`;
+
+const TxBadgeLabel = styled.span`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.sm};
+  color: ${colors.textSecondary};
+`;
+
+const TxCardBody = styled.div`
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`;
+
+const TxRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const TxKey = styled.span`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.sm};
+  color: ${colors.textSecondary};
+`;
+
+const TxVal = styled.span`
+  font-family: ${typography.fontFamily};
+  font-size: ${typography.size.sm};
+  font-weight: ${typography.weight.medium};
+  color: ${colors.textPrimary};
+`;
+
+const TxValGreen = styled(TxVal)`
+  color: #16a34a;
+  font-weight: ${typography.weight.bold};
+`;
+
+const TxSkeletonRow = styled.div`
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, ${colors.border} 25%, ${colors.bg} 50%, ${colors.border} 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+`;
+
 const TimerNote = styled.p`
   font-family: ${typography.fontFamily};
   font-size: ${typography.size.sm};
@@ -348,8 +441,7 @@ function StepIndicator({ current }: { current: Step }) {
 export function VerifyAccountPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const userId = useAuthStore((s) => s.userId);
-  const clearToken = useAuthStore((s) => s.clearToken);
+  const { userId, accessToken, clearToken } = useAuthStore();
   const { register, sendVerification, confirmCode } = useRegisterAccount();
   const [accountId, setAccountId] = useState<number | null>(null);
 
@@ -359,7 +451,22 @@ export function VerifyAccountPage() {
   const [bankCode, setBankCode] = useState("");
   const [bankName, setBankName] = useState("");
   const [bankOpen, setBankOpen] = useState(false);
+
+  const { data: myAccount } = useMyAccount(userId ?? undefined, accessToken);
+
+  useEffect(() => {
+    if (myAccount?.accountNumber) {
+      setAccountNumber(myAccount.accountNumber);
+      setBankCode(myAccount.bankCode || "001");
+      setBankName(myAccount.bankName || "한국은행");
+      setAccountHolderName("본인");
+      setStep("transfer-info");
+    }
+  }, [myAccount]);
+
   const [codeDigits, setCodeDigits] = useState(["", "", "", ""]);
+  const [latestTx, setLatestTx] = useState<any>(null);
+  const [txLoading, setTxLoading] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -413,7 +520,7 @@ export function VerifyAccountPage() {
   const handleSendTransfer = async () => {
     setError("");
     setLoading(true);
-    
+
     const timeoutMillis = 10000;
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('TIMEOUT_ERROR')), timeoutMillis)
@@ -421,11 +528,39 @@ export function VerifyAccountPage() {
 
     try {
       const id = await Promise.race([
-          register({ bankCode, bankName, accountNumber, accountHolderName }),
-          timeoutPromise
+        register({ bankCode, bankName, accountNumber, accountHolderName }),
+        timeoutPromise,
       ]) as number;
       setAccountId(id);
       setStep("verify-code");
+
+      // 1원 송금 후 거래내역 조회 (포트폴리오 실거래 확인용)
+      setTxLoading(true);
+      await new Promise((r) => setTimeout(r, 2000)); // SSAFY 처리 대기
+      try {
+        const res = await apiClient.get(
+          `${ENDPOINTS.DEMAND_DEPOSITS.HISTORY(accountNumber)}?transactionType=A&orderByType=DESC`,
+          accessToken ?? undefined
+        );
+        if (res.ok) {
+          const json = await res.json() as any;
+          // 응답 구조 대응 (대소문자 모두 시도)
+          const list: any[] =
+            json?.data?.REC?.list ??
+            json?.data?.rec?.list ??
+            json?.data?.REC ??
+            [];
+          const tx = list.find((t: any) =>
+            typeof t.transactionSummary === "string" &&
+            t.transactionSummary.toUpperCase().startsWith("SSADAGU")
+          );
+          if (tx) setLatestTx(tx);
+        }
+      } catch {
+        // 거래내역 조회 실패는 조용히 무시 (인증 흐름에 영향 없음)
+      } finally {
+        setTxLoading(false);
+      }
     } catch (e: any) {
       if (e.message === 'TIMEOUT_ERROR') {
         setError("요청 시간이 초과되었습니다. 다시 시도해주세요.");
@@ -657,6 +792,9 @@ export function VerifyAccountPage() {
                 <InfoValHighlight>1원</InfoValHighlight>
               </InfoRow>
             </InfoCard>
+            <NoticeBox>
+              회원가입 시 자동 생성된 한국은행 SSAFY 가상계좌로 인증이 진행됩니다.
+            </NoticeBox>
             {error && <ErrorMsg role="alert">{error}</ErrorMsg>}
           </Section>
           <BottomBar>
@@ -687,6 +825,46 @@ export function VerifyAccountPage() {
             <Desc>{`${bankName} ${accountNumber}로\n1원을 송금했어요`}</Desc>
           </TitleBlock>
           <FieldGroup>
+            {/* 실거래 확인 카드 */}
+            <TxCard>
+              <TxCardHeader>
+                <TxBadge>금융망 연동</TxBadge>
+                <TxBadgeLabel>입금 내역 확인</TxBadgeLabel>
+              </TxCardHeader>
+              <TxCardBody>
+                {txLoading ? (
+                  <>
+                    <TxSkeletonRow style={{ width: "60%" }} />
+                    <TxSkeletonRow style={{ width: "80%" }} />
+                    <TxSkeletonRow style={{ width: "50%" }} />
+                  </>
+                ) : latestTx ? (
+                  <>
+                    <TxRow>
+                      <TxKey>입금액</TxKey>
+                      <TxValGreen>
+                        {Number(latestTx.transactionBalance).toLocaleString()}원
+                      </TxValGreen>
+                    </TxRow>
+                    <TxRow>
+                      <TxKey>입금자명</TxKey>
+                      <TxVal>{latestTx.transactionSummary}</TxVal>
+                    </TxRow>
+                    <TxRow>
+                      <TxKey>거래일시</TxKey>
+                      <TxVal>
+                        {`${latestTx.transactionDate?.slice(0,4)}.${latestTx.transactionDate?.slice(4,6)}.${latestTx.transactionDate?.slice(6,8)} ${latestTx.transactionTime?.slice(0,2)}:${latestTx.transactionTime?.slice(2,4)}`}
+                      </TxVal>
+                    </TxRow>
+                  </>
+                ) : (
+                  <TxRow>
+                    <TxKey>잠시 후 입금 내역이 표시됩니다</TxKey>
+                  </TxRow>
+                )}
+              </TxCardBody>
+            </TxCard>
+
             <CodeInputRow>
               {codeDigits.map((d, i) => (
                 <CodeBox
