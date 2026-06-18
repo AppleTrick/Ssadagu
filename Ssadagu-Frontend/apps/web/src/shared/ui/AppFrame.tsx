@@ -8,7 +8,7 @@ const Backdrop = styled.div`
   min-height: 100dvh;
   display: flex;
   justify-content: center;
-  background: #0b0c0e;
+  background: #f2f2f2;
 `;
 
 const Frame = styled.div`
