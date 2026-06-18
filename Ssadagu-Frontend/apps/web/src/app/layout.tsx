@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from './providers';
+import { AppFrame } from '@/shared/ui';
 
 export const metadata: Metadata = {
   title: '싸다구 — 우리 동네 안전 중고거래',
@@ -17,7 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body>
-        <Providers>{children}</Providers>
+        <AppFrame>
+          <Providers>{children}</Providers>
+        </AppFrame>
       </body>
     </html>
   );

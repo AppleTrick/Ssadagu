@@ -12,3 +12,4 @@ export { default as MapBase } from './MapBase';
 export { default as ImageCarousel } from './ImageCarousel';
 export { Skeleton } from './Skeleton';
 export { FadeIn } from './FadeIn';
+export { AppFrame } from './AppFrame';
