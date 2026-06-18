@@ -66,7 +66,7 @@ export const typography = {
 } as const;
 
 // 모바일 앱 기준 너비
-export const APP_WIDTH = 390;
+export const APP_WIDTH = 410;
 export const BOTTOM_NAV_HEIGHT = 84;
 export const HEADER_HEIGHT = 56;
 export const STATUS_BAR_HEIGHT = 54;
