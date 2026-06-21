@@ -28,11 +28,29 @@ public class AIMetadataService {
     // Bean 주입 - Spring 전역 설정(JavaTimeModule 등)이 반영된 ObjectMapper 사용
     private final ObjectMapper objectMapper;
 
-    @Value("${gms.api.key}")
-    private String gmsApiKey;
+    @Value("${groq.api.key}")
+    private String groqApiKey;
 
-    @Value("${gms.api.endpoint:https://gms.ssafy.io/gmsapi/api.openai.com/v1/chat/completions}")
-    private String gmsEndpoint;
+    @Value("${groq.api.url}")
+    private String groqApiUrl;
+
+    @Value("${groq.model.primary}")
+    private String groqModelPrimary;
+
+    @Value("${groq.model.vision}")
+    private String groqModelVision;
+
+    @Value("${ai.provider:groq}")
+    private String aiProvider;
+
+    @Value("${anthropic.api.key:}")
+    private String anthropicApiKey;
+
+    @Value("${anthropic.api.url}")
+    private String anthropicApiUrl;
+
+    @Value("${anthropic.model}")
+    private String anthropicModel;
 
     private static final int MAX_IMAGES_FOR_METADATA = 3;
 
@@ -48,7 +66,7 @@ public class AIMetadataService {
             List<String> limitedImages = (imageUrls != null && imageUrls.size() > MAX_IMAGES_FOR_METADATA)
                     ? imageUrls.subList(0, MAX_IMAGES_FOR_METADATA)
                     : (imageUrls != null ? imageUrls : List.of());
-            String response = callGmsApi(prompt, limitedImages);
+            String response = callAiApi(prompt, limitedImages);
             return extractJsonFromResponse(response);
         } catch (Exception e) {
             log.error("Failed to generate metadata: {}", e.getMessage());
@@ -99,14 +117,14 @@ public class AIMetadataService {
 
     /**
      * [Phase 5] 이미지 분석 검증용 메서드.
-     * 텍스트 없이 이미지 URL만 GMS에 전달해 실제 비전/OCR 분석이 작동하는지 확인합니다.
+     * 텍스트 없이 이미지 URL만 비전 모델에 전달해 실제 비전/OCR 분석이 작동하는지 확인합니다.
      *
      * 검증 방법:
      * 1) 이 메서드 결과와 generateMetadata() 결과를 비교해 이미지가 실제로 분석에 기여하는지 판단
      * 2) detail=low vs detail=high 비교 시 imageUrls를 동일하게 하되 이 메서드를 두 번 호출
      *
      * @param imageUrls 분석할 이미지 URL 목록 (최대 3장)
-     * @return GMS 모델이 이미지에서 추출한 텍스트/정보 (JSON 또는 자유 텍스트)
+     * @return 비전 모델이 이미지에서 추출한 텍스트/정보 (JSON 또는 자유 텍스트)
      */
     public String analyzeImagesOnly(List<String> imageUrls) {
         try {
@@ -130,7 +148,7 @@ public class AIMetadataService {
                     }
                     """;
 
-            String response = callGmsApi(prompt, limitedImages);
+            String response = callAiApi(prompt, limitedImages);
             return extractJsonFromResponse(response);
         } catch (Exception e) {
             log.error("Image analysis failed: {}", e.getMessage());
@@ -148,7 +166,7 @@ public class AIMetadataService {
     public SearchFilterDto buildSearchFilter(String query) {
         try {
             String prompt = buildSearchFilterPrompt(query);
-            String response = callGmsApi(prompt, List.of());
+            String response = callAiApi(prompt, List.of());
             String jsonStr = extractJsonFromResponse(response);
             // 직접 DTO 역직렬화 대신 JsonNode 경유 → LLM 출력 불안정성 방어
             JsonNode node = objectMapper.readTree(jsonStr);
@@ -160,18 +178,50 @@ public class AIMetadataService {
     }
 
     /**
-     * GMS API를 호출합니다.
+     * 설정된 ai.provider에 따라 Groq 또는 Claude API를 호출합니다.
+     * (Groq의 on-demand rate limit 이슈로 임시로 Claude를 병행 지원)
      */
-    private String callGmsApi(String prompt, List<String> imageUrls) throws Exception {
+    private String callAiApi(String prompt, List<String> imageUrls) throws Exception {
+        if ("claude".equalsIgnoreCase(aiProvider)) {
+            return callClaudeApi(prompt, imageUrls);
+        }
+        return callGroqApi(prompt, imageUrls);
+    }
+
+    /**
+     * Claude API(Anthropic Messages API)를 호출합니다.
+     */
+    private String callClaudeApi(String prompt, List<String> imageUrls) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + gmsApiKey);
+        headers.set("x-api-key", anthropicApiKey);
+        headers.set("anthropic-version", "2023-06-01");
 
-        String requestBody = objectMapper.writeValueAsString(new GmsRequest(prompt, imageUrls));
+        String requestBody = objectMapper.writeValueAsString(new ClaudeRequest(anthropicModel, prompt, imageUrls));
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
-        String response = restTemplate.postForObject(gmsEndpoint, entity, String.class);
-        log.debug("GMS API Response: {}", response);
+        String response = restTemplate.postForObject(anthropicApiUrl, entity, String.class);
+        log.debug("Claude API Response: {}", response);
+
+        return response;
+    }
+
+    /**
+     * Groq API를 호출합니다.
+     * groq/compound는 이미지(비전) 입력을 지원하지 않아, 이미지가 포함된 요청은
+     * 비전 지원 모델(groq.model.vision)로 자동 전환합니다.
+     */
+    private String callGroqApi(String prompt, List<String> imageUrls) throws Exception {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + groqApiKey);
+
+        String model = (imageUrls != null && !imageUrls.isEmpty()) ? groqModelVision : groqModelPrimary;
+        String requestBody = objectMapper.writeValueAsString(new GroqRequest(model, prompt, imageUrls));
+        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+
+        String response = restTemplate.postForObject(groqApiUrl, entity, String.class);
+        log.debug("Groq API Response: {}", response);
 
         return response;
     }
@@ -409,19 +459,25 @@ public class AIMetadataService {
 
     /**
      * API 응답에서 JSON 문자열을 추출합니다.
+     * Claude(Anthropic Messages API)와 Groq(OpenAI 호환 API)의 응답 형식이 달라 분기합니다.
      */
     private String extractJsonFromResponse(String response) throws Exception {
         JsonNode rootNode = objectMapper.readTree(response);
+        String content;
 
-        JsonNode choices = rootNode.path("choices");
-        if (!choices.isArray() || choices.isEmpty()) {
-            throw new IllegalStateException("GMS API 응답에 choices가 없습니다: " + response);
+        if ("claude".equalsIgnoreCase(aiProvider)) {
+            JsonNode contentArr = rootNode.path("content");
+            if (!contentArr.isArray() || contentArr.isEmpty()) {
+                throw new IllegalStateException("Claude API 응답에 content가 없습니다: " + response);
+            }
+            content = contentArr.get(0).path("text").asText();
+        } else {
+            JsonNode choices = rootNode.path("choices");
+            if (!choices.isArray() || choices.isEmpty()) {
+                throw new IllegalStateException("Groq API 응답에 choices가 없습니다: " + response);
+            }
+            content = choices.get(0).path("message").path("content").asText();
         }
-
-        String content = choices.get(0)
-                .path("message")
-                .path("content")
-                .asText();
 
         String jsonContent = extractJsonBlock(content);
         objectMapper.readTree(jsonContent); // 유효성 검증
@@ -443,15 +499,16 @@ public class AIMetadataService {
     }
 
     /**
-     * GMS API 요청 형식
+     * Groq API 요청 형식
      */
-    static class GmsRequest {
-        public String model = "gpt-5.2";
+    static class GroqRequest {
+        public String model;
         public Object[] messages;
         public int max_completion_tokens = 4096;
         public double temperature = 0.3;
 
-        GmsRequest(String userContent, List<String> imageUrls) {
+        GroqRequest(String model, String userContent, List<String> imageUrls) {
+            this.model = model;
             Map<String, Object> systemMsg = new java.util.HashMap<>();
             systemMsg.put("role", "developer");
             systemMsg.put("content",
@@ -481,6 +538,45 @@ public class AIMetadataService {
             }
 
             this.messages = new Object[] { systemMsg, userMsg };
+        }
+    }
+
+    /**
+     * Claude API(Anthropic Messages API) 요청 형식
+     */
+    static class ClaudeRequest {
+        public String model;
+        public int max_tokens = 4096;
+        public Object[] messages;
+
+        ClaudeRequest(String model, String userContent, List<String> imageUrls) {
+            this.model = model;
+            String textWithInstruction = userContent + "\n\n(Answer in Korean.)";
+
+            Map<String, Object> userMsg = new java.util.HashMap<>();
+            userMsg.put("role", "user");
+
+            if (imageUrls != null && !imageUrls.isEmpty()) {
+                List<Map<String, Object>> contentParts = new ArrayList<>();
+                for (String url : imageUrls) {
+                    Map<String, Object> source = new java.util.HashMap<>();
+                    source.put("type", "url");
+                    source.put("url", url);
+                    Map<String, Object> imagePart = new java.util.HashMap<>();
+                    imagePart.put("type", "image");
+                    imagePart.put("source", source);
+                    contentParts.add(imagePart);
+                }
+                Map<String, Object> textPart = new java.util.HashMap<>();
+                textPart.put("type", "text");
+                textPart.put("text", textWithInstruction);
+                contentParts.add(textPart);
+                userMsg.put("content", contentParts);
+            } else {
+                userMsg.put("content", textWithInstruction);
+            }
+
+            this.messages = new Object[] { userMsg };
         }
     }
 }

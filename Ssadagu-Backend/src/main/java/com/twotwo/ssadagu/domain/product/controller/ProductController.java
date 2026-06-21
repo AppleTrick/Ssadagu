@@ -112,7 +112,7 @@ public class ProductController {
 
     @Operation(
         summary = "[Phase 5] 이미지 분석 검증",
-        description = "이미지 URL 목록을 텍스트 없이 GMS 모델에 전달하여 비전/OCR 분석이 실제로 동작하는지 검증합니다. " +
+        description = "이미지 URL 목록을 텍스트 없이 Groq 비전 모델에 전달하여 비전/OCR 분석이 실제로 동작하는지 검증합니다. " +
                       "generateMetadata() 결과와 비교해 이미지 기여도를 확인하세요.")
     @PostMapping("/debug/analyze-images")
     public ResponseEntity<String> analyzeImages(
