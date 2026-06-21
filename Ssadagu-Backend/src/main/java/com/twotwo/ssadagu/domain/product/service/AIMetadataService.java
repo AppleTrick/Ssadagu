@@ -227,14 +227,17 @@ public class AIMetadataService {
                 price, categoryCode, regionName, buildExtraHint(categoryCode));
     }
 
+    /** 프론트엔드(ItemRegistrationForm)에서 실제로 전송하는 카테고리 코드 목록 */
+    private static final Set<String> ALLOWED_CATEGORY = Set.of(
+            "ELEC", "CLOT", "BOOK", "FURN", "SPOR", "BEAU", "FOOD", "KID", "HOBB", "ETC");
+
     private String buildExtraHint(String categoryCode) {
         if (categoryCode == null)
             return "\"key\": \"value\"";
         return switch (categoryCode.toUpperCase()) {
-            case "DIGITAL", "ELECTRONICS" ->
-                "\"storage\": \"string\", \"memory\": \"string\", \"screenSize\": \"string\"";
-            case "FASHION", "CLOTHING" -> "\"size\": \"string\", \"material\": \"string\"";
-            case "FURNITURE" -> "\"size\": \"string\", \"material\": \"string\"";
+            case "ELEC" -> "\"storage\": \"string\", \"memory\": \"string\", \"screenSize\": \"string\"";
+            case "CLOT" -> "\"size\": \"string\", \"material\": \"string\"";
+            case "FURN" -> "\"size\": \"string\", \"material\": \"string\"";
             case "BOOK" -> "\"author\": \"string\", \"publisher\": \"string\"";
             default -> "\"key\": \"value\"";
         };
@@ -271,6 +274,9 @@ public class AIMetadataService {
                 - sort는 반드시 [LATEST, PRICE_ASC, PRICE_DESC] 중 하나 또는 null.
                 - condition은 반드시 [새상품, 거의새상품, 좋음, 사용감있음, 불량] 중 하나 또는 null.
                 - tradeType은 반드시 [직거래, 택배] 중 하나 또는 null.
+                - category는 반드시 [ELEC, CLOT, BOOK, FURN, SPOR, BEAU, FOOD, KID, HOBB, ETC] 중 하나 또는 null.
+                  (ELEC=전자기기, CLOT=의류, FURN=가구/인테리어, SPOR=스포츠/레저, BEAU=뷰티/미용,
+                   FOOD=식품, KID=유아동, HOBB=취미/게임, ETC=기타)
 
                 검색어: %s
 
@@ -285,7 +291,7 @@ public class AIMetadataService {
                     "modelName": "string or null",
                     "colors": [] or null,
                     "condition": "string or null (새상품/거의새상품/좋음/사용감있음/불량 중 하나)",
-                    "category": "string or null",
+                    "category": "string or null (ELEC/CLOT/BOOK/FURN/SPOR/BEAU/FOOD/KID/HOBB/ETC 중 하나)",
                     "region": "string or null",
                     "tradeType": "string or null (직거래/택배 중 하나)"
                   },
@@ -339,7 +345,9 @@ public class AIMetadataService {
             filters.setModelName(textOrNull(f, "modelName"));
             filters.setColors(toStringList(f.path("colors")));
             filters.setCondition(whitelistedOrNull(f, "condition", ALLOWED_CONDITION));
-            filters.setCategory(textOrNull(f, "category"));
+            String category = textOrNull(f, "category");
+            filters.setCategory((category != null && ALLOWED_CATEGORY.contains(category.toUpperCase()))
+                    ? category.toUpperCase() : null);
             filters.setRegion(textOrNull(f, "region"));
             filters.setTradeType(whitelistedOrNull(f, "tradeType", ALLOWED_TRADE_TYPE));
         }
