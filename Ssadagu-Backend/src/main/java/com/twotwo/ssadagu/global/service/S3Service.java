@@ -27,8 +27,11 @@ public class S3Service {
     @Value("${spring.cloud.aws.region.static}")
     private String region;
 
+    @Value("${s3.public.base-url}")
+    private String publicBaseUrl;
+
     /**
-     * 이미지를 S3에 업로드하고 퍼블릭 URL을 반환합니다.
+     * 이미지를 S3(MinIO)에 업로드하고 퍼블릭 URL을 반환합니다.
      */
     public String uploadImage(MultipartFile file) {
         String fileName = createFileName(file.getOriginalFilename());
@@ -40,9 +43,9 @@ public class S3Service {
                     .build();
 
             s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(is, file.getSize()));
-            
-            // URL 형식: https://{bucket}.s3.{region}.amazonaws.com/{fileName}
-            return String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, fileName);
+
+            // MinIO 공개 경로(path-style): {publicBaseUrl}/{bucket}/{fileName}
+            return String.format("%s/%s/%s", publicBaseUrl, bucket, fileName);
         } catch (IOException e) {
             log.error("파일 업로드 중 오류 발생: {}", e.getMessage());
             throw new RuntimeException("파일 업로드에 실패했습니다.");
