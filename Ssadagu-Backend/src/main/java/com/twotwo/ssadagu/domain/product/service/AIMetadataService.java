@@ -75,13 +75,12 @@ public class AIMetadataService {
             String modelName = textOrNull(node, "modelName");
             String condition = textOrNull(node, "condition");
 
-            // canonicalColors: ["검정","흰색"] → "검정,흰색"
-            String canonicalColors = null;
-            JsonNode colorsNode = node.path("canonicalColors");
-            if (colorsNode.isArray() && !colorsNode.isEmpty()) {
-                List<String> colorList = toStringList(colorsNode);
-                if (!colorList.isEmpty()) canonicalColors = String.join(",", colorList);
-            }
+            // 실제 색상명("미드나이트")과 화이트리스트 색상("검정")을 함께 저장 →
+            // 검색 시 둘 중 어느 표현으로 와도 매칭되도록 함
+            LinkedHashSet<String> colorSet = new LinkedHashSet<>();
+            colorSet.addAll(toStringList(node.path("colors")));
+            colorSet.addAll(toStringList(node.path("canonicalColors")));
+            String canonicalColors = colorSet.isEmpty() ? null : String.join(",", colorSet);
 
             // searchAliases: ["맥북","MacBook","애플"] → "맥북 MacBook 애플"
             String searchAliases = null;
